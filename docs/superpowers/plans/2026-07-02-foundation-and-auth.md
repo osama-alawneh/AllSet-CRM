@@ -211,13 +211,7 @@ Create `supabase/migrations/0002_rls.sql`:
 create or replace function auth_role() returns user_role
 language sql stable as $$ select role from profiles where id = auth.uid() $$;
 
--- test fixtures (two known profiles + one invoice) so policies are testable
-insert into profiles(id,full_name,role) values
-  ('00000000-0000-0000-0000-000000000001','Admin One','admin'),
-  ('00000000-0000-0000-0000-000000000002','Rep Two','rep')
-on conflict do nothing;
-insert into customers(id,name) values (1,'Seed Co') on conflict do nothing;
-insert into invoices(id,customer_id,number) values (1,1,'INV-0001') on conflict do nothing;
+-- NOTE: no fixtures here — the pgTAP tests create their own fixtures inside a rolled-back transaction.
 
 alter table customers      enable row level security;
 alter table leads          enable row level security;
@@ -274,8 +268,12 @@ Create `supabase/tests/claim_job.sql`:
 ```sql
 begin;
 select plan(2);
-insert into customers(id,name) values (9,'Claim Co') on conflict do nothing;
-insert into jobs(id,customer_id,status) values (99,9,'unclaimed') on conflict do nothing;
+-- fixtures inside the transaction (jobs.claimed_by FK → profiles → auth.users)
+insert into auth.users (id, instance_id, aud, role, email) values
+  ('00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','rep@test.dev');
+insert into profiles(id,full_name,role) values ('00000000-0000-0000-0000-000000000002','Rep Two','cleaner');
+insert into customers(id,name) values (9,'Claim Co');
+insert into jobs(id,customer_id,status) values (99,9,'unclaimed');
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-000000000002"}';
 
 select lives_ok($$ select claim_job(99) $$, 'first claim succeeds');

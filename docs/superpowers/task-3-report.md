@@ -1,7 +1,7 @@
 # Task 3 Report — RLS: Admin-only money
 
 ## STATUS: COMPLETE ✅
-Commit hash: `<filled below>`
+Commit hash: `39f7a85be0a984acccd20f12925f539c6ca141b3`
 
 Money (`invoices`, `invoice_items`, plus `leads.quote_value` / `jobs.price`) is now
 unreadable by non-admin users at the database via RLS, proven by pgTAP.
