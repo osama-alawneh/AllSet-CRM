@@ -5,6 +5,12 @@ values
  ('00000000-0000-0000-0000-000000000000','22222222-2222-2222-2222-222222222222','authenticated','authenticated','rep@clearview.dev',crypt('password123',gen_salt('bf')),now(),now(),now(),'{"provider":"email","providers":["email"]}','{}'),
  ('00000000-0000-0000-0000-000000000000','33333333-3333-3333-3333-333333333333','authenticated','authenticated','cleaner@clearview.dev',crypt('password123',gen_salt('bf')),now(),now(),now(),'{"provider":"email","providers":["email"]}','{}');
 
+-- GoTrue scans these token columns as non-null strings; NULL breaks login. Must be ''.
+update auth.users set
+  confirmation_token='', recovery_token='', email_change='', email_change_token_current='',
+  email_change_token_new='', phone_change='', phone_change_token='', reauthentication_token=''
+where email in ('admin@clearview.dev','rep@clearview.dev','cleaner@clearview.dev');
+
 insert into auth.identities (id,user_id,provider_id,identity_data,provider,last_sign_in_at,created_at,updated_at)
 values
  (gen_random_uuid(),'11111111-1111-1111-1111-111111111111','11111111-1111-1111-1111-111111111111',jsonb_build_object('sub','11111111-1111-1111-1111-111111111111','email','admin@clearview.dev'),'email',now(),now(),now()),

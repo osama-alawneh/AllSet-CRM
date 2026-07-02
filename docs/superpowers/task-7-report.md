@@ -2,7 +2,7 @@
 
 ## STATUS: COMPLETE
 
-Commit hash: _(see below after commit)_
+Commit hash: `814e1975b4fa8dc4e294a09a868c78a69770b4d7`
 
 ## Deliverables
 - Created `supabase/seed.sql` (exact spec content): 3 login users (auth.users + auth.identities + profiles), 10 customers, 10 leads, 4 jobs, 3 invoices, 4 invoice_items, plus setval() calls to advance IDENTITY sequences past the manual ids.
