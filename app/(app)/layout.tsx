@@ -1,9 +1,25 @@
 import { redirect } from 'next/navigation';
-import { getRole, guardDecision } from '@/lib/auth';
+import { getRole, guardDecision, getSession } from '@/lib/auth';
+import { supabaseServer } from '@/lib/supabase/server';
+import { Sidebar } from '@/components/shell/Sidebar';
+import { Topbar } from '@/components/shell/Topbar';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const role = await getRole();
   const to = guardDecision(role);
-  if (to) redirect(to);
-  return <div data-role={role ?? ''}>{children}</div>;
+  if (to || !role) {
+    redirect(to ?? '/login');
+  }
+  const user = await getSession();
+  const sb = await supabaseServer();
+  const { data: profile } = await sb.from('profiles').select('full_name').eq('id', user!.id).single();
+  return (
+    <div className="app">
+      <Sidebar role={role} name={profile?.full_name ?? 'Unknown'} />
+      <div className="main">
+        <Topbar />
+        {children}
+      </div>
+    </div>
+  );
 }
