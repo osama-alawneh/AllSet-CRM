@@ -3,6 +3,7 @@ import { getRole, guardDecision, getSession } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
 import { Sidebar } from '@/components/shell/Sidebar';
 import { Topbar } from '@/components/shell/Topbar';
+import { GlobalSearch } from '@/components/search/GlobalSearch';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const role = await getRole();
@@ -17,7 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="app">
       <Sidebar role={role} name={profile?.full_name ?? 'Unknown'} />
       <div className="main">
-        <Topbar />
+        <Topbar search={<GlobalSearch />} />
         {children}
       </div>
     </div>
