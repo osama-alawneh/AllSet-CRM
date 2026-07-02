@@ -18,3 +18,7 @@ export async function getRole(): Promise<Role | null> {
   const { data } = await sb.from('profiles').select('role').eq('id', u.id).single();
   return normalizeRole(data?.role as string | undefined);
 }
+
+export function guardDecision(role: Role | null): string | null {
+  return role ? null : '/login';
+}
