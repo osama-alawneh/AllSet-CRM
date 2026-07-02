@@ -1,0 +1,170 @@
+<title>ClearView CRM — Blueprint</title>
+<style>
+  :root{
+    --paper:#eaeef2; --ink:#0e2036; --muted:#5f7188; --line:#c3d0dd;
+    --blue:#2f6df6; --blue-d:#1a4fc4;
+    --won:#1a9e6a; --lost:#d64848; --follow:#c98a12;
+    --card:#fbfcfe;
+  }
+  *{box-sizing:border-box}
+  .wrap{
+    font-family:ui-monospace,"Cascadia Code","Consolas",monospace;color:var(--ink);min-height:100vh;
+    background:
+      linear-gradient(var(--line) 1px,transparent 1px) 0 0/26px 26px,
+      linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/26px 26px,
+      var(--paper);
+    background-blend-mode:normal;padding:24px;display:grid;grid-template-columns:210px 1fr;gap:24px;
+  }
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}}
+  a{color:inherit;text-decoration:none}
+  .box{background:var(--card);border:1.5px solid var(--ink);border-radius:3px;
+    box-shadow:4px 4px 0 rgba(14,32,54,.08)}
+  .lbl{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+
+  .side{padding:16px 14px;display:flex;flex-direction:column;gap:3px;align-self:start;position:sticky;top:24px}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1.5px dashed var(--line)}
+  .logo{width:36px;height:36px;border:1.5px solid var(--ink);border-radius:3px;display:grid;place-items:center;font-size:17px;background:var(--blue);color:#fff}
+  .brand b{font-size:15px;letter-spacing:-.01em}.brand small{display:block;font-size:9px;letter-spacing:.2em;color:var(--muted)}
+  .nav a{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:3px;color:var(--muted);font-size:13px;transition:.12s}
+  .nav a .n{font-size:10px;color:var(--line)}
+  .nav a:hover{background:#eef3f8;color:var(--ink)}
+  .nav a.on{background:var(--ink);color:#fff}.nav a.on .n{color:var(--blue)}
+  .who{margin-top:auto;padding-top:14px;border-top:1.5px dashed var(--line);font-size:12px}
+  .who b{display:block}.who small{color:var(--muted);font-size:10px}
+
+  .main{display:flex;flex-direction:column;gap:20px;min-width:0}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    border-bottom:1.5px solid var(--ink);padding-bottom:14px}
+  .top h1{font-size:22px;letter-spacing:-.02em;margin:0;font-weight:700}
+  .top .co{font-size:11px;color:var(--muted);margin-top:4px}
+  .stamp{border:1.5px solid var(--won);color:var(--won);border-radius:3px;padding:6px 12px;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  @media(max-width:1080px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpi{padding:16px;position:relative}
+  .kpi .tag{position:absolute;top:10px;right:12px;font-size:9px;color:var(--muted)}
+  .kpi .val{font-size:29px;font-weight:700;letter-spacing:-.03em;margin-top:14px;font-variant-numeric:tabular-nums}
+  .kpi .sub{font-size:11px;margin-top:6px}
+  .up{color:var(--won)} .warn{color:var(--follow)}
+  .lock{color:var(--blue)}
+
+  .row{display:grid;grid-template-columns:1.5fr 1fr;gap:20px}
+  @media(max-width:900px){.row{grid-template-columns:1fr}}
+  .card{padding:18px}
+  .card h3{margin:0;font-size:14px;font-weight:700;letter-spacing:.02em}
+  .card .cap{color:var(--muted);font-size:11px;margin:4px 0 14px}
+  canvas{width:100%;height:160px;display:block}
+
+  .jobs{display:flex;flex-direction:column}
+  .job{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px dashed var(--line)}
+  .job:last-child{border-bottom:0}
+  .job .pin{width:9px;height:9px;border-radius:2px;transform:rotate(45deg)}
+  .job .info{flex:1;min-width:0}.job b{font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .job small{font-size:11px;color:var(--muted)}
+  .claim{font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    padding:7px 12px;border:1.5px solid var(--ink);border-radius:3px;background:var(--blue);color:#fff;cursor:pointer;transition:.12s;white-space:nowrap}
+  .claim:hover{background:var(--blue-d)}
+  .claim.done{background:transparent;color:var(--won);border-color:var(--won);pointer-events:none}
+
+  .map{position:relative;height:200px;border:1.5px solid var(--ink);border-radius:3px;overflow:hidden;
+    background:
+      linear-gradient(var(--line) 1px,transparent 1px) 0 0/20px 20px,
+      linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/20px 20px,
+      #f2f6fa}
+  .street{position:absolute;background:#d9e2ec}
+  .mpin{position:absolute;width:14px;height:14px;border:1.5px solid var(--ink);border-radius:2px;transform:rotate(45deg);cursor:pointer;transition:.12s}
+  .mpin:hover{transform:rotate(45deg) scale(1.3)}
+  .mpin::after{content:"";position:absolute;inset:3px;border-radius:1px;background:var(--c)}
+  .legend{display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+  .legend span{display:flex;align-items:center;gap:6px}.lg{width:9px;height:9px;border-radius:2px;transform:rotate(45deg)}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  .rise{animation:rise .5s ease both}@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+</style>
+
+<div class="wrap">
+  <aside class="side box rise">
+    <div class="brand"><div class="logo">◇</div><div><b>ClearView</b><small>BLUEPRINT</small></div></div>
+    <nav class="nav">
+      <a class="on"><span class="n">01</span> Dashboard</a>
+      <a><span class="n">02</span> Map</a>
+      <a><span class="n">03</span> Leads</a>
+      <a><span class="n">04</span> Jobs</a>
+      <a><span class="n">05</span> Contacts</a>
+      <a><span class="n">06</span> Settings</a>
+    </nav>
+    <div class="who"><b>Marcus Reed</b><small>ROLE: ADMIN</small></div>
+  </aside>
+
+  <main class="main">
+    <div class="top rise">
+      <div><h1>DASHBOARD / DAILY OPS</h1><div class="co">REF 2026-07-02 · 7 JOBS SCHEDULED · WX: CLEAR</div></div>
+      <div class="stamp">◉ Crews Active</div>
+    </div>
+
+    <section class="kpis">
+      <div class="kpi box rise" style="animation-delay:.04s"><span class="tag lock">▚ ADMIN</span>
+        <div class="lbl">Revenue · MTD</div><div class="val" data-count="18420" data-prefix="$">$0</div><div class="sub up">▲ +12.0%</div></div>
+      <div class="kpi box rise" style="animation-delay:.08s"><span class="tag">wk</span>
+        <div class="lbl">Jobs / week</div><div class="val" data-count="34">0</div><div class="sub up">▲ 6 done</div></div>
+      <div class="kpi box rise" style="animation-delay:.12s"><span class="tag">%</span>
+        <div class="lbl">Win rate</div><div class="val" data-count="61" data-suffix="%">0%</div><div class="sub up">▲ lead→won</div></div>
+      <div class="kpi box rise" style="animation-delay:.16s"><span class="tag">!</span>
+        <div class="lbl">Follow-ups due</div><div class="val" data-count="9">0</div><div class="sub warn">● 3 overdue</div></div>
+    </section>
+
+    <section class="row">
+      <div class="card box rise"><h3>REVENUE / 14D</h3><p class="cap">plotted daily · USD</p><canvas id="chart"></canvas></div>
+      <div class="card box rise"><h3>CLAIMABLE JOBS</h3><p class="cap">claim = lock · one owner</p>
+        <div class="jobs">
+          <div class="job"><div class="pin" style="background:var(--won)"></div>
+            <div class="info"><b>142 Maple Ave</b><small>2-story · 18 panes · in+out</small></div><button class="claim">Claim</button></div>
+          <div class="job"><div class="pin" style="background:var(--won)"></div>
+            <div class="info"><b>7 Birch Court</b><small>bungalow · 11 panes · outside</small></div><button class="claim">Claim</button></div>
+          <div class="job"><div class="pin" style="background:var(--follow)"></div>
+            <div class="info"><b>90 Cedar Lane</b><small>3-story · screens + hard water</small></div><button class="claim">Claim</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card box rise"><h3>NEIGHBORHOOD / PIN MAP</h3><p class="cap">click plot → open lead record</p>
+      <div class="map">
+        <div class="street" style="left:0;top:38%;width:100%;height:6px"></div>
+        <div class="street" style="left:0;top:72%;width:100%;height:6px"></div>
+        <div class="street" style="left:28%;top:0;width:6px;height:100%"></div>
+        <div class="street" style="left:66%;top:0;width:6px;height:100%"></div>
+        <div class="mpin" style="left:16%;top:24%;--c:var(--won)"></div>
+        <div class="mpin" style="left:44%;top:20%;--c:var(--follow)"></div>
+        <div class="mpin" style="left:74%;top:30%;--c:var(--won)"></div>
+        <div class="mpin" style="left:38%;top:56%;--c:var(--lost)"></div>
+        <div class="mpin" style="left:80%;top:60%;--c:var(--won)"></div>
+        <div class="mpin" style="left:20%;top:82%;--c:var(--follow)"></div>
+      </div>
+      <div class="legend">
+        <span><i class="lg" style="background:var(--won)"></i> WON</span>
+        <span><i class="lg" style="background:var(--follow)"></i> FOLLOW-UP</span>
+        <span><i class="lg" style="background:var(--lost)"></i> LOST</span>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+document.querySelectorAll('[data-count]').forEach(el=>{const end=+el.dataset.count,pre=el.dataset.prefix||'',suf=el.dataset.suffix||'';
+  if(reduce){el.textContent=pre+end.toLocaleString()+suf;return;}let t0=null;
+  function step(t){if(!t0)t0=t;const p=Math.min((t-t0)/1000,1);const e=1-Math.pow(1-p,3);
+    el.textContent=pre+Math.round(end*e).toLocaleString()+suf;if(p<1)requestAnimationFrame(step);}requestAnimationFrame(step);});
+document.querySelectorAll('.claim').forEach(b=>b.addEventListener('click',()=>{b.textContent='✓ Locked';b.classList.add('done');}));
+const cv=document.getElementById('chart');
+function draw(){const dpr=devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;cv.width=w*dpr;cv.height=h*dpr;
+  const c=cv.getContext('2d');c.scale(dpr,dpr);const d=[9,11,10,14,13,17,16,15,19,18,22,21,25,27],max=30,pad=4;
+  const X=i=>i/(d.length-1)*(w-pad*2)+pad,Y=v=>h-10-(v/max)*(h-24);
+  // grid
+  c.strokeStyle='#dbe4ee';c.lineWidth=1;for(let i=0;i<=4;i++){const y=10+i*(h-24)/4;c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke();}
+  // step line
+  c.beginPath();c.moveTo(X(0),Y(d[0]));d.forEach((v,i)=>c.lineTo(X(i),Y(v)));
+  c.lineWidth=2;c.strokeStyle='#2f6df6';c.stroke();
+  d.forEach((v,i)=>{c.beginPath();c.rect(X(i)-2,Y(v)-2,4,4);c.fillStyle='#0e2036';c.fill();});
+}
+draw();addEventListener('resize',draw);
+</script>
