@@ -7,3 +7,4 @@ Task 5: complete (commit 0af0926, supabase clients + auth helpers; adapted Next1
 Task 6: complete (commit 9aca9c9, login + route guard; next build clean, 4 unit tests pass)
 Task 7: complete (commit 814e197, seed + 3 login users; 7 pgTAP pass, test ids bumped to 900k to avoid seed collision)
 FOUNDATION PLAN COMPLETE (Tasks 1-7). Logins: admin@/rep@/cleaner@clearview.dev pw password123.
+FIX: commit f5335fc — grants migration 0004 + seed token fix; E2E verified (logins, RLS, claim-lock all pass). Removed stray CleanView PDF + temp verify script.
