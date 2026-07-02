@@ -1,0 +1,246 @@
+<title>ClearView CRM — Product Brief</title>
+<style>
+  :root{
+    --font:ui-monospace,"Cascadia Code","Consolas","SF Mono",monospace;
+    --paper:#e9eef3;--grid:#ccd8e4;--card:#fbfcfe;--ink:#0e2036;--muted:#5f7188;
+    --line:#d3dde8;--accent:#2f6df6;--accent-d:#1a4fc4;--shadow:rgba(14,32,54,.10);
+    --won:#0f9e63;--lost:#d64848;--follow:#c98a12;--new:#5f7188;--chip:#eef3f9;
+  }
+  [data-theme="dark"]{
+    --paper:#070d18;--grid:#16233b;--card:#0e1830;--ink:#dce6f5;--muted:#7d8db0;
+    --line:#1d2c48;--accent:#38e0ff;--accent-d:#22b8ff;--shadow:rgba(0,0,0,.5);
+    --won:#31e6a8;--lost:#ff6b7a;--follow:#ffcb5e;--new:#8b98bd;--chip:#12203c;
+  }
+  *{box-sizing:border-box}body{margin:0}
+  .doc{font-family:var(--font);color:var(--ink);
+    background:linear-gradient(var(--grid) 1px,transparent 1px) 0 0/26px 26px,
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/26px 26px,var(--paper);
+    min-height:100vh;transition:background .3s,color .3s;padding:0 20px 80px}
+  .wrap{max-width:1000px;margin:0 auto}
+  .box{background:var(--card);border:1.5px solid var(--ink);border-radius:4px;box-shadow:4px 4px 0 var(--shadow)}
+  [data-theme="dark"] .box{border-color:var(--line);box-shadow:0 12px 34px -20px #000}
+  .lbl{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  a{color:var(--accent)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  .tblwrap{overflow-x:auto}
+  th{text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:9px 10px;border-bottom:1.5px solid var(--line);white-space:nowrap}
+  td{padding:9px 10px;border-bottom:1px dashed var(--line);vertical-align:top}
+  .yes{color:var(--won);font-weight:700}.no{color:var(--lost);font-weight:700}
+
+  /* topbar */
+  .bar{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:12px 0;margin-bottom:8px;backdrop-filter:blur(8px)}
+  .bar .id{display:flex;align-items:center;gap:10px}
+  .logo{width:34px;height:34px;border:1.5px solid var(--ink);border-radius:4px;display:grid;place-items:center;font-size:15px;background:var(--accent);color:#fff}
+  [data-theme="dark"] .logo{border-color:var(--accent);color:#04101c;box-shadow:0 0 16px -2px var(--accent)}
+  .bar b{font-size:14px}.bar small{display:block;font-size:9px;letter-spacing:.16em;color:var(--muted)}
+  .tbtn{font-family:var(--font);background:transparent;border:1.5px solid var(--line);border-radius:6px;padding:7px 11px;font-size:11px;color:var(--muted);cursor:pointer}
+  .tbtn:hover{border-color:var(--ink);color:var(--ink)}
+
+  /* hero */
+  .hero{padding:54px 0 30px}
+  .stamp{display:inline-block;border:1.5px solid var(--accent);color:var(--accent);border-radius:4px;padding:5px 11px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:20px}
+  .hero h1{font-size:clamp(32px,6vw,58px);line-height:1.02;letter-spacing:-.03em;margin:0;font-weight:700;text-wrap:balance}
+  .hero h1 span{color:var(--accent)}
+  .hero p{font-size:15px;color:var(--muted);max-width:60ch;line-height:1.7;margin:18px 0 0}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:34px}
+  @media(max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{padding:16px}
+  .stat .n{font-size:26px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .stat .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+
+  /* sections */
+  section{margin-top:46px;scroll-margin-top:70px}
+  .sh{display:flex;align-items:baseline;gap:12px;margin-bottom:18px;border-bottom:1.5px solid var(--ink);padding-bottom:10px}
+  [data-theme="dark"] .sh{border-color:var(--line)}
+  .sh .no{color:var(--accent);font-weight:700;font-size:13px}
+  .sh h2{font-size:19px;margin:0;letter-spacing:-.01em;font-weight:700}
+  .prose{font-size:13.5px;line-height:1.75;color:var(--ink)}
+  .prose .muted{color:var(--muted)}
+
+  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media(max-width:720px){.cards{grid-template-columns:1fr}}
+  .feat{padding:18px}
+  .feat .ic{width:30px;height:30px;border:1.5px solid var(--line);border-radius:4px;display:grid;place-items:center;font-size:15px;margin-bottom:12px}
+  .feat h3{margin:0 0 6px;font-size:14px}
+  .feat p{margin:0;font-size:12px;color:var(--muted);line-height:1.6}
+
+  .pill{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:3px;display:inline-block;background:var(--chip);color:var(--accent)}
+
+  /* entity diagram */
+  .erd{padding:20px;font-size:12px;line-height:1.9;overflow-x:auto}
+  .erd pre{margin:0;color:var(--ink);white-space:pre}
+
+  /* roadmap */
+  .road{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:720px){.road{grid-template-columns:1fr}}
+  .phase{padding:18px}
+  .phase .tag{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:700}
+  .phase h3{margin:6px 0 10px;font-size:15px}
+  .phase ul{margin:0;padding-left:16px;font-size:12px;color:var(--muted);line-height:1.8}
+  .phase.now{border-color:var(--accent)}
+  [data-theme="dark"] .phase.now{box-shadow:0 0 0 1px var(--accent),0 12px 34px -20px #000}
+
+  .cost td:first-child{font-weight:700}
+  .free{color:var(--won);font-weight:700}
+
+  .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
+  .foot{margin-top:60px;text-align:center;font-size:11px;color:var(--muted)}
+
+  /* PRINT → clean PDF (light, no grid, no shadows, page-break friendly) */
+  @media print{
+    @page{margin:14mm}
+    .doc{background:#fff!important;color:#0e2036!important;padding:0}
+    .box{box-shadow:none!important;border:1px solid #cfd8e2!important}
+    .bar,#tbtn{display:none!important}
+    .reveal{opacity:1!important;transform:none!important}
+    .hero{padding:0 0 18px}
+    .hero h1{font-size:30px}
+    .stamp{border-color:#2f6df6;color:#2f6df6}
+    section{margin-top:24px;page-break-inside:avoid}
+    .feat,.phase,.stat,.erd{page-break-inside:avoid}
+    .cards,.road{gap:12px}
+    a{color:#1a4fc4}
+    .hero h1 span,.sh .no,.phase .tag{color:#2f6df6!important}
+    .yes,.free{color:#0f7a4e!important}.no{color:#b23b3b!important}
+  }
+</style>
+
+<div class="doc" data-theme="light" id="doc">
+<div class="wrap">
+
+  <div class="bar">
+    <div class="id"><div class="logo">◇</div><div><b>ClearView CRM</b><small>PRODUCT BRIEF · v1</small></div></div>
+    <div style="display:flex;gap:8px"><button class="tbtn" onclick="window.print()">🖨 Save PDF</button><button class="tbtn" id="tbtn">◐ Dark</button></div>
+  </div>
+
+  <!-- HERO -->
+  <header class="hero">
+    <span class="stamp">◉ Product Requirements · 2026-07-02</span>
+    <h1>Run the whole window-cleaning business from <span>one map.</span></h1>
+    <p>Turn doorsteps and inbound calls into tracked leads. Drop a pin on a house, win the work, send a crew, get paid — on your desktop or your phone. Built for window cleaning, not bent from a generic CRM.</p>
+    <div class="stats">
+      <div class="stat box reveal"><div class="n" data-c="4">4</div><div class="k">Core entities</div></div>
+      <div class="stat box reveal"><div class="n" data-c="3">3</div><div class="k">User roles</div></div>
+      <div class="stat box reveal"><div class="n" data-c="3">3</div><div class="k">Rollout phases</div></div>
+      <div class="stat box reveal"><div class="n">$0</div><div class="k">To run MVP*</div></div>
+    </div>
+  </header>
+
+  <!-- 01 PROBLEM -->
+  <section class="reveal">
+    <div class="sh"><span class="no">01</span><h2>Why build it</h2></div>
+    <div class="prose">Generic CRMs don't understand window cleaning: they can't price by pane count, stories, or screens, don't map a neighborhood, don't let crews claim jobs, and don't model repeat service. Today it's spreadsheets and a buggy hand-built tool. <span class="muted">ClearView fixes exactly that — one place to see the neighborhood, win work, dispatch crews, and get paid, with the money numbers visible only to the owner.</span></div>
+  </section>
+
+  <!-- 02 ROLES -->
+  <section class="reveal">
+    <div class="sh"><span class="no">02</span><h2>Who uses it — and what they can see</h2></div>
+    <div class="box tblwrap" style="padding:6px 8px">
+      <table>
+        <thead><tr><th>Capability</th><th>Admin (owner)</th><th>Rep (sales)</th><th>Cleaner (field)</th></tr></thead>
+        <tbody>
+          <tr><td>See revenue, prices, invoices</td><td class="yes">✓</td><td class="no">✕</td><td class="no">✕</td></tr>
+          <tr><td>Dashboard</td><td class="yes">✓ w/ money</td><td>✓ no money</td><td>✓ no money</td></tr>
+          <tr><td>Map — drop pin / create lead</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">view only</td></tr>
+          <tr><td>Leads pipeline</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">✕</td></tr>
+          <tr><td>Jobs — claim & update</td><td class="yes">✓</td><td>view</td><td class="yes">✓ own</td></tr>
+          <tr><td>Invoices</td><td class="yes">✓</td><td class="no">✕</td><td class="no">✕</td></tr>
+          <tr><td>Users & settings</td><td class="yes">✓</td><td class="no">✕</td><td class="no">✕</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prose" style="margin-top:14px"><span class="pill">Hard rule</span> &nbsp;Money visibility and job-claim locking are enforced <b>in the database</b>, not just hidden in the screen — so they can't be bypassed.</div>
+  </section>
+
+  <!-- 03 FEATURES -->
+  <section class="reveal">
+    <div class="sh"><span class="no">03</span><h2>What it does</h2></div>
+    <div class="cards">
+      <div class="feat box"><div class="ic">◎</div><h3>Live neighborhood map</h3><p>Click a house → drop a colored pin (won / lost / follow-up / new) → it creates a lead. Click any pin to open its lead. Pin ⇄ lead, two-way linked.</p></div>
+      <div class="feat box"><div class="ic">◆</div><h3>Leads pipeline</h3><p>Drag cards across New → Follow-up → Won → Lost. Dropping into Won automatically creates a job.</p></div>
+      <div class="feat box"><div class="ic">✦</div><h3>Jobs your crew claims</h3><p>Cleaners claim a job and it locks to them — nobody else can take it. Track Unclaimed → Claimed → In progress → Done.</p></div>
+      <div class="feat box"><div class="ic">☺</div><h3>Customers, connected</h3><p>Every customer's full history — jobs, invoices, leads — in one profile. Search a name and see a card with phone + address to pick the right person.</p></div>
+      <div class="feat box"><div class="ic">$</div><h3>Invoices &amp; PDF</h3><p>Build an invoice from a job, print it to PDF, mark it paid. Revenue rolls up on the dashboard — owner only.</p></div>
+      <div class="feat box"><div class="ic">▦</div><h3>Dashboard &amp; export</h3><p>Revenue, jobs, win rate, overdue invoices, a live map snapshot. Export any list to Excel.</p></div>
+    </div>
+  </section>
+
+  <!-- 04 ENTITIES -->
+  <section class="reveal">
+    <div class="sh"><span class="no">04</span><h2>How the pieces connect</h2></div>
+    <div class="box erd">
+<pre>Customer ──1───*── Lead ──(won)──▶ Job ──(done)──▶ Invoice
+   │                 │                │               │
+   │                 └── shown as a   │               └── line items, PDF,
+   │                     map pin      │                   status: draft/sent/paid
+   ├──1───*── Job         (color =    └── claimed by ONE cleaner (locks)
+   └──1───*── Invoice      status)</pre>
+    </div>
+    <div class="prose" style="margin-top:12px muted"><span class="muted">One customer holds many leads, jobs, and invoices. A lead becomes a job when won; a finished job becomes an invoice. Nothing is a dead end — every record links back to the customer and forward to its next step.</span></div>
+  </section>
+
+  <!-- 05 MOBILE -->
+  <section class="reveal">
+    <div class="sh"><span class="no">05</span><h2>On the phone</h2></div>
+    <div class="cards">
+      <div class="feat box" style="border-color:var(--accent)"><div class="ic">📲</div><h3>Now — installable app (PWA) <span class="pill">Phase 1</span></h3><p>One tap adds ClearView to the home screen with its own icon, full-screen, works on any phone. No app store, no fees. Reps and cleaners are in the field on day one.</p></div>
+      <div class="feat box"><div class="ic">📸</div><h3>Later — native app <span class="pill">Phase 2</span></h3><p>A real iOS/Android app for crews: before/after photos, GPS routing, solid offline. Shares the same code, added when the field features earn the store fees.</p></div>
+    </div>
+  </section>
+
+  <!-- 06 ROADMAP -->
+  <section class="reveal">
+    <div class="sh"><span class="no">06</span><h2>Rollout in three phases</h2></div>
+    <div class="road">
+      <div class="phase box now"><div class="tag">Phase 1 · MVP</div><h3>Run the business</h3><ul><li>Roles + login</li><li>Customers</li><li>Map + pins</li><li>Leads pipeline</li><li>Jobs + claiming</li><li>Invoices + PDF</li><li>Dashboard + export</li><li>Installable PWA</li></ul></div>
+      <div class="phase box"><div class="tag">Phase 2 · Field</div><h3>Crews &amp; repeat work</h3><ul><li>Recurring "due again" service</li><li>Before/after photos</li><li>Today's route</li><li>Native mobile app</li><li>Weather flag · tags</li></ul></div>
+      <div class="phase box"><div class="tag">Phase 3 · Growth</div><h3>Money &amp; automation</h3><ul><li>Online payments</li><li>Email invoices · tax · deposits</li><li>Customer self-booking</li><li>Reminders/notifications</li><li>Reporting</li></ul></div>
+    </div>
+  </section>
+
+  <!-- 07 COST -->
+  <section class="reveal">
+    <div class="sh"><span class="no">07</span><h2>What it costs to run</h2></div>
+    <div class="box tblwrap" style="padding:6px 8px">
+      <table class="cost">
+        <thead><tr><th>Piece</th><th>Cost</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Database + login (Supabase)</td><td class="free">Free</td><td>Paid ~$25/mo only when you scale up</td></tr>
+          <tr><td>Map (Mapbox)</td><td class="free">Free</td><td>~50k map loads / month included</td></tr>
+          <tr><td>Web hosting</td><td class="free">Free</td><td>Cloudflare Pages / Netlify</td></tr>
+          <tr><td>Installable app (PWA)</td><td class="free">Free</td><td>No app store fees</td></tr>
+          <tr><td>Domain name</td><td>~$12/yr</td><td>The one fixed cost</td></tr>
+          <tr><td>Native app (Phase 2)</td><td>$99/yr + $25</td><td>Apple yearly, Google one-time — only if/when we go native</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prose" style="margin-top:12px"><span class="muted">* MVP runs essentially free — just a domain. Native app is the only thing that later forces store fees.</span></div>
+  </section>
+
+  <!-- 08 DONE -->
+  <section class="reveal">
+    <div class="sh"><span class="no">08</span><h2>What "done" looks like (MVP)</h2></div>
+    <div class="prose">A rep drops a pin, creating a lead on the map and in the pipeline. Dragging it to <b>Won</b> spins up a job; a cleaner claims it and it locks to them. The owner builds an invoice from that job, prints a PDF, marks it paid — and watches revenue update on a dashboard that reps and cleaners can't see the money on. Every list exports to Excel. The whole thing installs on a phone.</div>
+  </section>
+
+  <div class="foot">ClearView CRM · Product Brief v1 · Blueprint+ · placeholder branding — final name, colors &amp; logo TBD</div>
+</div>
+</div>
+
+<script>
+const doc=document.getElementById('doc');
+document.getElementById('tbtn').addEventListener('click',()=>{const d=doc.getAttribute('data-theme')==='dark';
+  doc.setAttribute('data-theme',d?'light':'dark');document.getElementById('tbtn').textContent=d?'◐ Dark':'◑ Light';});
+// scroll reveal
+const io=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+// count up (once visible)
+const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const cio=new IntersectionObserver((es)=>es.forEach(e=>{if(!e.isIntersecting)return;cio.unobserve(e.target);
+  const el=e.target,end=+el.dataset.c;if(reduce){el.textContent=end;return;}let t0=null;
+  function s(t){if(!t0)t0=t;const p=Math.min((t-t0)/800,1);el.textContent=Math.round(end*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(s);}requestAnimationFrame(s);}),{threshold:.5});
+document.querySelectorAll('[data-c]').forEach(el=>cio.observe(el));
+</script>
