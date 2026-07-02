@@ -9,8 +9,9 @@ export async function saveCustomer(id: number, fd: FormData): Promise<{ error?: 
   const parsed = parseCustomerForm(fd);
   if (!parsed.ok) return { error: parsed.error };
   const sb = await supabaseServer();
-  const { error } = await sb.from('customers').update(parsed.value).eq('id', id);
+  const { data, error } = await sb.from('customers').update(parsed.value).eq('id', id).select('id');
   if (error) return { error: error.message };
+  if (!data?.length) return { error: 'Save failed: not permitted or customer not found' };
   revalidatePath('/customers');
   return {};
 }
