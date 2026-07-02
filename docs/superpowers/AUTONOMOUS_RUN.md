@@ -17,7 +17,8 @@
 ## CURRENT STATUS (as of 2026-07-02)
 
 - **Foundation plan COMPLETE and merged to `main` @ `c2cef99`.** Verified end-to-end (logins, RLS money-hide, atomic job-claim). 7 pgTAP + 4 unit tests pass; `next build` clean.
-- A branch `feat/customers` was created off main for Plan 2 (empty so far).
+- **Plan 2 COMPLETE and merged to `main` @ `9af91b0`** (branch `feat/customers`). Blueprint+ shell (sidebar role nav, theme cookie, placeholder routes with role guards), customers list + drawer (edit/create, related tabs, RLS-aware), global typeahead. Migration 0005 (admin/rep customer writes). pgTAP 12/12, unit 21/21, build + lint clean, 15/15 live E2E checks (all roles, RLS mutations). Plan doc: `docs/superpowers/plans/2026-07-02-plan2-customers-search-shell.md`. Backlog minors recorded in `.superpowers/sdd/progress.md` (auth round-trip consolidation, requireRole helper, error UI, a11y nits, drawer key on customer switch).
+- Next: **Plan 3 — Leads pipeline + Map/pins** on branch `feat/leads-map`.
 - Repo root: `D:\Development\ClearViewCRM`.
 
 ### Done (Foundation, Tasks 1–7 + fixes)
