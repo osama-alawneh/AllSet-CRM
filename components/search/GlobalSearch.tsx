@@ -20,16 +20,21 @@ export function GlobalSearch() {
       setOpen(false);
       return;
     }
+    let cancelled = false;
     const t = setTimeout(async () => {
       const { data } = await supabaseBrowser()
         .from('customers')
         .select('id,name,phone,address')
         .or(filter)
         .limit(6);
+      if (cancelled) return;
       setHits(data ?? []);
       setOpen(true);
     }, 200);
-    return () => clearTimeout(t);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, [q]);
 
   useEffect(() => {
