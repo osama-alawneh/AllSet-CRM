@@ -12,14 +12,11 @@ export function GlobalSearch() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const boxRef = useRef<HTMLDivElement>(null);
+  const filter = buildOrFilter(q);
+  const visible = open && filter !== null;
 
   useEffect(() => {
-    const filter = buildOrFilter(q);
-    if (!filter) {
-      setHits(null);
-      setOpen(false);
-      return;
-    }
+    if (!filter) return;
     let cancelled = false;
     const t = setTimeout(async () => {
       const { data } = await supabaseBrowser()
@@ -35,7 +32,7 @@ export function GlobalSearch() {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [q]);
+  }, [filter]);
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
@@ -61,11 +58,11 @@ export function GlobalSearch() {
         onFocus={() => hits && setOpen(true)}
         onKeyDown={e => {
           if (e.key === 'Escape') setOpen(false);
-          if (e.key === 'Enter' && hits?.length) pick(hits[0].id);
+          if (e.key === 'Enter' && visible && hits?.length) pick(hits[0].id);
         }}
         aria-label="Find customer"
       />
-      <div className={`sresults box ${open ? 'show' : ''}`}>
+      <div className={`sresults box ${visible ? 'show' : ''}`}>
         {hits?.length ? (
           hits.map(h => (
             <div className="scard" key={h.id} onClick={() => pick(h.id)}>

@@ -1,11 +1,10 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export function ThemeToggle() {
-  const [dark, setDark] = useState(false);
-  useEffect(() => {
-    setDark(document.documentElement.dataset.theme === 'dark');
-  }, []);
+  const [dark, setDark] = useState(
+    () => typeof document !== 'undefined' && document.documentElement.dataset.theme === 'dark'
+  );
   const toggle = () => {
     const next = dark ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
@@ -13,7 +12,7 @@ export function ThemeToggle() {
     setDark(!dark);
   };
   return (
-    <button className="iconbtn" onClick={toggle} aria-label="Toggle dark mode">
+    <button className="iconbtn" onClick={toggle} aria-label="Toggle dark mode" suppressHydrationWarning>
       {dark ? '◑ Light' : '◐ Dark'}
     </button>
   );
