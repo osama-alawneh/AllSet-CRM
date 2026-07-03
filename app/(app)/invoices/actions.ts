@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase/server';
 import { parseInvoiceForm } from '@/lib/invoices';
+import { getRole } from '@/lib/auth';
 
 // Save an invoice header + its line items. id === null → create (number/issue_date/status
 // defaults fill from the DB; 0012 sets number = INV-<nextval>). Authorization is the
@@ -55,4 +56,41 @@ export async function saveInvoice(id: number | null, fd: FormData): Promise<{ er
   revalidatePath('/dashboard');
   if (id === null) redirect(`/invoices?i=${invoiceId}`);
   return {};
+}
+
+// Create a draft invoice seeded from a job: one line item "<service> — window cleaning" at the
+// job's price. Explicit admin check (defence in depth on top of the invoices_admin RLS policy)
+// so a non-admin gets a clean error instead of a raw RLS failure. Reads the BASE jobs table
+// (admin passes jobs_admin SELECT) for customer_id + price. number/status/issue_date default.
+export async function createInvoiceFromJob(jobId: number): Promise<{ error?: string }> {
+  const role = await getRole();
+  if (role !== 'admin') return { error: 'Not authorized' };
+  const sb = await supabaseServer();
+
+  const { data: job, error: jErr } = await sb
+    .from('jobs')
+    .select('id,customer_id,service,price')
+    .eq('id', jobId)
+    .single();
+  if (jErr || !job) return { error: jErr?.message ?? 'Job not found' };
+
+  const { data: inv, error: iErr } = await sb
+    .from('invoices')
+    .insert({ customer_id: job.customer_id, job_id: job.id })
+    .select('id')
+    .single();
+  if (iErr) return { error: iErr.message };
+
+  const { error: itErr } = await sb.from('invoice_items').insert({
+    invoice_id: inv.id,
+    description: (job.service ?? 'Service') + ' — window cleaning',
+    qty: 1,
+    unit_price: Number(job.price ?? 0),
+  });
+  if (itErr) return { error: itErr.message };
+
+  revalidatePath('/invoices');
+  revalidatePath('/customers');
+  revalidatePath('/dashboard');
+  redirect(`/invoices?i=${inv.id}`);
 }
