@@ -44,7 +44,11 @@ declare
   v_customer_id bigint;
   v_lead_id bigint;
 begin
-  if public.auth_role() not in ('admin','rep') then
+  -- NULL-safe deny: auth_role() is NULL for an authenticated user with no profiles
+  -- row, and `NULL NOT IN (...)` is NULL, so a bare `not in` check is silently
+  -- skipped and would let roleless callers through. coalesce(...) treats a NULL
+  -- role as denied, matching the implicit NULL-deny of the RLS policies.
+  if coalesce(public.auth_role() in ('admin','rep'), false) is not true then
     raise exception 'Not authorized to create leads';
   end if;
   insert into public.customers (name, address, lat, lng, type, created_by)
