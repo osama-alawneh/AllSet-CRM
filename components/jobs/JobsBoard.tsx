@@ -52,18 +52,21 @@ export function JobsBoard({
     const sb = supabaseBrowser();
     let channel: ReturnType<typeof sb.channel> | null = null;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
     const refresh = () => {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => router.refresh(), 250);
     };
     (async () => {
       await sb.realtime.setAuth(); // attach the current session token for RLS on realtime.messages
+      if (cancelled) return; // effect cleaned up while awaiting — don't subscribe an orphaned channel
       channel = sb
         .channel('jobs', { config: { private: true } })
         .on('broadcast', { event: 'change' }, refresh)
         .subscribe();
     })();
     return () => {
+      cancelled = true;
       if (timer) clearTimeout(timer);
       if (channel) sb.removeChannel(channel);
     };
