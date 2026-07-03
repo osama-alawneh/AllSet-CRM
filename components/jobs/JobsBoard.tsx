@@ -1,5 +1,5 @@
 'use client';
-import { useOptimistic, useState, useTransition } from 'react';
+import { useEffect, useOptimistic, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   DndContext,
@@ -16,6 +16,7 @@ import {
   type JobStatus,
 } from '@/lib/jobs';
 import type { Role } from '@/lib/auth';
+import { supabaseBrowser } from '@/lib/supabase/client';
 import { claimJob, setJobStatus } from '@/app/(app)/jobs/actions';
 import { JobColumn } from './JobColumn';
 
@@ -42,6 +43,31 @@ export function JobsBoard({
   // 5px activation distance so a tap still fires the card's onClick (opens drawer).
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const grouped = groupJobsByStatus(optimistic);
+
+  // Realtime: subscribe to the private 'jobs' broadcast topic. The DB trigger
+  // (0011) sends a tiny {id,status} ping on any job insert/update; we debounce it
+  // (250ms trailing) into router.refresh(), which re-runs the role-split server fetch.
+  // Sensitive data (price/names) is NEVER in the ping — it comes back through RLS.
+  useEffect(() => {
+    const sb = supabaseBrowser();
+    let channel: ReturnType<typeof sb.channel> | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const refresh = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => router.refresh(), 250);
+    };
+    (async () => {
+      await sb.realtime.setAuth(); // attach the current session token for RLS on realtime.messages
+      channel = sb
+        .channel('jobs', { config: { private: true } })
+        .on('broadcast', { event: 'change' }, refresh)
+        .subscribe();
+    })();
+    return () => {
+      if (timer) clearTimeout(timer);
+      if (channel) sb.removeChannel(channel);
+    };
+  }, [router]);
 
   const onDragEnd = (e: DragEndEvent) => {
     const id = Number(e.active.id);
