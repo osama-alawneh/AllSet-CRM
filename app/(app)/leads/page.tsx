@@ -3,10 +3,16 @@ import { getRole } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
 import { buildLeads, type LeadPublicRow, type CustomerGeo } from '@/lib/leads';
 import { KanbanBoard } from '@/components/leads/KanbanBoard';
+import { LeadDrawer } from '@/components/leads/LeadDrawer';
 
-export default async function LeadsPage() {
+export default async function LeadsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ l?: string }>;
+}) {
   const role = await getRole();
   if (role !== 'admin' && role !== 'rep') redirect('/dashboard');
+  const { l: lParam } = await searchParams;
   const admin = role === 'admin';
   const sb = await supabaseServer();
 
@@ -23,6 +29,12 @@ export default async function LeadsPage() {
   }
 
   const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], quoteById);
+  const selected = lParam ? leads.find(l => l.id === Number(lParam)) ?? null : null;
 
-  return <KanbanBoard leads={leads} admin={admin} canEdit={true} />;
+  return (
+    <>
+      <KanbanBoard leads={leads} admin={admin} canEdit={true} />
+      {selected && <LeadDrawer lead={selected} admin={admin} canEdit={true} backTo="/leads" />}
+    </>
+  );
 }
