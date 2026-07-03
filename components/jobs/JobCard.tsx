@@ -6,12 +6,13 @@ import type { Job } from '@/lib/jobs';
 const fmt = (n: number) => '$' + Number(n || 0).toLocaleString();
 
 export function JobCard({
-  job, admin, draggable, canClaim, onOpen, onClaim,
+  job, admin, draggable, canClaim, pending, onOpen, onClaim,
 }: {
   job: Job;
   admin: boolean;
   draggable: boolean;
   canClaim: boolean;
+  pending: boolean;
   onOpen: (id: number) => void;
   onClaim: (id: number) => void;
 }) {
@@ -52,6 +53,7 @@ export function JobCard({
           <button
             type="button"
             className="claim"
+            disabled={pending}
             onClick={e => { e.stopPropagation(); onClaim(job.id); }}
           >
             Claim

@@ -32,7 +32,7 @@ export function JobsBoard({
   admin: boolean;
 }) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   // Optimistic patch; reverts automatically when the action returns without a revalidate
   // (i.e. on error), and reconciles with fresh server data on success/realtime refresh.
@@ -70,6 +70,7 @@ export function JobsBoard({
   }, [router]);
 
   const onDragEnd = (e: DragEndEvent) => {
+    if (pending) return; // ignore drops while a claim/status action is already in flight
     const id = Number(e.active.id);
     const to = e.over?.id as JobStatus | undefined;
     if (!to || !JOB_STATUSES.includes(to)) return;
@@ -115,6 +116,7 @@ export function JobsBoard({
               admin={admin}
               role={role}
               uid={uid}
+              pending={pending}
               onOpen={open}
               onClaim={onClaim}
             />

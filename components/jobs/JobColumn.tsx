@@ -12,13 +12,14 @@ import type { Role } from '@/lib/auth';
 import { JobCard } from './JobCard';
 
 export function JobColumn({
-  status, jobs, admin, role, uid, onOpen, onClaim,
+  status, jobs, admin, role, uid, pending, onOpen, onClaim,
 }: {
   status: JobStatus;
   jobs: Job[];
   admin: boolean;
   role: Role;
   uid: string;
+  pending: boolean;
   onOpen: (id: number) => void;
   onClaim: (id: number) => void;
 }) {
@@ -39,6 +40,7 @@ export function JobColumn({
             admin={admin}
             draggable={draggable}
             canClaim={canClaim}
+            pending={pending}
             onOpen={onOpen}
             onClaim={onClaim}
           />
