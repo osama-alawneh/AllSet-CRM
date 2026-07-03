@@ -61,3 +61,4 @@ PLAN 3 VERIFICATION (rerun after fix, Task 7, full E2E pass against live local s
 - Only script-side fix during the run (not an app bug): restrict HTML matching to SSR body (exclude RSC flight payload — literal "$4" ref ids false-matched money regex) + normalize <!-- --> comment nodes (same artifact as Plan 2).
 - DB reset to clean seed after run; verify-plan3.mjs deleted; dev server stopped. Full detail: .superpowers/sdd/task-7-report.md.
 Task 7: complete (commit f8c4c1e fix + this ledger; pgTAP 31/31, unit 36/36, build clean, lint 0 errors, 18/18 live E2E checks pass). PLAN 3 VERIFIED.
+Task 7 + FINAL: complete (verification rerun 18/18 live PASS after set_lead_status fix f8c4c1e; whole-branch review READY TO MERGE. PLAN 3 COMPLETE. Backlog: drop dead leads_insert/update policies+grant (inert defense-in-depth), Mapbox-path useCallback churn + marker/map effect coupling when token lands, onDragEnd try/catch)
