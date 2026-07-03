@@ -18,7 +18,8 @@
 
 - **Foundation plan COMPLETE and merged to `main` @ `c2cef99`.** Verified end-to-end (logins, RLS money-hide, atomic job-claim). 7 pgTAP + 4 unit tests pass; `next build` clean.
 - **Plan 2 COMPLETE and merged to `main` @ `9af91b0`** (branch `feat/customers`). Blueprint+ shell (sidebar role nav, theme cookie, placeholder routes with role guards), customers list + drawer (edit/create, related tabs, RLS-aware), global typeahead. Migration 0005 (admin/rep customer writes). pgTAP 12/12, unit 21/21, build + lint clean, 15/15 live E2E checks (all roles, RLS mutations). Plan doc: `docs/superpowers/plans/2026-07-02-plan2-customers-search-shell.md`. Backlog minors recorded in `.superpowers/sdd/progress.md` (auth round-trip consolidation, requireRole helper, error UI, a11y nits, drawer key on customer switch).
-- Next: **Plan 3 — Leads pipeline + Map/pins** on branch `feat/leads-map`.
+- **Plan 3 COMPLETE and merged to `main` @ `984222e`** (branch `feat/leads-map`). Kanban (dnd-kit, optimistic, post-drag click suppression), LeadDrawer on `?l=` (both routes, money-gated, cleaner read-only), map page (SchematicMap live path — Mapbox token EMPTY, MapboxMap built behind token check, statically reviewed only), pin popover → `create_lead_from_pin` RPC. Migrations 0006 (lead writes + won→job trigger + pin RPC, NULL-safe role checks) and 0007 (`set_lead_status` definer RPC — plain rep UPDATEs were RLS no-ops because base leads SELECT is admin-only; all status changes route through RPC). Seed reworked (trigger creates jobs; seed updates them; invoices join by lead_id). pgTAP 31/31, unit 36/36, build+lint clean, 18/18 live E2E. Plan doc: `docs/superpowers/plans/2026-07-02-plan3-leads-map.md`.
+- Next: **Plan 4 — Jobs board + realtime claim** on branch `feat/jobs`.
 - Repo root: `D:\Development\ClearViewCRM`.
 
 ### Done (Foundation, Tasks 1–7 + fixes)
