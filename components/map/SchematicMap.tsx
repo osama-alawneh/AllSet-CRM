@@ -9,9 +9,10 @@ export type MapImplProps = {
   overlay: React.ReactNode;
   onMapClick: (lat: number, lng: number, xPct: number, yPct: number) => void;
   onPinClick: (id: number) => void;
+  height?: number | string;
 };
 
-export function SchematicMap({ pins, canCreate, overlay, onMapClick, onPinClick }: MapImplProps) {
+export function SchematicMap({ pins, canCreate, overlay, onMapClick, onPinClick, height }: MapImplProps) {
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!canCreate) return;
     const target = e.target as HTMLElement;
@@ -24,7 +25,11 @@ export function SchematicMap({ pins, canCreate, overlay, onMapClick, onPinClick 
   };
 
   return (
-    <div className="map" onClick={handleClick} style={{ cursor: canCreate ? 'crosshair' : 'default' }}>
+    <div
+      className="map"
+      onClick={handleClick}
+      style={{ cursor: canCreate ? 'crosshair' : 'default', ...(height != null ? { height } : {}) }}
+    >
       {/* prototype street/block chrome (clearview-proto.html mapChrome) */}
       <div className="street" style={{ left: 0, top: '38%', width: '100%', height: 6 }} />
       <div className="street" style={{ left: 0, top: '72%', width: '100%', height: 6 }} />
