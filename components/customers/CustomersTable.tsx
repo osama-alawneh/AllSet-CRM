@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { filterCustomers, type CustomerRow } from '@/lib/customers';
+import { toCSV, downloadCSV, customersCsvTable } from '@/lib/csv';
 
 export function CustomersTable({ rows, admin }: { rows: CustomerRow[]; admin: boolean }) {
   const [q, setQ] = useState('');
@@ -16,9 +17,22 @@ export function CustomersTable({ rows, admin }: { rows: CustomerRow[]; admin: bo
           value={q}
           onChange={e => setQ(e.target.value)}
         />
-        <button className="btn" onClick={() => router.push('/customers?new=1', { scroll: false })}>
-          + New customer
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            className="btn sec"
+            type="button"
+            onClick={() => {
+              // Export ALL rows, not the search-filtered `shown` subset.
+              const t = customersCsvTable(rows, admin);
+              downloadCSV('clearview-customers.csv', toCSV(t.headers, t.rows));
+            }}
+          >
+            ⬇ Export CSV
+          </button>
+          <button className="btn" onClick={() => router.push('/customers?new=1', { scroll: false })}>
+            + New customer
+          </button>
+        </div>
       </div>
       <div className="panel box">
         <div className="tblwrap">
@@ -37,7 +51,16 @@ export function CustomersTable({ rows, admin }: { rows: CustomerRow[]; admin: bo
                 <tr
                   key={c.id}
                   data-click=""
+                  tabIndex={0}
                   onClick={() => router.push(`/customers?c=${c.id}`, { scroll: false })}
+                  onKeyDown={e => {
+                    const t = e.target as HTMLElement;
+                    if (t.closest('button, a, input, select, textarea')) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      router.push(`/customers?c=${c.id}`, { scroll: false });
+                    }
+                  }}
                 >
                   <td>
                     <b>{c.name}</b>

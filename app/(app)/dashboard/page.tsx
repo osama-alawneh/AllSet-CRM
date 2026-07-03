@@ -22,30 +22,38 @@ export default async function DashboardPage() {
   const sb = await supabaseServer();
   const now = new Date(); // server "today"; all metrics compare YYYY-MM-DD (UTC-normalized)
 
+  // Independent reads run concurrently. Admin-only reads (base jobs table for price, invoices,
+  // invoice_items) are conditional; non-admins substitute a resolved { data: null } so the tuple
+  // shape is stable. Money is still gated behind `if (admin)` below — nothing leaks.
+  const jobsQuery = admin
+    ? sb.from('jobs').select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,price').order('id')
+    : sb.from('jobs_public').select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service').order('id');
+
+  const [jobsRes, csRes, psRes, lpRes, invRes, itemRes] = await Promise.all([
+    jobsQuery,
+    sb.from('customers').select('id,name,address,phone,email,lat,lng'),
+    sb.from('profiles').select('id,full_name'),
+    sb.from('leads_public').select('id,customer_id,status,service,stories,panes,note').order('id'),
+    admin ? sb.from('invoices').select('id,status,issue_date') : Promise.resolve({ data: null }),
+    admin ? sb.from('invoice_items').select('invoice_id,qty,unit_price') : Promise.resolve({ data: null }),
+  ]);
+
   // ---- everyone: jobs (role-split price), leads (win rate + pins), customers ----
   let jobRows: JobRow[] = [];
   let priceById: Map<number, number> | null = null;
   if (admin) {
-    const { data } = await sb
-      .from('jobs')
-      .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,price')
-      .order('id');
-    const rows = data ?? [];
+    const rows = (jobsRes.data ?? []) as Array<JobRow & { price: number | null }>;
     jobRows = rows.map(r => ({
       id: r.id, customer_id: r.customer_id, lead_id: r.lead_id, status: r.status,
       claimed_by: r.claimed_by, scheduled_date: r.scheduled_date, service: r.service,
     }));
     priceById = new Map(rows.map(r => [r.id, Number(r.price ?? 0)]));
   } else {
-    const { data } = await sb
-      .from('jobs_public')
-      .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service')
-      .order('id');
-    jobRows = (data ?? []) as JobRow[];
+    jobRows = (jobsRes.data ?? []) as JobRow[];
   }
 
-  const { data: cs } = await sb.from('customers').select('id,name,address,phone,email,lat,lng');
-  const { data: ps } = await sb.from('profiles').select('id,full_name');
+  const cs = csRes.data;
+  const ps = psRes.data;
   const names = new Map((ps ?? []).map(p => [p.id as string, p.full_name as string]));
   const jobs = buildJobs(jobRows, (cs ?? []) as JobCustomer[], priceById, names);
   const visible = visibleJobs(role, uid, jobs);
@@ -55,11 +63,7 @@ export default async function DashboardPage() {
     .map(j => ({ id: j.id, customer_name: j.customer_name, address: j.address, service: j.service, price: j.price }));
   const jpw = jobsThisWeek(jobs as WeekJob[], now);
 
-  const { data: lp } = await sb
-    .from('leads_public')
-    .select('id,customer_id,status,service,stories,panes,note')
-    .order('id');
-  const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], null);
+  const leads = buildLeads((lpRes.data ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], null);
   const wr = Math.round(winRate(leads as WinLead[]) * 100);
   const pins: Pin[] = leads
     .filter(l => l.lat != null && l.lng != null)
@@ -71,13 +75,11 @@ export default async function DashboardPage() {
   // ---- admin-only money (non-admins NEVER fetch invoices or receive these values) ----
   let revenue = 0, overdue = 0, chart: number[] = [];
   if (admin) {
-    const { data: invRows } = await sb.from('invoices').select('id,status,issue_date');
-    const { data: itemRows } = await sb.from('invoice_items').select('invoice_id,qty,unit_price');
     const totalById = new Map<number, number>();
-    for (const it of itemRows ?? []) {
+    for (const it of itemRes.data ?? []) {
       totalById.set(it.invoice_id, (totalById.get(it.invoice_id) ?? 0) + Number(it.qty) * Number(it.unit_price));
     }
-    const rev: RevenueInvoice[] = (invRows ?? []).map(i => ({
+    const rev: RevenueInvoice[] = (invRes.data ?? []).map(i => ({
       status: i.status, issue_date: i.issue_date, total: totalById.get(i.id) ?? 0,
     }));
     revenue = revenueMTD(rev, now);

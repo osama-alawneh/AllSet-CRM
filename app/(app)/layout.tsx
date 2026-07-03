@@ -16,11 +16,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { data: profile } = await sb.from('profiles').select('full_name').eq('id', user!.id).single();
   return (
     <div className="app">
+      <a href="#main" className="skip-link">Skip to content</a>
       <Sidebar role={role} name={profile?.full_name ?? 'Unknown'} />
-      <div className="main">
+      <main className="main" id="main">
         <Topbar search={<GlobalSearch />} />
         {children}
-      </div>
+      </main>
     </div>
   );
 }

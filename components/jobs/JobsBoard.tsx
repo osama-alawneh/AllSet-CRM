@@ -18,6 +18,7 @@ import {
 import type { Role } from '@/lib/auth';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { claimJob, setJobStatus } from '@/app/(app)/jobs/actions';
+import { toCSV, downloadCSV, jobsCsvTable } from '@/lib/csv';
 import { JobColumn } from './JobColumn';
 
 type Patch = { id: number; status: JobStatus; claimed_by?: string | null; claimed_by_name?: string | null };
@@ -107,6 +108,16 @@ export function JobsBoard({
         <span className="cap" style={{ fontSize: 11, color: 'var(--muted)' }}>
           drag between statuses · claim to lock
         </span>
+        <button
+          className="btn sec"
+          type="button"
+          onClick={() => {
+            const t = jobsCsvTable(jobs, admin);
+            downloadCSV('clearview-jobs.csv', toCSV(t.headers, t.rows));
+          }}
+        >
+          ⬇ Export CSV
+        </button>
       </div>
       {error && <p style={{ color: 'var(--lost)', fontSize: 12 }}>{error}</p>}
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>

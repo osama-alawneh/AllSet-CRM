@@ -15,6 +15,7 @@ import {
   type LeadStatus,
 } from '@/lib/leads';
 import { setLeadStatus } from '@/app/(app)/leads/actions';
+import { toCSV, downloadCSV, leadsCsvTable } from '@/lib/csv';
 import { KanbanColumn } from './KanbanColumn';
 
 export function KanbanBoard({
@@ -60,6 +61,17 @@ export function KanbanBoard({
         <span className="cap" style={{ fontSize: 11, color: 'var(--muted)' }}>
           drag cards between columns to change status
         </span>
+        <button
+          className="btn sec"
+          type="button"
+          onClick={() => {
+            // Export the committed `leads` prop, NOT the optimistic drag state.
+            const t = leadsCsvTable(leads, admin);
+            downloadCSV('clearview-leads.csv', toCSV(t.headers, t.rows));
+          }}
+        >
+          ⬇ Export CSV
+        </button>
       </div>
       {error && <p style={{ color: 'var(--lost)', fontSize: 12 }}>{error}</p>}
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>

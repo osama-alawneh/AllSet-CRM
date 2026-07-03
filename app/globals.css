@@ -43,6 +43,10 @@ button { font-family: var(--font-blueprint); cursor: pointer; }
 input, select, textarea { font-family: var(--font-blueprint); font-size: 12px; padding: 8px 10px; border: 1.5px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
 
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 12px; background: var(--accent); color: #fff; border-radius: 4px; font-size: 12px; }
+.skip-link:focus-visible { left: 8px; top: 8px; }
+
 .app { display: grid; grid-template-columns: 212px 1fr; gap: 20px; padding: 20px; min-height: 100vh; }
 @media (max-width: 860px) { .app { grid-template-columns: 1fr; padding: 12px; gap: 12px; } }
 
@@ -118,7 +122,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .claim { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 7px 11px; border: 1.5px solid var(--ink); border-radius: 4px; background: var(--accent); color: #fff; white-space: nowrap; }
 [data-theme="dark"] .claim { border-color: var(--accent); color: #04101c; }
 .claim:hover { background: var(--accent-d); }
-.claim.locked, .claim.mine { background: transparent; color: var(--won); border-color: var(--won); cursor: default; }
+.claim.locked { background: transparent; color: var(--won); border-color: var(--won); cursor: default; }
 
 /* map (Plan 3 reuses) */
 .maptools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
