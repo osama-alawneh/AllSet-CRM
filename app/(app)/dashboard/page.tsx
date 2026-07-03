@@ -7,7 +7,6 @@ import {
   revenueMTD, overdueTotal, chartBuckets14d, jobsThisWeek, winRate,
   type RevenueInvoice, type WeekJob, type WinLead,
 } from '@/lib/dashboard';
-import { fmtMoney } from '@/lib/invoices';
 import { KpiCountUp } from '@/components/dashboard/KpiCountUp';
 import { RevenueChart } from '@/components/dashboard/RevenueChart';
 import { ClaimableJobs, type ClaimableJob } from '@/components/dashboard/ClaimableJobs';
@@ -93,7 +92,7 @@ export default async function DashboardPage() {
           <div className="kpi box">
             <span className="tag">▚ ADMIN</span>
             <div className="lbl">Revenue · MTD</div>
-            <div className="val"><KpiCountUp end={revenue} format={n => fmtMoney(Math.round(n))} /></div>
+            <div className="val"><KpiCountUp end={revenue} format="money" /></div>
             <div className="sub up">▲ paid this month</div>
           </div>
         )}
@@ -113,7 +112,7 @@ export default async function DashboardPage() {
           <div className="kpi box">
             <span className="tag">$</span>
             <div className="lbl">Overdue invoices</div>
-            <div className="val"><KpiCountUp end={overdue} format={n => fmtMoney(Math.round(n))} /></div>
+            <div className="val"><KpiCountUp end={overdue} format="money" /></div>
             <div className="sub bad">● sent &gt; 30d</div>
           </div>
         )}
