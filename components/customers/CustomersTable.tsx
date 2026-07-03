@@ -54,6 +54,8 @@ export function CustomersTable({ rows, admin }: { rows: CustomerRow[]; admin: bo
                   tabIndex={0}
                   onClick={() => router.push(`/customers?c=${c.id}`, { scroll: false })}
                   onKeyDown={e => {
+                    const t = e.target as HTMLElement;
+                    if (t.closest('button, a, input, select, textarea')) return;
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
                       router.push(`/customers?c=${c.id}`, { scroll: false });

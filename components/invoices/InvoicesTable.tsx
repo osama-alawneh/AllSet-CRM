@@ -40,6 +40,8 @@ export function InvoicesTable({ invoices }: { invoices: Invoice[] }) {
                   tabIndex={0}
                   onClick={() => open(inv.id)}
                   onKeyDown={e => {
+                    const t = e.target as HTMLElement;
+                    if (t.closest('button, a, input, select, textarea')) return;
                     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(inv.id); }
                   }}
                 >
