@@ -48,18 +48,21 @@ insert into leads (id,customer_id,status,service,stories,panes,quote_value,note)
  (9,9,'new','TBD',2,12,130,'Referral.'),
  (10,10,'follow','Storefront monthly',1,30,400,'Contract pending.');
 
--- ===== jobs (from won leads) =====
-insert into jobs (id,customer_id,lead_id,status,claimed_by,price,scheduled_date,service) overriding system value values
- (1,1,1,'claimed','33333333-3333-3333-3333-333333333333',180,'2026-07-03','In + out'),
- (2,2,2,'unclaimed',null,95,'2026-07-03','Outside only'),
- (5,5,5,'in_progress','33333333-3333-3333-3333-333333333333',210,'2026-07-02','In + out + screens'),
- (8,8,8,'unclaimed',null,140,'2026-07-04','In + out');
+-- ===== jobs =====
+-- Won leads (1,2,5,8) auto-create an 'unclaimed' job via the leads_won_creates_job
+-- trigger (0006), already carrying service = lead.service. Re-derive the original
+-- seed job states by UPDATE (match on lead_id — the trigger's job ids are sequence-
+-- assigned, so never reference them by literal id).
+update jobs set status='claimed',     claimed_by='33333333-3333-3333-3333-333333333333', price=180, scheduled_date='2026-07-03' where lead_id=1;
+update jobs set                                                                          price=95,  scheduled_date='2026-07-03' where lead_id=2;
+update jobs set status='in_progress', claimed_by='33333333-3333-3333-3333-333333333333', price=210, scheduled_date='2026-07-02' where lead_id=5;
+update jobs set                                                                          price=140, scheduled_date='2026-07-04' where lead_id=8;
 
 -- ===== invoices + items =====
 insert into invoices (id,customer_id,job_id,number,issue_date,status) overriding system value values
- (1,1,1,'INV-1001','2026-06-20','paid'),
- (2,5,5,'INV-1002','2026-06-25','sent'),
- (3,8,8,'INV-1003','2026-05-28','sent');
+ (1,1,(select id from jobs where lead_id=1),'INV-1001','2026-06-20','paid'),
+ (2,5,(select id from jobs where lead_id=5),'INV-1002','2026-06-25','sent'),
+ (3,8,(select id from jobs where lead_id=8),'INV-1003','2026-05-28','sent');
 
 insert into invoice_items (id,invoice_id,description,qty,unit_price) overriding system value values
  (1,1,'Window cleaning — in + out (18 panes)',1,180),
