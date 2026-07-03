@@ -42,5 +42,5 @@ export function RevenueChart({ data }: { data: number[] }) {
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     return () => { removeEventListener('resize', draw); mo.disconnect(); };
   }, [data]);
-  return <canvas ref={ref} style={{ width: '100%', height: 160 }} />;
+  return <canvas ref={ref} role="img" aria-label="Daily revenue, last 14 days" style={{ width: '100%', height: 160 }} />;
 }

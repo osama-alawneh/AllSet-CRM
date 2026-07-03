@@ -34,7 +34,15 @@ export function InvoicesTable({ invoices }: { invoices: Invoice[] }) {
             </thead>
             <tbody>
               {invoices.map(inv => (
-                <tr key={inv.id} data-click="" onClick={() => open(inv.id)}>
+                <tr
+                  key={inv.id}
+                  data-click=""
+                  tabIndex={0}
+                  onClick={() => open(inv.id)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(inv.id); }
+                  }}
+                >
                   <td><b>{inv.number}</b></td>
                   <td>{inv.customer_name}</td>
                   <td>{inv.issue_date}</td>

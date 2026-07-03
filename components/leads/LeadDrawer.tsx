@@ -98,6 +98,7 @@ export function LeadDrawer({
                   key={st}
                   type="button"
                   className={sel ? 'sel' : ''}
+                  aria-pressed={sel}
                   disabled={pending}
                   style={sel ? { background: statusColor[st], color: '#fff', borderColor: 'transparent' } : undefined}
                   onClick={() => change(st)}

@@ -51,7 +51,14 @@ export function CustomersTable({ rows, admin }: { rows: CustomerRow[]; admin: bo
                 <tr
                   key={c.id}
                   data-click=""
+                  tabIndex={0}
                   onClick={() => router.push(`/customers?c=${c.id}`, { scroll: false })}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      router.push(`/customers?c=${c.id}`, { scroll: false });
+                    }
+                  }}
                 >
                   <td>
                     <b>{c.name}</b>

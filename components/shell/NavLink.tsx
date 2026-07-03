@@ -6,7 +6,7 @@ export function NavLink({ href, num, label }: { href: string; num: string; label
   const pathname = usePathname();
   const on = pathname === href || pathname.startsWith(href + '/');
   return (
-    <Link href={href} className={on ? 'on' : ''}>
+    <Link href={href} className={on ? 'on' : ''} aria-current={on ? 'page' : undefined}>
       <span className="n">{num}</span> {label}
     </Link>
   );
