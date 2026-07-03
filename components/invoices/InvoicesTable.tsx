@@ -1,6 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { fmtMoney, invoiceTotal, invoiceStatusColor, type Invoice } from '@/lib/invoices';
+import { toCSV, downloadCSV, invoicesCsvTable } from '@/lib/csv';
 
 export function InvoicesTable({ invoices }: { invoices: Invoice[] }) {
   const router = useRouter();
@@ -9,9 +10,21 @@ export function InvoicesTable({ invoices }: { invoices: Invoice[] }) {
     <section className="screen">
       <div className="scrhead">
         <h3 style={{ margin: 0, textTransform: 'uppercase', fontSize: 13 }}>Invoices</h3>
-        <button className="btn" type="button" onClick={() => router.push('/invoices?new=1', { scroll: false })}>
-          + New invoice
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            className="btn sec"
+            type="button"
+            onClick={() => {
+              const t = invoicesCsvTable(invoices);
+              downloadCSV('clearview-invoices.csv', toCSV(t.headers, t.rows));
+            }}
+          >
+            ⬇ Export CSV
+          </button>
+          <button className="btn" type="button" onClick={() => router.push('/invoices?new=1', { scroll: false })}>
+            + New invoice
+          </button>
+        </div>
       </div>
       <div className="panel box">
         <div className="tblwrap">
