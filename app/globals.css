@@ -218,3 +218,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
   #printArea .tot { text-align: right; font-size: 16px; font-weight: 700; margin-top: 16px; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* Plan 3: dnd-kit pointer dragging on Kanban cards */
+.kanban .card2 { touch-action: none; }
