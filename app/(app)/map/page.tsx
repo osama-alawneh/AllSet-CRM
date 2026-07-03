@@ -1,10 +1,50 @@
-export default function MapPage() {
+import { getRole } from '@/lib/auth';
+import { supabaseServer } from '@/lib/supabase/server';
+import { buildLeads, statusLabel, type Pin, type LeadPublicRow, type CustomerGeo } from '@/lib/leads';
+import { MapView } from '@/components/map/MapView';
+import { LeadDrawer } from '@/components/leads/LeadDrawer';
+
+export default async function MapPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ l?: string }>;
+}) {
+  const { l: lParam } = await searchParams;
+  const role = await getRole();
+  const admin = role === 'admin';
+  const canCreate = role === 'admin' || role === 'rep';
+  const sb = await supabaseServer();
+
+  const { data: lp } = await sb
+    .from('leads_public')
+    .select('id,customer_id,status,service,stories,panes,note')
+    .order('id');
+  const { data: cs } = await sb.from('customers').select('id,name,address,phone,email,lat,lng');
+
+  let quoteById: Map<number, number> | null = null;
+  if (admin) {
+    const { data: base } = await sb.from('leads').select('id,quote_value');
+    quoteById = new Map((base ?? []).map(b => [b.id, Number(b.quote_value ?? 0)]));
+  }
+
+  const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], quoteById);
+  const pins: Pin[] = leads
+    .filter(l => l.lat != null && l.lng != null)
+    .map(l => ({
+      id: l.id,
+      lat: l.lat as number,
+      lng: l.lng as number,
+      status: l.status,
+      label: `${l.customer_name} — ${statusLabel[l.status]}`,
+    }));
+
+  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || null; // empty string → null
+  const selected = lParam ? leads.find(l => l.id === Number(lParam)) ?? null : null;
+
   return (
     <section className="screen">
-      <div className="panel box">
-        <h3>Map / Pin Board</h3>
-        <p className="cap">Mapbox pin map arrives in Plan 3.</p>
-      </div>
+      <MapView pins={pins} token={token} canCreate={canCreate} />
+      {selected && <LeadDrawer lead={selected} admin={admin} canEdit={canCreate} backTo="/map" />}
     </section>
   );
 }
