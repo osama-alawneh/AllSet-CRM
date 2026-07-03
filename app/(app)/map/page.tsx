@@ -43,7 +43,7 @@ export default async function MapPage({
 
   return (
     <section className="screen">
-      <MapView pins={pins} token={token} canCreate={canCreate} />
+      <MapView pins={pins} token={token} canCreate={canCreate} openLeadId={lParam ?? null} />
       {selected && <LeadDrawer lead={selected} admin={admin} canEdit={canCreate} backTo="/map" />}
     </section>
   );

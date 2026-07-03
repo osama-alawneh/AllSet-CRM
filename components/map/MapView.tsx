@@ -15,15 +15,28 @@ const MapboxMap = dynamic(() => import('./MapboxMap').then(m => m.MapboxMap), { 
 type Pending = { lat: number; lng: number; xPct: number; yPct: number };
 
 export function MapView({
-  pins, token, canCreate,
+  pins, token, canCreate, openLeadId,
 }: {
   pins: Pin[];
   token: string | null;
   canCreate: boolean;
+  openLeadId: string | null;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState<Pending | null>(null);
   const impl = pickMapImpl(token);
+
+  // A successful createLeadFromPin soft-navigates to /map?l=<newId>, so this instance
+  // persists and the popover would otherwise stay open (re-enabled Create button →
+  // duplicate customer+lead on a second click). Render-phase state adjustment
+  // (React-documented "adjust state when props change" pattern; a useEffect here
+  // would trip react-hooks/set-state-in-effect): when the open-drawer lead changes,
+  // dismiss the popover.
+  const [seenLeadId, setSeenLeadId] = useState<string | null>(openLeadId);
+  if (openLeadId !== seenLeadId) {
+    setSeenLeadId(openLeadId);
+    setPending(null); // creation succeeded (or a pin drawer opened) → close popover
+  }
 
   const onMapClick = (lat: number, lng: number, xPct: number, yPct: number) => {
     if (canCreate) setPending({ lat, lng, xPct, yPct });
