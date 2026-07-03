@@ -11,6 +11,7 @@ export async function claimJob(id: number): Promise<{ error?: string }> {
   const { error } = await sb.rpc('claim_job', { p_job_id: id });
   if (error) return { error: error.message };
   revalidatePath('/jobs');
+  revalidatePath('/dashboard');
   return {};
 }
 
@@ -22,5 +23,6 @@ export async function setJobStatus(id: number, status: JobStatus): Promise<{ err
   const { error } = await sb.rpc('set_job_status', { p_job_id: id, p_status: status });
   if (error) return { error: error.message };
   revalidatePath('/jobs');
+  revalidatePath('/dashboard');
   return {};
 }

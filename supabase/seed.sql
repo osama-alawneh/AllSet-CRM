@@ -76,3 +76,7 @@ select setval(pg_get_serial_sequence('leads','id'), (select max(id) from leads))
 select setval(pg_get_serial_sequence('jobs','id'), (select max(id) from jobs));
 select setval(pg_get_serial_sequence('invoices','id'), (select max(id) from invoices));
 select setval(pg_get_serial_sequence('invoice_items','id'), (select max(id) from invoice_items));
+
+-- invoice_number_seq is NOT an identity sequence; the seed sets number explicitly, so advance
+-- it past the highest seeded INV number (INV-1003) → next app-created invoice is INV-1004.
+select setval('invoice_number_seq', 1003);

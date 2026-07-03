@@ -12,6 +12,7 @@ import {
 } from '@/lib/jobs';
 import type { Role } from '@/lib/auth';
 import { claimJob, setJobStatus } from '@/app/(app)/jobs/actions';
+import { createInvoiceFromJob } from '@/app/(app)/invoices/actions';
 
 const fmt = (n: number) => '$' + Number(n || 0).toLocaleString();
 
@@ -44,6 +45,13 @@ export function JobDrawer({
       const res = await claimJob(job.id);
       if (res?.error) setError(res.error);
       else router.refresh();
+    });
+  };
+  const createInvoice = () => {
+    setError(null);
+    startTransition(async () => {
+      const res = await createInvoiceFromJob(job.id); // redirects to /invoices?i=<id> on success
+      if (res?.error) setError(res.error);
     });
   };
 
@@ -131,17 +139,12 @@ export function JobDrawer({
           </button>
         )}
         {admin && (
-          <button className="btn-s" type="button" disabled title="Invoicing arrives in Plan 5">
+          <button className="btn-s" type="button" disabled={pending} onClick={createInvoice}>
             Create invoice
           </button>
         )}
         <button className="btn-s" type="button" onClick={close}>Close</button>
       </div>
-      {admin && (
-        <p className="cap" style={{ fontSize: 10, color: 'var(--muted)', marginTop: 6 }}>
-          Invoicing (Create invoice) arrives in Plan 5.
-        </p>
-      )}
     </Drawer>
   );
 }
