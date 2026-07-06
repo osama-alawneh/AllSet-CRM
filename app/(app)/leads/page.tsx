@@ -8,11 +8,12 @@ import { LeadDrawer } from '@/components/leads/LeadDrawer';
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ l?: string }>;
+  searchParams: Promise<{ l?: string; new?: string }>;
 }) {
   const role = await getRole();
   if (role !== 'admin' && role !== 'rep') redirect('/dashboard');
-  const { l: lParam } = await searchParams;
+  const { l: lParam, new: newParam } = await searchParams;
+  const isNew = newParam === '1';
   const admin = role === 'admin';
   const sb = await supabaseServer();
 
@@ -30,11 +31,17 @@ export default async function LeadsPage({
 
   const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], quoteById);
   const selected = lParam ? leads.find(l => l.id === Number(lParam)) ?? null : null;
+  const customerOptions = (cs ?? []).map(c => ({ id: c.id, name: c.name }));
 
   return (
     <>
       <KanbanBoard leads={leads} admin={admin} canEdit={true} />
-      {selected && <LeadDrawer lead={selected} admin={admin} canEdit={true} backTo="/leads" />}
+      {(selected || isNew) && (
+        <LeadDrawer
+          lead={selected} admin={admin} canEdit={true} backTo="/leads"
+          isNew={isNew && !selected} customers={customerOptions}
+        />
+      )}
     </>
   );
 }
