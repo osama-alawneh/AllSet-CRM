@@ -1,6 +1,7 @@
 import type { Role } from '@/lib/auth';
 import { navForRole } from '@/lib/nav';
 import { NavLink } from './NavLink';
+import { SignOutButton } from './SignOutButton';
 
 export function Sidebar({ role, name }: { role: Role; name: string }) {
   const initial = (name.trim()[0] ?? '?').toUpperCase();
@@ -26,6 +27,7 @@ export function Sidebar({ role, name }: { role: Role; name: string }) {
             <small>ROLE: {role.toUpperCase()}</small>
           </div>
         </div>
+        <SignOutButton />
       </div>
     </aside>
   );
