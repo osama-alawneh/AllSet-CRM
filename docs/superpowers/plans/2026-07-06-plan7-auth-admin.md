@@ -14,7 +14,7 @@
 
 - Next.js is **v16**: `cookies()` from `next/headers` is async. Read `node_modules/next/dist/docs/` before non-trivial Next work (AGENTS.md).
 - Design = Blueprint+ tokens already in `app/globals.css`; no component libraries. Reference prototype: `docs/design/clearview-proto.html`.
-- **Decision (2026-07-06): LIGHT theme stays the default.** Code already defaults light (`app/layout.tsx:12`); if the app appears dark it is a persisted `theme=dark` cookie from an earlier toggle. No default change; the login task below only verifies this.
+- **Decision (2026-07-06, user in person — supersedes the earlier AFK light-default note): DARK theme is the default.** Flip the no-cookie fallback in `app/layout.tsx` (currently defaults light around line 12) so a fresh visitor with no `theme` cookie gets dark; an explicit `theme=light` cookie must still win. Update any theme-toggle logic/tests that assume light default. The login task verifies dark-by-default.
 - `SUPABASE_SERVICE_ROLE_KEY` already exists in `.env.local`. It must **never** be imported into client components — service-role code lives only in `'use server'` files and `lib/supabase/admin.ts`.
 - Tests: `npm test` (Vitest, `tests/unit/`), `npm run lint`, `npm run build` must be clean before merge. No new DB migrations in this plan (service-role bypasses RLS; no pgTAP needed).
 - Local logins for live verification (password `password123`): `admin@clearview.dev` · `rep@clearview.dev` · `cleaner@clearview.dev`. Stack: `npx supabase start`, `npm run dev`.
@@ -128,7 +128,7 @@ Expected: 0 errors, build clean.
 
 Live (`npm run dev` with Supabase up):
 - `curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/login` → `200`.
-- Browser: `/login` shows a centered Blueprint+ card on the graph-paper background, **light theme by default in a fresh/incognito window** (theme-default verification for MVP item 2). Wrong password shows the error in red under the button; correct login lands on `/dashboard`. Visiting `/login` while signed in redirects to `/dashboard`.
+- Browser: `/login` shows a centered Blueprint+ card on the graph-paper background, **dark theme by default in a fresh/incognito window (no `theme` cookie), light when `theme=light` cookie is set** (theme-default change for MVP item 2 — see Global Constraints). Wrong password shows the error in red under the button; correct login lands on `/dashboard`. Visiting `/login` while signed in redirects to `/dashboard`.
 
 - [ ] **Step 5: Commit**
 
@@ -546,6 +546,6 @@ git commit -m "feat(users): admin settings page — create users + assign roles"
 
 ## Self-Review Notes
 
-- Spec coverage: MVP item 1 (login) → Task 1; item 2 (theme default = light, verified) → Task 1 Step 4; item 5 (sign out) → Task 2; item 6 (user management) → Tasks 3–5.
+- Spec coverage: MVP item 1 (login) → Task 1; item 2 (theme default = dark, flipped + verified) → Task 1 Step 4; item 5 (sign out) → Task 2; item 6 (user management) → Tasks 3–5.
 - `setUserRole` blocks self-role-change → an admin cannot lock themselves out; last-admin protection beyond that is out of scope (recorded in backlog).
 - `listUsers` pagination capped at 200 — fine for a small company; recorded in backlog.

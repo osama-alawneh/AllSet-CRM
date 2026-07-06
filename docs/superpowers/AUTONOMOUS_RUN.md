@@ -28,7 +28,7 @@ own branch, with superpowers:subagent-driven-development, merge to main when gre
 | 10 — Search & list views | `plans/2026-07-06-plan10-search-views.md` | 4 search everything · 8 board/list toggle | pending |
 
 **Decisions locked 2026-07-06** (user was away when asked; revisit only if user objects):
-- **Light theme stays default** (user screenshots were light; a stale `theme=dark` cookie explains the complaint; one-line flip if wrong).
+- **Dark theme is default** (user confirmed in person 2026-07-06, overriding the earlier AFK light-default call: "Dark theme is default unless there is a reason otherwise").
 - **Deletes are admin-only**, always behind a confirm dialog.
 - Search = BOTH halves of the user's either/or: grouped multi-entity topbar search everywhere + per-page local filter inputs.
 - Lead `description` also added to jobs and copied by the won→job trigger (the cleaner works from the job — that is where "what exactly to do" must surface).
