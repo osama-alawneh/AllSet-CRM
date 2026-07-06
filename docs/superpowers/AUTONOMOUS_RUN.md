@@ -25,7 +25,9 @@ own branch, with superpowers:subagent-driven-development, merge to main when gre
 | 7 — Auth & admin surface | `plans/2026-07-06-plan7-auth-admin.md` | 1 login redesign · 2 theme default · 5 sign-out · 6 user management | **DONE — merged @ `0d1289a`** (dark default, migration 0013 service_role grants; plan 8's migration renumbers to 0014) |
 | 8 — Data model & CRUD | `plans/2026-07-06-plan8-crud-datamodel.md` | 3 create/delete (DB+actions) · 7 timestamps · 9 drawer-tab bug · 14 description column | **DONE — merged @ `d2ca891`** (migration is 0014 not 0013; backlog: column-scope 0006 leads grants) |
 | 9 — Drawer UX | `plans/2026-07-06-plan9-drawer-ux.md` | 3 create/delete UI · 10 editing · 11 read-only→Edit mode · 12 invoice placeholders · 13 job/lead quick-view · 14 field order | **DONE — merged @ `4025cbb`** |
-| 10 — Search & list views | `plans/2026-07-06-plan10-search-views.md` | 4 search everything · 8 board/list toggle | pending |
+| 10 — Search & list views | `plans/2026-07-06-plan10-search-views.md` | 4 search everything · 8 board/list toggle | **DONE — merged @ `ffaed76`** |
+
+**PHASE 1.5 COMPLETE (2026-07-06).** All 14 user-reported gaps shipped. Final state: pgTAP 80/80, unit 106/106, lint+build clean, live three-role walkthroughs green on every plan. Backlog items from reviews are recorded per-plan in `.superpowers/sdd/progress.md`; notable: column-scope 0006 leads grants (rep blind-write of quote_value), pgTAP guard asserting public views never grow money columns, useJobsRealtime hook extraction, admin cannot clear money via edit forms (RPC coalesce semantics).
 
 **Decisions locked 2026-07-06** (user was away when asked; revisit only if user objects):
 - **Dark theme is default** (user confirmed in person 2026-07-06, overriding the earlier AFK light-default call: "Dark theme is default unless there is a reason otherwise").
