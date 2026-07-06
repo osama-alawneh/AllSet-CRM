@@ -42,6 +42,18 @@ export function CustomerDrawer({
   const [error, setError] = useState<string | null>(null);
   const canEdit = role !== 'cleaner';
   const close = () => router.push('/customers', { scroll: false });
+  // Keyboard-accessible row nav, mirroring the row pattern in CustomersTable/InvoicesTable.
+  const rowNav = (href: string) => ({
+    role: 'button' as const,
+    tabIndex: 0,
+    onClick: () => router.push(href, { scroll: false }),
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        router.push(href, { scroll: false });
+      }
+    },
+  });
 
   if (!isNew && !customer) return null;
   const c = customer;
@@ -61,7 +73,7 @@ export function CustomerDrawer({
       label: `Jobs (${jobs.length})`,
       content: jobs.length ? (
         jobs.map(j => (
-          <div className="minirow" key={j.id} onClick={() => router.push(`/jobs?j=${j.id}`, { scroll: false })}>
+          <div className="minirow" key={j.id} {...rowNav(`/jobs?j=${j.id}`)}>
             <span>{j.service ?? 'Job'} · {j.scheduled_date ?? 'TBD'}</span>
             <span className="badge" style={{ background: 'var(--chip)', color: JOB_COLORS[j.status] }}>
               {JOB_NAMES[j.status] ?? j.status}
@@ -78,7 +90,7 @@ export function CustomerDrawer({
           label: `Invoices (${invoices.length})`,
           content: invoices.length ? (
             invoices.map(i => (
-              <div className="minirow" key={i.id} onClick={() => router.push(`/invoices?i=${i.id}`, { scroll: false })}>
+              <div className="minirow" key={i.id} {...rowNav(`/invoices?i=${i.id}`)}>
                 <span>{i.number} · {i.issue_date}</span>
                 <span>
                   {fmt(i.total)}{' '}
@@ -98,7 +110,7 @@ export function CustomerDrawer({
       label: `Leads (${leads.length})`,
       content: leads.length ? (
         leads.map(l => (
-          <div className="minirow" key={l.id} onClick={() => router.push(`/leads?l=${l.id}`, { scroll: false })}>
+          <div className="minirow" key={l.id} {...rowNav(`/leads?l=${l.id}`)}>
             <span>{l.service ?? 'Lead'}</span>
             <span className="badge" style={{ background: 'var(--chip)', color: LEAD_COLORS[l.status] }}>
               {LEAD_NAMES[l.status] ?? l.status}
