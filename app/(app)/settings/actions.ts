@@ -17,7 +17,17 @@ export async function createUser(fd: FormData): Promise<{ error?: string }> {
   const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   if (error) return { error: error.message };
   const { error: pErr } = await admin.from('profiles').insert({ id: data.user.id, full_name, role });
-  if (pErr) return { error: `Login created but profile failed: ${pErr.message}` };
+  if (pErr) {
+    // Roll back the orphaned auth user — without a profile, getRole() is null for it
+    // and retrying the same email would fail at createUser (email already exists).
+    const { error: dErr } = await admin.auth.admin.deleteUser(data.user.id);
+    if (dErr) {
+      return {
+        error: `Profile creation failed: ${pErr.message}. Cleanup of the login also failed (${dErr.message}) — the account for ${email} may need manual removal before retrying.`,
+      };
+    }
+    return { error: `Profile creation failed: ${pErr.message}. The login was rolled back — you can retry.` };
+  }
   revalidatePath('/settings');
   return {};
 }
