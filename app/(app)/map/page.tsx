@@ -17,7 +17,7 @@ export default async function MapPage({
 
   const { data: lp } = await sb
     .from('leads_public')
-    .select('id,customer_id,status,service,stories,panes,note')
+    .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at')
     .order('id');
   const { data: cs } = await sb.from('customers').select('id,name,address,phone,email,lat,lng');
 

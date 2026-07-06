@@ -36,18 +36,18 @@ export function downloadCSV(filename: string, text: string): void {
 // Money columns are OMITTED for non-admins — header and cell column both dropped, never blanked.
 
 export function leadsCsvTable(leads: Lead[], admin: boolean): CsvTable {
-  const headers = ['ID', 'Customer', 'Address', 'Status', 'Service', 'Stories', 'Panes', ...(admin ? ['Value'] : [])];
+  const headers = ['ID', 'Customer', 'Address', 'Status', 'Service', 'Description', 'Stories', 'Panes', ...(admin ? ['Value'] : [])];
   const rows: CsvCell[][] = leads.map(l => [
-    l.id, l.customer_name, l.address, statusLabel[l.status], l.service, l.stories, l.panes,
+    l.id, l.customer_name, l.address, statusLabel[l.status], l.service, l.description, l.stories, l.panes,
     ...(admin ? [l.quote_value] : []),
   ]);
   return { headers, rows };
 }
 
 export function jobsCsvTable(jobs: Job[], admin: boolean): CsvTable {
-  const headers = ['ID', 'Customer', 'Service', 'Status', 'Claimed by', 'Scheduled', ...(admin ? ['Price'] : [])];
+  const headers = ['ID', 'Customer', 'Service', 'Description', 'Status', 'Claimed by', 'Scheduled', ...(admin ? ['Price'] : [])];
   const rows: CsvCell[][] = jobs.map(j => [
-    j.id, j.customer_name, j.service, jobStatusLabel[j.status], j.claimed_by_name, j.scheduled_date,
+    j.id, j.customer_name, j.service, j.description, jobStatusLabel[j.status], j.claimed_by_name, j.scheduled_date,
     ...(admin ? [j.price] : []),
   ]);
   return { headers, rows };

@@ -14,10 +14,13 @@ export type Lead = {
   customer_id: number;
   status: LeadStatus;
   service: string | null;
+  description: string | null;
   stories: number | null;
   panes: number | null;
   note: string | null;
   quote_value: number | null; // null = not visible (non-admin) or unset
+  created_at: string;
+  updated_at: string;
   customer_name: string;
   address: string | null;
   phone: string | null;
@@ -34,9 +37,12 @@ export type LeadPublicRow = {
   customer_id: number;
   status: LeadStatus;
   service: string | null;
+  description: string | null;
   stories: number | null;
   panes: number | null;
   note: string | null;
+  created_at: string;
+  updated_at: string;
 };
 export type CustomerGeo = {
   id: number;
@@ -61,10 +67,13 @@ export function buildLeads(
       customer_id: r.customer_id,
       status: r.status,
       service: r.service,
+      description: r.description,
       stories: r.stories,
       panes: r.panes,
       note: r.note,
       quote_value: quoteById ? (quoteById.get(r.id) ?? null) : null,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
       customer_name: c?.name ?? 'Unknown',
       address: c?.address ?? null,
       phone: c?.phone ?? null,
@@ -95,4 +104,46 @@ export function parsePinForm(
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return { ok: false, error: 'Invalid coordinates' };
   if (!LEAD_STATUSES.includes(status as LeadStatus)) return { ok: false, error: 'Invalid status' };
   return { ok: true, value: { name, address, lat, lng, status: status as LeadStatus } };
+}
+
+export type LeadInput = {
+  customer_id: number; service: string; description: string | null;
+  stories: number | null; panes: number | null; note: string | null; quote: number | null;
+};
+
+// Shared field readers: '' -> null; anything non-numeric -> error via NaN checks below.
+const optText = (fd: FormData, k: string): string | null => {
+  const v = String(fd.get(k) ?? '').trim();
+  return v || null;
+};
+const optNum = (fd: FormData, k: string): number | null => {
+  const v = String(fd.get(k) ?? '').trim();
+  return v === '' ? null : Number(v);
+};
+
+export function parseLeadForm(
+  fd: FormData
+): { ok: true; value: LeadInput } | { ok: false; error: string } {
+  const customer_id = Number(fd.get('customer_id'));
+  if (!Number.isFinite(customer_id) || customer_id <= 0) return { ok: false, error: 'Customer is required' };
+  const service = String(fd.get('service') ?? '').trim();
+  if (!service) return { ok: false, error: 'Service is required' };
+  const stories = optNum(fd, 'stories');
+  const panes = optNum(fd, 'panes');
+  const quote = optNum(fd, 'quote');
+  for (const n of [stories, panes, quote]) {
+    if (n !== null && !Number.isFinite(n)) return { ok: false, error: 'Invalid number' };
+    if (n !== null && n < 0) return { ok: false, error: 'Numbers cannot be negative' };
+  }
+  return {
+    ok: true,
+    value: {
+      customer_id, service,
+      description: optText(fd, 'description'),
+      stories: stories === null ? null : Math.trunc(stories),
+      panes: panes === null ? null : Math.trunc(panes),
+      note: optText(fd, 'note'),
+      quote,
+    },
+  };
 }

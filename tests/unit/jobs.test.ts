@@ -14,7 +14,8 @@ import {
 
 const job = (over: Partial<Job>): Job => ({
   id: 1, customer_id: 1, lead_id: 5, status: 'unclaimed', claimed_by: null,
-  claimed_by_name: null, scheduled_date: null, service: 'In + out', price: null,
+  claimed_by_name: null, scheduled_date: null, service: 'In + out', description: null, price: null,
+  created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z',
   customer_name: 'X', address: null, phone: null, email: null, ...over,
 });
 
@@ -36,8 +37,8 @@ describe('status maps', () => {
 
 describe('buildJobs', () => {
   const rows: JobRow[] = [
-    { id: 10, customer_id: 1, lead_id: 5, status: 'claimed', claimed_by: 'u-1', scheduled_date: '2026-07-03', service: 'In + out' },
-    { id: 11, customer_id: 2, lead_id: null, status: 'unclaimed', claimed_by: null, scheduled_date: null, service: null },
+    { id: 10, customer_id: 1, lead_id: 5, status: 'claimed', claimed_by: 'u-1', scheduled_date: '2026-07-03', service: 'In + out', description: null, created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z' },
+    { id: 11, customer_id: 2, lead_id: null, status: 'unclaimed', claimed_by: null, scheduled_date: null, service: null, description: null, created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z' },
   ];
   const customers: JobCustomer[] = [
     { id: 1, name: 'Sarah Kim', address: '142 Maple Ave', phone: '555-0142', email: 's@k.io' },
