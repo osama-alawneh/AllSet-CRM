@@ -34,10 +34,11 @@ export function InvoiceDrawer({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  const [editing, setEditing] = useState(isNew);
   const [customerId, setCustomerId] = useState<number>(invoice?.customer_id ?? customers[0]?.id ?? 0);
   const [status, setStatus] = useState<InvoiceStatus>(invoice?.status ?? 'draft');
   const [items, setItems] = useState<InvoiceItem[]>(
-    invoice?.items.length ? invoice.items : [{ description: 'Window cleaning', qty: 1, unit_price: 150 }]
+    invoice?.items.length ? invoice.items : [{ description: '', qty: 1, unit_price: 0 }]
   );
   const [printPayload, setPrintPayload] = useState<PrintData | null>(null);
 
@@ -68,12 +69,27 @@ export function InvoiceDrawer({
       // New invoices redirect inside the action (this frame does not return); only the
       // edit path returns {} — mirror CustomerDrawer: close only on edit.
       if (res?.error) setError(res.error);
-      else if (!isNew) close();
+      else if (!isNew) { setEditing(false); }
     });
   };
 
   const printPdf = () => {
     setError(null);
+    // Read mode: print exactly what's persisted — do NOT save first.
+    if (!editing && !isNew) {
+      setPrintPayload({
+        number,
+        issue_date: issueDate,
+        customer_name: cust?.name ?? 'Customer',
+        customer_address: cust?.address ?? null,
+        customer_phone: cust?.phone ?? null,
+        customer_email: cust?.email ?? null,
+        items,
+        tax: invoice?.tax ?? 0,
+        deposit: invoice?.deposit ?? 0,
+      });
+      return;
+    }
     startTransition(async () => {
       const res = await saveInvoice(isNew ? null : invoice!.id, buildFd());
       if (res?.error) { setError(res.error); return; }
@@ -114,12 +130,23 @@ export function InvoiceDrawer({
 
       <div className="sec">
         <span className="lbl">Bill to</span>
-        <select value={customerId} onChange={e => setCustomerId(Number(e.target.value))} style={{ width: '100%' }}>
-          {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-        <div className="minirow" style={{ cursor: 'default' }}>
-          <span style={{ color: 'var(--muted)' }}>📞 {cust?.phone ?? '—'} · {cust?.address ?? '—'}</span>
-        </div>
+        {editing ? (
+          <>
+            <select value={customerId} onChange={e => setCustomerId(Number(e.target.value))} style={{ width: '100%' }}>
+              {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <div className="minirow" style={{ cursor: 'default' }}>
+              <span style={{ color: 'var(--muted)' }}>📞 {cust?.phone ?? '—'} · {cust?.address ?? '—'}</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ fontWeight: 600 }}>{cust?.name ?? '—'}</div>
+            <div className="minirow" style={{ cursor: 'default' }}>
+              <span style={{ color: 'var(--muted)' }}>📞 {cust?.phone ?? '—'} · {cust?.address ?? '—'}</span>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="sec">
@@ -130,25 +157,40 @@ export function InvoiceDrawer({
           </thead>
           <tbody>
             {items.map((it, i) => (
-              <tr key={i}>
-                <td><input value={it.description} onChange={e => setItem(i, 'description', e.target.value)} /></td>
-                <td><input className="num" value={it.qty} onChange={e => setItem(i, 'qty', e.target.value)} /></td>
-                <td><input className="num" value={it.unit_price} onChange={e => setItem(i, 'unit_price', e.target.value)} /></td>
-                <td style={{ textAlign: 'right' }}>{fmtMoney(it.qty * it.unit_price)}</td>
-              </tr>
+              editing ? (
+                <tr key={i}>
+                  <td><input value={it.description} placeholder="Window cleaning" onChange={e => setItem(i, 'description', e.target.value)} /></td>
+                  <td><input className="num" value={it.qty} onChange={e => setItem(i, 'qty', e.target.value)} /></td>
+                  <td><input className="num" value={it.unit_price === 0 ? '' : it.unit_price} placeholder="0.00" onChange={e => setItem(i, 'unit_price', e.target.value)} /></td>
+                  <td style={{ textAlign: 'right' }}>{fmtMoney(it.qty * it.unit_price)}</td>
+                </tr>
+              ) : (
+                <tr key={i}>
+                  <td>{it.description || '—'}</td>
+                  <td className="num">{it.qty}</td>
+                  <td className="num">{fmtMoney(it.unit_price)}</td>
+                  <td style={{ textAlign: 'right' }}>{fmtMoney(it.qty * it.unit_price)}</td>
+                </tr>
+              )
             ))}
           </tbody>
         </table>
-        <button className="btn sec" type="button" onClick={addLine} style={{ marginTop: 8 }}>+ Add line</button>
+        {editing && (
+          <button className="btn sec" type="button" onClick={addLine} style={{ marginTop: 8 }}>+ Add line</button>
+        )}
       </div>
 
       <div className="sec">
         <div className="kv">
           <span className="k">Status</span>
           <span className="v">
-            <select value={status} onChange={e => setStatus(e.target.value as InvoiceStatus)}>
-              {INVOICE_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
+            {editing ? (
+              <select value={status} onChange={e => setStatus(e.target.value as InvoiceStatus)}>
+                {INVOICE_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            ) : (
+              <span className="badge" style={{ background: 'var(--chip)', color: invoiceStatusColor[status] }}>{status}</span>
+            )}
           </span>
           <span className="k">Total</span>
           <span className="v" style={{ color: 'var(--won)', fontSize: 15 }}>{fmtMoney(total)}</span>
@@ -158,7 +200,18 @@ export function InvoiceDrawer({
       {error && <p style={{ color: 'var(--lost)', fontSize: 12 }}>{error}</p>}
 
       <div className="acts">
-        <button className="btn-p" type="button" disabled={pending} onClick={save}>Save</button>
+        {!editing && (
+          <button className="btn-p" type="button" onClick={() => { setError(null); setEditing(true); }}>✎ Edit</button>
+        )}
+        {editing && (
+          <button className="btn-p" type="button" disabled={pending} onClick={save}>Save</button>
+        )}
+        {editing && !isNew && (
+          <button className="btn-s" type="button" disabled={pending}
+            onClick={() => { setError(null); setEditing(false); setItems(invoice!.items); setStatus(invoice!.status); setCustomerId(invoice!.customer_id); }}>
+            Cancel
+          </button>
+        )}
         <button className="btn-s" type="button" disabled={pending} onClick={printPdf}>🖨 Print PDF</button>
         <button className="btn-s" type="button" onClick={close}>Close</button>
       </div>
