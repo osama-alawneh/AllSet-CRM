@@ -38,6 +38,7 @@ export default async function LeadsPage({
       <KanbanBoard leads={leads} admin={admin} canEdit={true} />
       {(selected || isNew) && (
         <LeadDrawer
+          key={selected?.id ?? 'new'}
           lead={selected} admin={admin} canEdit={true} backTo="/leads"
           isNew={isNew && !selected} customers={customerOptions}
         />

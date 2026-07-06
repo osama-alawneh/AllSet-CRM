@@ -89,6 +89,7 @@ export default async function JobsPage({
       <JobsBoard jobs={visible} role={role} uid={uid} meName={meName} admin={admin} />
       {(selected || isNew) && (
         <JobDrawer
+          key={selected?.id ?? 'new'}
           job={selected} role={role} uid={uid} admin={admin}
           isNew={isNew && !selected} customers={customerOptions} leadDetail={leadDetail}
         />

@@ -86,6 +86,7 @@ export default async function CustomersPage({
       <CustomersTable rows={rows} admin={admin} />
       {(isNew || drawerCustomer) && role && (
         <CustomerDrawer
+          key={drawerCustomer?.id ?? 'new'}
           customer={drawerCustomer}
           jobs={drawerJobs}
           leads={drawerLeads}
