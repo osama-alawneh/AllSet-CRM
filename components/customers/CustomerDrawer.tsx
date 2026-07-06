@@ -61,7 +61,7 @@ export function CustomerDrawer({
       label: `Jobs (${jobs.length})`,
       content: jobs.length ? (
         jobs.map(j => (
-          <div className="minirow" key={j.id}>
+          <div className="minirow" key={j.id} onClick={() => router.push(`/jobs?j=${j.id}`, { scroll: false })}>
             <span>{j.service ?? 'Job'} · {j.scheduled_date ?? 'TBD'}</span>
             <span className="badge" style={{ background: 'var(--chip)', color: JOB_COLORS[j.status] }}>
               {JOB_NAMES[j.status] ?? j.status}
@@ -78,7 +78,7 @@ export function CustomerDrawer({
           label: `Invoices (${invoices.length})`,
           content: invoices.length ? (
             invoices.map(i => (
-              <div className="minirow" key={i.id}>
+              <div className="minirow" key={i.id} onClick={() => router.push(`/invoices?i=${i.id}`, { scroll: false })}>
                 <span>{i.number} · {i.issue_date}</span>
                 <span>
                   {fmt(i.total)}{' '}
@@ -98,7 +98,7 @@ export function CustomerDrawer({
       label: `Leads (${leads.length})`,
       content: leads.length ? (
         leads.map(l => (
-          <div className="minirow" key={l.id}>
+          <div className="minirow" key={l.id} onClick={() => router.push(`/leads?l=${l.id}`, { scroll: false })}>
             <span>{l.service ?? 'Lead'}</span>
             <span className="badge" style={{ background: 'var(--chip)', color: LEAD_COLORS[l.status] }}>
               {LEAD_NAMES[l.status] ?? l.status}
