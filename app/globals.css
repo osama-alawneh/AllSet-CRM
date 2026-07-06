@@ -223,6 +223,10 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
+/* settings / users (Plan 7) */
+.userform { display: grid; grid-template-columns: 1fr 1fr 1fr auto auto; gap: 8px; }
+@media (max-width: 900px) { .userform { grid-template-columns: 1fr; } }
+
 /* Plan 3: dnd-kit pointer dragging on Kanban cards */
 .kanban .card2 { touch-action: none; }
 
