@@ -16,6 +16,8 @@ import {
 } from '@/lib/leads';
 import { setLeadStatus } from '@/app/(app)/leads/actions';
 import { toCSV, downloadCSV, leadsCsvTable } from '@/lib/csv';
+import { filterLeads } from '@/lib/search';
+import { ViewToggle } from '@/components/ui/ViewToggle';
 import { KanbanColumn } from './KanbanColumn';
 
 export function KanbanBoard({
@@ -28,6 +30,7 @@ export function KanbanBoard({
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [q, setQ] = useState('');
   // Optimistic move; reverts automatically when the action returns without a
   // revalidate (i.e. on error), and matches the fresh server data on success.
   const [optimistic, moveOptimistic] = useOptimistic(
@@ -37,7 +40,7 @@ export function KanbanBoard({
   );
   // 5px activation distance so a tap still fires the card's onClick (opens drawer).
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
-  const grouped = groupByStatus(optimistic);
+  const grouped = groupByStatus(filterLeads(optimistic, q));
 
   const onDragEnd = (e: DragEndEvent) => {
     const id = Number(e.active.id);
@@ -58,6 +61,8 @@ export function KanbanBoard({
   return (
     <section className="screen">
       <div className="scrhead">
+        <ViewToggle view="board" base="/leads" />
+        <input placeholder="🔍 filter leads…" style={{ width: 200 }} value={q} onChange={e => setQ(e.target.value)} aria-label="Filter leads" />
         <span className="cap" style={{ fontSize: 11, color: 'var(--muted)' }}>
           drag cards between columns to change status
         </span>

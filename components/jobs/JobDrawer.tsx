@@ -18,7 +18,7 @@ export type LeadDetail = {
 };
 
 export function JobDrawer({
-  job, role, uid, admin, isNew = false, customers = [], leadDetail = null,
+  job, role, uid, admin, isNew = false, customers = [], leadDetail = null, backTo = '/jobs',
 }: {
   job: Job | null;
   role: Role;
@@ -27,12 +27,13 @@ export function JobDrawer({
   isNew?: boolean;
   customers?: { id: number; name: string }[];
   leadDetail?: LeadDetail | null;
+  backTo?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(isNew);
-  const close = () => router.push('/jobs', { scroll: false });
+  const close = () => router.push(backTo, { scroll: false });
 
   if (!isNew && !job) return null;
   const canClaim = job?.status === 'unclaimed' && (role === 'admin' || role === 'cleaner');

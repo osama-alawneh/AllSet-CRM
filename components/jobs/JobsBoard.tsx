@@ -19,6 +19,8 @@ import type { Role } from '@/lib/auth';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { claimJob, setJobStatus } from '@/app/(app)/jobs/actions';
 import { toCSV, downloadCSV, jobsCsvTable } from '@/lib/csv';
+import { filterJobs } from '@/lib/search';
+import { ViewToggle } from '@/components/ui/ViewToggle';
 import { JobColumn } from './JobColumn';
 
 type Patch = { id: number; status: JobStatus; claimed_by?: string | null; claimed_by_name?: string | null };
@@ -35,6 +37,7 @@ export function JobsBoard({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [q, setQ] = useState('');
   // Optimistic patch; reverts automatically when the action returns without a revalidate
   // (i.e. on error), and reconciles with fresh server data on success/realtime refresh.
   const [optimistic, applyOptimistic] = useOptimistic(
@@ -43,7 +46,7 @@ export function JobsBoard({
   );
   // 5px activation distance so a tap still fires the card's onClick (opens drawer).
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
-  const grouped = groupJobsByStatus(optimistic);
+  const grouped = groupJobsByStatus(filterJobs(optimistic, q));
 
   // Realtime: subscribe to the private 'jobs' broadcast topic. The DB trigger
   // (0011) sends a tiny {id,status} ping on any job insert/update; we debounce it
@@ -105,6 +108,8 @@ export function JobsBoard({
   return (
     <section className="screen">
       <div className="scrhead">
+        <ViewToggle view="board" base="/jobs" />
+        <input placeholder="🔍 filter jobs…" style={{ width: 200 }} value={q} onChange={e => setQ(e.target.value)} aria-label="Filter jobs" />
         <span className="cap" style={{ fontSize: 11, color: 'var(--muted)' }}>
           drag between statuses · claim to lock
         </span>

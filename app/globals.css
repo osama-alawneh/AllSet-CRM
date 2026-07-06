@@ -172,6 +172,12 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .tbl tr[data-click] { cursor: pointer; } .tbl tr[data-click]:hover td { background: var(--chip); }
 .badge { font-size: 9px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; display: inline-block; }
 
+/* view toggle (Plan 10) */
+.viewtoggle { display: inline-flex; border: 1.5px solid var(--line); border-radius: 4px; overflow: hidden; }
+.viewtoggle button { border: 0; background: transparent; color: var(--muted); padding: 7px 11px; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
+.viewtoggle button.on { background: var(--ink); color: var(--card); }
+[data-theme="dark"] .viewtoggle button.on { background: var(--accent); color: #04101c; }
+
 /* drawer */
 .scrim { position: fixed; inset: 0; background: rgba(6, 14, 30, .5); opacity: 0; pointer-events: none; transition: .25s; z-index: 40; }
 .scrim.open { opacity: 1; pointer-events: auto; }

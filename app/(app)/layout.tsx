@@ -19,7 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <a href="#main" className="skip-link">Skip to content</a>
       <Sidebar role={role} name={profile?.full_name ?? 'Unknown'} />
       <main className="main" id="main">
-        <Topbar search={<GlobalSearch />} />
+        <Topbar search={<GlobalSearch role={role} />} />
         {children}
       </main>
     </div>

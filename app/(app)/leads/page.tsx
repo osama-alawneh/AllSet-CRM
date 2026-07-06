@@ -3,17 +3,20 @@ import { getRole } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
 import { buildLeads, type LeadPublicRow, type CustomerGeo } from '@/lib/leads';
 import { KanbanBoard } from '@/components/leads/KanbanBoard';
+import { LeadsListSection } from '@/components/leads/LeadsListSection';
 import { LeadDrawer } from '@/components/leads/LeadDrawer';
 
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ l?: string; new?: string }>;
+  searchParams: Promise<{ l?: string; new?: string; view?: string }>;
 }) {
   const role = await getRole();
   if (role !== 'admin' && role !== 'rep') redirect('/dashboard');
-  const { l: lParam, new: newParam } = await searchParams;
+  const { l: lParam, new: newParam, view } = await searchParams;
   const isNew = newParam === '1';
+  const list = view === 'list';
+  const backTo = list ? '/leads?view=list' : '/leads';
   const admin = role === 'admin';
   const sb = await supabaseServer();
 
@@ -35,11 +38,15 @@ export default async function LeadsPage({
 
   return (
     <>
-      <KanbanBoard leads={leads} admin={admin} canEdit={true} />
+      {list ? (
+        <LeadsListSection leads={leads} admin={admin} canEdit={true} />
+      ) : (
+        <KanbanBoard leads={leads} admin={admin} canEdit={true} />
+      )}
       {(selected || isNew) && (
         <LeadDrawer
           key={selected?.id ?? 'new'}
-          lead={selected} admin={admin} canEdit={true} backTo="/leads"
+          lead={selected} admin={admin} canEdit={true} backTo={backTo}
           isNew={isNew && !selected} customers={customerOptions}
         />
       )}
