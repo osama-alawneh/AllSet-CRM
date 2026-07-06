@@ -1,15 +1,19 @@
 'use client';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { fmtMoney, invoiceTotal, invoiceStatusColor, type Invoice } from '@/lib/invoices';
 import { toCSV, downloadCSV, invoicesCsvTable } from '@/lib/csv';
+import { filterInvoices } from '@/lib/search';
 
 export function InvoicesTable({ invoices }: { invoices: Invoice[] }) {
   const router = useRouter();
+  const [q, setQ] = useState('');
+  const shown = filterInvoices(invoices, q);
   const open = (id: number) => router.push(`/invoices?i=${id}`, { scroll: false });
   return (
     <section className="screen">
       <div className="scrhead">
-        <h3 style={{ margin: 0, textTransform: 'uppercase', fontSize: 13 }}>Invoices</h3>
+        <input placeholder="🔍 filter invoices…" style={{ width: 220 }} value={q} onChange={e => setQ(e.target.value)} aria-label="Filter invoices" />
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             className="btn sec"
@@ -33,7 +37,7 @@ export function InvoicesTable({ invoices }: { invoices: Invoice[] }) {
               <tr><th>#</th><th>Customer</th><th>Date</th><th>Amount</th><th>Status</th><th /></tr>
             </thead>
             <tbody>
-              {invoices.map(inv => (
+              {shown.map(inv => (
                 <tr
                   key={inv.id}
                   data-click=""
@@ -61,8 +65,8 @@ export function InvoicesTable({ invoices }: { invoices: Invoice[] }) {
                   </td>
                 </tr>
               ))}
-              {invoices.length === 0 && (
-                <tr><td colSpan={6} className="cap" style={{ color: 'var(--muted)' }}>No invoices yet.</td></tr>
+              {shown.length === 0 && (
+                <tr><td colSpan={6} className="cap" style={{ color: 'var(--muted)' }}>No invoices match.</td></tr>
               )}
             </tbody>
           </table>
