@@ -3,14 +3,16 @@ import { getRole, getSession } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
 import { buildJobs, visibleJobs, type JobRow, type JobCustomer } from '@/lib/jobs';
 import { JobsBoard } from '@/components/jobs/JobsBoard';
+import { JobsListSection } from '@/components/jobs/JobsListSection';
 import { JobDrawer } from '@/components/jobs/JobDrawer';
 
 export default async function JobsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ j?: string; new?: string }>;
+  searchParams: Promise<{ j?: string; new?: string; view?: string }>;
 }) {
-  const { j: jParam, new: newParam } = await searchParams;
+  const { j: jParam, new: newParam, view } = await searchParams;
+  const list = view === 'list';
   const user = await getSession();
   if (!user) redirect('/login');
   const role = await getRole();
@@ -86,12 +88,17 @@ export default async function JobsPage({
 
   return (
     <>
-      <JobsBoard jobs={visible} role={role} uid={uid} meName={meName} admin={admin} />
+      {list ? (
+        <JobsListSection jobs={visible} admin={admin} />
+      ) : (
+        <JobsBoard jobs={visible} role={role} uid={uid} meName={meName} admin={admin} />
+      )}
       {(selected || isNew) && (
         <JobDrawer
           key={selected?.id ?? 'new'}
           job={selected} role={role} uid={uid} admin={admin}
           isNew={isNew && !selected} customers={customerOptions} leadDetail={leadDetail}
+          backTo={list ? '/jobs?view=list' : '/jobs'}
         />
       )}
     </>

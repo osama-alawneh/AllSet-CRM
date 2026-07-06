@@ -16,7 +16,7 @@ export function LeadDrawer({
   lead: Lead | null;
   admin: boolean;
   canEdit: boolean;
-  backTo: '/leads' | '/map';
+  backTo: string;
   isNew?: boolean;
   customers?: { id: number; name: string }[];
 }) {
