@@ -22,7 +22,7 @@ own branch, with superpowers:subagent-driven-development, merge to main when gre
 
 | Plan | File | Covers (user's item #s) | Status |
 |---|---|---|---|
-| 7 — Auth & admin surface | `plans/2026-07-06-plan7-auth-admin.md` | 1 login redesign · 2 theme default · 5 sign-out · 6 user management | pending |
+| 7 — Auth & admin surface | `plans/2026-07-06-plan7-auth-admin.md` | 1 login redesign · 2 theme default · 5 sign-out · 6 user management | **DONE — merged @ `0d1289a`** (dark default, migration 0013 service_role grants; plan 8's migration renumbers to 0014) |
 | 8 — Data model & CRUD | `plans/2026-07-06-plan8-crud-datamodel.md` | 3 create/delete (DB+actions) · 7 timestamps · 9 drawer-tab bug · 14 description column | pending |
 | 9 — Drawer UX | `plans/2026-07-06-plan9-drawer-ux.md` | 3 create/delete UI · 10 editing · 11 read-only→Edit mode · 12 invoice placeholders · 13 job/lead quick-view · 14 field order | pending |
 | 10 — Search & list views | `plans/2026-07-06-plan10-search-views.md` | 4 search everything · 8 board/list toggle | pending |
@@ -87,7 +87,7 @@ Write each plan with **superpowers:writing-plans** (save to `docs/superpowers/pl
 
 ## KEY FACTS & GOTCHAS (do not relearn the hard way)
 - **Next.js is v16** — `cookies()` from `next/headers` is **async** (await it). `AGENTS.md` warns APIs differ from training; read `node_modules/next/dist/docs/` before non-trivial Next code.
-- **New tables need `grant select on <table> to authenticated;`** (local Supabase does NOT auto-grant) or RLS never runs and client reads return empty/permission-denied. Add write grants (insert/update) as features need them.
+- **New tables need `grant select on <table> to authenticated;`** (local Supabase does NOT auto-grant) or RLS never runs and client reads return empty/permission-denied. Add write grants (insert/update) as features need them. **Same for `service_role`**: RLS-bypass does NOT remove the need for table-level GRANTs — Plan 7's admin actions failed at runtime until migration 0013 granted service_role select/insert/update on profiles.
 - **Seeding `auth.users`:** string token columns (`confirmation_token`, `recovery_token`, `email_change*`, `phone_change*`, `reauthentication_token`) must be `''` not NULL or GoTrue login 500s.
 - **pgTAP test fixtures** use id range `900000+` and uuids `90000000-…` / emails `t-*@test.dev` to avoid colliding with seed data.
 - **RLS pattern:** money-free `leads_public`/`jobs_public` views for non-admins; base `leads`/`jobs`/`invoices` gated to admin. `auth_role()` is SECURITY DEFINER (breaks policy recursion).
