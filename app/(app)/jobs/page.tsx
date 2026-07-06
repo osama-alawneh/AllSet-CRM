@@ -8,15 +8,16 @@ import { JobDrawer } from '@/components/jobs/JobDrawer';
 export default async function JobsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ j?: string }>;
+  searchParams: Promise<{ j?: string; new?: string }>;
 }) {
-  const { j: jParam } = await searchParams;
+  const { j: jParam, new: newParam } = await searchParams;
   const user = await getSession();
   if (!user) redirect('/login');
   const role = await getRole();
   if (!role) redirect('/login');
   const uid = user.id;
   const admin = role === 'admin';
+  const isNew = newParam === '1' && admin; // only admins create jobs
   const sb = await supabaseServer();
 
   // Role-split fetch: admins read base jobs (incl. price); everyone else reads the
@@ -61,10 +62,37 @@ export default async function JobsPage({
   // (?j=<id> not in their visible set) must render no drawer.
   const selected = jParam ? visible.find(j => j.id === Number(jParam)) ?? null : null;
 
+  // Origin-lead quick view for the open job: admins read base `leads` (incl. quote_value);
+  // everyone else reads leads_public (money structurally absent).
+  let leadDetail = null;
+  if (selected?.lead_id != null) {
+    if (admin) {
+      const { data: ld } = await sb
+        .from('leads')
+        .select('stories,panes,note,description,quote_value')
+        .eq('id', selected.lead_id)
+        .single();
+      leadDetail = ld ? { ...ld, quote_value: Number(ld.quote_value ?? 0) } : null;
+    } else {
+      const { data: ld } = await sb
+        .from('leads_public')
+        .select('stories,panes,note,description')
+        .eq('id', selected.lead_id)
+        .single();
+      leadDetail = ld ? { ...ld, quote_value: null } : null; // money structurally absent for non-admins
+    }
+  }
+  const customerOptions = (cs ?? []).map(c => ({ id: c.id, name: c.name }));
+
   return (
     <>
       <JobsBoard jobs={visible} role={role} uid={uid} meName={meName} admin={admin} />
-      {selected && <JobDrawer job={selected} role={role} uid={uid} admin={admin} />}
+      {(selected || isNew) && (
+        <JobDrawer
+          job={selected} role={role} uid={uid} admin={admin}
+          isNew={isNew && !selected} customers={customerOptions} leadDetail={leadDetail}
+        />
+      )}
     </>
   );
 }
