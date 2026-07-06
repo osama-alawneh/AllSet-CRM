@@ -14,6 +14,31 @@
 
 ---
 
+## PHASE 1.5 — MVP USABILITY WAVE (planned 2026-07-06, NOT yet executed)
+
+The user tested the MVP on 2026-07-06 and filed 14 gaps/bugs. Four plans cover all of them —
+**execute in order (8 and 9 are sequential; 7 is independent; 10 depends on 8+9), each on its
+own branch, with superpowers:subagent-driven-development, merge to main when green:**
+
+| Plan | File | Covers (user's item #s) | Status |
+|---|---|---|---|
+| 7 — Auth & admin surface | `plans/2026-07-06-plan7-auth-admin.md` | 1 login redesign · 2 theme default · 5 sign-out · 6 user management | pending |
+| 8 — Data model & CRUD | `plans/2026-07-06-plan8-crud-datamodel.md` | 3 create/delete (DB+actions) · 7 timestamps · 9 drawer-tab bug · 14 description column | pending |
+| 9 — Drawer UX | `plans/2026-07-06-plan9-drawer-ux.md` | 3 create/delete UI · 10 editing · 11 read-only→Edit mode · 12 invoice placeholders · 13 job/lead quick-view · 14 field order | pending |
+| 10 — Search & list views | `plans/2026-07-06-plan10-search-views.md` | 4 search everything · 8 board/list toggle | pending |
+
+**Decisions locked 2026-07-06** (user was away when asked; revisit only if user objects):
+- **Light theme stays default** (user screenshots were light; a stale `theme=dark` cookie explains the complaint; one-line flip if wrong).
+- **Deletes are admin-only**, always behind a confirm dialog.
+- Search = BOTH halves of the user's either/or: grouped multi-entity topbar search everywhere + per-page local filter inputs.
+- Lead `description` also added to jobs and copied by the won→job trigger (the cleaner works from the job — that is where "what exactly to do" must surface).
+- Edit-mode = read-only default with an explicit ✎ Edit button (user's stated preference in item 11).
+
+Also done 2026-07-06 directly on main: `042f305` — root `/` was still the create-next-app
+starter page (never replaced); now redirects to `/dashboard`.
+
+---
+
 ## CURRENT STATUS (as of 2026-07-02)
 
 - **Foundation plan COMPLETE and merged to `main` @ `c2cef99`.** Verified end-to-end (logins, RLS money-hide, atomic job-claim). 7 pgTAP + 4 unit tests pass; `next build` clean.
