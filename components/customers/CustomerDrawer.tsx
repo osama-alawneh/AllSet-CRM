@@ -40,6 +40,7 @@ export function CustomerDrawer({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(isNew);
   const canEdit = role !== 'cleaner';
   const close = () => router.push('/customers', { scroll: false });
   // Keyboard-accessible row nav, mirroring the row pattern in CustomersTable/InvoicesTable.
@@ -63,7 +64,7 @@ export function CustomerDrawer({
     startTransition(async () => {
       const res = isNew ? await createCustomer(fd) : await saveCustomer(c!.id, fd);
       if (res?.error) setError(res.error);
-      else if (!isNew) close();
+      else if (!isNew) { setEditing(false); router.refresh(); }
     });
   };
 
@@ -143,41 +144,60 @@ export function CustomerDrawer({
           </div>
         )}
         <div className="sec">
-          <span className="lbl">Details {canEdit ? '(editable)' : '(read-only)'}</span>
-          <div className="kv">
-            <span className="k">Name</span>
-            <span className="v"><input name="name" defaultValue={c?.name ?? ''} disabled={!canEdit} required /></span>
-            <span className="k">Phone</span>
-            <span className="v"><input name="phone" defaultValue={c?.phone ?? ''} disabled={!canEdit} /></span>
-            <span className="k">Email</span>
-            <span className="v"><input name="email" defaultValue={c?.email ?? ''} disabled={!canEdit} /></span>
-            <span className="k">Address</span>
-            <span className="v"><input name="address" defaultValue={c?.address ?? ''} disabled={!canEdit} /></span>
-            <span className="k">Type</span>
-            <span className="v">
-              <select name="type" defaultValue={c?.type ?? 'residential'} disabled={!canEdit}>
-                <option value="residential">Residential</option>
-                <option value="commercial">Commercial</option>
-              </select>
-            </span>
-          </div>
+          <span className="lbl">Details</span>
+          {editing ? (
+            <div className="kv">
+              <span className="k">Name</span>
+              <span className="v"><input name="name" defaultValue={c?.name ?? ''} required /></span>
+              <span className="k">Phone</span>
+              <span className="v"><input name="phone" defaultValue={c?.phone ?? ''} /></span>
+              <span className="k">Email</span>
+              <span className="v"><input name="email" defaultValue={c?.email ?? ''} /></span>
+              <span className="k">Address</span>
+              <span className="v"><input name="address" defaultValue={c?.address ?? ''} /></span>
+              <span className="k">Type</span>
+              <span className="v">
+                <select name="type" defaultValue={c?.type ?? 'residential'}>
+                  <option value="residential">Residential</option>
+                  <option value="commercial">Commercial</option>
+                </select>
+              </span>
+            </div>
+          ) : (
+            <div className="kv">
+              <span className="k">Name</span><span className="v">{c!.name}</span>
+              <span className="k">Phone</span><span className="v">{c!.phone ?? '—'}</span>
+              <span className="k">Email</span><span className="v">{c!.email ?? '—'}</span>
+              <span className="k">Address</span><span className="v">{c!.address ?? '—'}</span>
+              <span className="k">Type</span><span className="v">{c!.type}</span>
+            </div>
+          )}
         </div>
         {!isNew && <Tabs tabs={tabs} />}
         <div className="sec">
           <span className="lbl">Notes</span>
-          <textarea
-            name="notes"
-            defaultValue={c?.notes ?? ''}
-            disabled={!canEdit}
-            style={{ width: '100%', minHeight: 90 }}
-          />
+          {editing ? (
+            <textarea
+              name="notes"
+              defaultValue={c?.notes ?? ''}
+              style={{ width: '100%', minHeight: 90 }}
+            />
+          ) : (
+            <p style={{ fontSize: 12, lineHeight: 1.6, margin: 0, color: 'var(--muted)' }}>{c!.notes ?? '—'}</p>
+          )}
         </div>
         {error && <p style={{ color: 'var(--lost)', fontSize: 12 }}>{error}</p>}
         <div className="acts">
-          {canEdit && (
+          {canEdit && !editing && (
+            <button className="btn-p" type="button" onClick={() => { setError(null); setEditing(true); }}>✎ Edit</button>
+          )}
+          {editing && (
             <button className="btn-p" type="submit" disabled={pending}>
-              {pending ? 'Saving…' : isNew ? 'Create customer' : 'Save customer'}
+              {pending ? 'Saving…' : isNew ? 'Create customer' : 'Save'}
             </button>
+          )}
+          {editing && !isNew && (
+            <button className="btn-s" type="button" disabled={pending} onClick={() => { setError(null); setEditing(false); }}>Cancel</button>
           )}
           <button className="btn-s" type="button" onClick={close}>Close</button>
         </div>
