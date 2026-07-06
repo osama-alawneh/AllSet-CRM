@@ -24,7 +24,7 @@ own branch, with superpowers:subagent-driven-development, merge to main when gre
 |---|---|---|---|
 | 7 — Auth & admin surface | `plans/2026-07-06-plan7-auth-admin.md` | 1 login redesign · 2 theme default · 5 sign-out · 6 user management | **DONE — merged @ `0d1289a`** (dark default, migration 0013 service_role grants; plan 8's migration renumbers to 0014) |
 | 8 — Data model & CRUD | `plans/2026-07-06-plan8-crud-datamodel.md` | 3 create/delete (DB+actions) · 7 timestamps · 9 drawer-tab bug · 14 description column | **DONE — merged @ `d2ca891`** (migration is 0014 not 0013; backlog: column-scope 0006 leads grants) |
-| 9 — Drawer UX | `plans/2026-07-06-plan9-drawer-ux.md` | 3 create/delete UI · 10 editing · 11 read-only→Edit mode · 12 invoice placeholders · 13 job/lead quick-view · 14 field order | pending |
+| 9 — Drawer UX | `plans/2026-07-06-plan9-drawer-ux.md` | 3 create/delete UI · 10 editing · 11 read-only→Edit mode · 12 invoice placeholders · 13 job/lead quick-view · 14 field order | **DONE — merged @ `4025cbb`** |
 | 10 — Search & list views | `plans/2026-07-06-plan10-search-views.md` | 4 search everything · 8 board/list toggle | pending |
 
 **Decisions locked 2026-07-06** (user was away when asked; revisit only if user objects):
