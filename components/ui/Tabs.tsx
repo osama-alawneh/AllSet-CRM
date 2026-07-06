@@ -7,7 +7,7 @@ export function Tabs({ tabs }: { tabs: { key: string; label: string; content: Re
     <>
       <div className="tabs">
         {tabs.map(t => (
-          <button key={t.key} className={t.key === on ? 'on' : ''} onClick={() => setOn(t.key)}>
+          <button key={t.key} type="button" className={t.key === on ? 'on' : ''} onClick={() => setOn(t.key)}>
             {t.label}
           </button>
         ))}

@@ -11,9 +11,9 @@ import {
 } from '@/lib/leads';
 
 const lead = (over: Partial<Lead>): Lead => ({
-  id: 1, customer_id: 1, status: 'new', service: 'TBD', stories: 2, panes: 12,
-  note: null, quote_value: null, customer_name: 'X', address: null, phone: null,
-  email: null, lat: null, lng: null, ...over,
+  id: 1, customer_id: 1, status: 'new', service: 'TBD', description: null, stories: 2, panes: 12,
+  note: null, quote_value: null, created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z',
+  customer_name: 'X', address: null, phone: null, email: null, lat: null, lng: null, ...over,
 });
 
 describe('status maps', () => {
@@ -40,8 +40,8 @@ describe('groupByStatus', () => {
 
 describe('buildLeads', () => {
   const rows: LeadPublicRow[] = [
-    { id: 10, customer_id: 1, status: 'won', service: 'In + out', stories: 2, panes: 18, note: 'Booked.' },
-    { id: 11, customer_id: 2, status: 'new', service: null, stories: null, panes: null, note: null },
+    { id: 10, customer_id: 1, status: 'won', service: 'In + out', description: null, stories: 2, panes: 18, note: 'Booked.', created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z' },
+    { id: 11, customer_id: 2, status: 'new', service: null, description: null, stories: null, panes: null, note: null, created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z' },
   ];
   const customers: CustomerGeo[] = [
     { id: 1, name: 'Sarah Kim', address: '142 Maple Ave', phone: '555-0142', email: 's@k.io', lat: 42.331, lng: -83.045 },

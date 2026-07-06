@@ -26,7 +26,7 @@ export default async function JobsPage({
   if (admin) {
     const { data } = await sb
       .from('jobs')
-      .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,price')
+      .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price')
       .order('id');
     const rows = data ?? [];
     jobRows = rows.map(r => ({
@@ -37,12 +37,15 @@ export default async function JobsPage({
       claimed_by: r.claimed_by,
       scheduled_date: r.scheduled_date,
       service: r.service,
+      description: r.description,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
     }));
     priceById = new Map(rows.map(r => [r.id, Number(r.price ?? 0)]));
   } else {
     const { data } = await sb
       .from('jobs_public')
-      .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service')
+      .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at')
       .order('id');
     jobRows = (data ?? []) as JobRow[];
   }

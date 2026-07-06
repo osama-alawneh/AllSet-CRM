@@ -26,14 +26,14 @@ export default async function DashboardPage() {
   // invoice_items) are conditional; non-admins substitute a resolved { data: null } so the tuple
   // shape is stable. Money is still gated behind `if (admin)` below — nothing leaks.
   const jobsQuery = admin
-    ? sb.from('jobs').select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,price').order('id')
-    : sb.from('jobs_public').select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service').order('id');
+    ? sb.from('jobs').select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price').order('id')
+    : sb.from('jobs_public').select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at').order('id');
 
   const [jobsRes, csRes, psRes, lpRes, invRes, itemRes] = await Promise.all([
     jobsQuery,
     sb.from('customers').select('id,name,address,phone,email,lat,lng'),
     sb.from('profiles').select('id,full_name'),
-    sb.from('leads_public').select('id,customer_id,status,service,stories,panes,note').order('id'),
+    sb.from('leads_public').select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at').order('id'),
     admin ? sb.from('invoices').select('id,status,issue_date') : Promise.resolve({ data: null }),
     admin ? sb.from('invoice_items').select('invoice_id,qty,unit_price') : Promise.resolve({ data: null }),
   ]);
@@ -46,6 +46,7 @@ export default async function DashboardPage() {
     jobRows = rows.map(r => ({
       id: r.id, customer_id: r.customer_id, lead_id: r.lead_id, status: r.status,
       claimed_by: r.claimed_by, scheduled_date: r.scheduled_date, service: r.service,
+      description: r.description, created_at: r.created_at, updated_at: r.updated_at,
     }));
     priceById = new Map(rows.map(r => [r.id, Number(r.price ?? 0)]));
   } else {

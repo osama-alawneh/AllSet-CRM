@@ -48,39 +48,40 @@ describe('toCSV', () => {
 });
 
 const lead = (over: Partial<Lead>): Lead => ({
-  id: 1, customer_id: 10, status: 'new', service: 'Standard', stories: 2, panes: 20,
-  note: null, quote_value: 500, customer_name: 'Sarah Kim', address: '1 Elm St',
-  phone: '555', email: 'a@b.co', lat: 1, lng: 2, ...over,
+  id: 1, customer_id: 10, status: 'new', service: 'Standard', description: 'Front bay window', stories: 2, panes: 20,
+  note: null, quote_value: 500, created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z',
+  customer_name: 'Sarah Kim', address: '1 Elm St', phone: '555', email: 'a@b.co', lat: 1, lng: 2, ...over,
 });
 
 describe('leadsCsvTable', () => {
   it('includes Value only for admin (header AND cell column omitted otherwise)', () => {
     const rows = [lead({})];
     const asAdmin = leadsCsvTable(rows, true);
-    expect(asAdmin.headers).toEqual(['ID', 'Customer', 'Address', 'Status', 'Service', 'Stories', 'Panes', 'Value']);
-    expect(asAdmin.rows[0]).toEqual([1, 'Sarah Kim', '1 Elm St', 'New', 'Standard', 2, 20, 500]);
+    expect(asAdmin.headers).toEqual(['ID', 'Customer', 'Address', 'Status', 'Service', 'Description', 'Stories', 'Panes', 'Value']);
+    expect(asAdmin.rows[0]).toEqual([1, 'Sarah Kim', '1 Elm St', 'New', 'Standard', 'Front bay window', 2, 20, 500]);
     const asRep = leadsCsvTable(rows, false);
-    expect(asRep.headers).toEqual(['ID', 'Customer', 'Address', 'Status', 'Service', 'Stories', 'Panes']);
+    expect(asRep.headers).toEqual(['ID', 'Customer', 'Address', 'Status', 'Service', 'Description', 'Stories', 'Panes']);
     expect(asRep.headers).not.toContain('Value');
-    expect(asRep.rows[0]).toHaveLength(7);
+    expect(asRep.rows[0]).toHaveLength(8);
   });
 });
 
 const job = (over: Partial<Job>): Job => ({
   id: 3, customer_id: 10, lead_id: null, status: 'claimed', claimed_by: 'u1',
   claimed_by_name: 'Cal Cleaner', scheduled_date: '2026-07-01', service: 'Standard',
-  price: 180, customer_name: 'Sarah Kim', address: '1 Elm St', phone: null, email: null, ...over,
+  description: '3 storeys', price: 180, created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z',
+  customer_name: 'Sarah Kim', address: '1 Elm St', phone: null, email: null, ...over,
 });
 
 describe('jobsCsvTable', () => {
   it('includes Price only for admin', () => {
     const rows = [job({})];
     const asAdmin = jobsCsvTable(rows, true);
-    expect(asAdmin.headers).toEqual(['ID', 'Customer', 'Service', 'Status', 'Claimed by', 'Scheduled', 'Price']);
-    expect(asAdmin.rows[0]).toEqual([3, 'Sarah Kim', 'Standard', 'Claimed', 'Cal Cleaner', '2026-07-01', 180]);
+    expect(asAdmin.headers).toEqual(['ID', 'Customer', 'Service', 'Description', 'Status', 'Claimed by', 'Scheduled', 'Price']);
+    expect(asAdmin.rows[0]).toEqual([3, 'Sarah Kim', 'Standard', '3 storeys', 'Claimed', 'Cal Cleaner', '2026-07-01', 180]);
     const asCleaner = jobsCsvTable(rows, false);
     expect(asCleaner.headers).not.toContain('Price');
-    expect(asCleaner.rows[0]).toHaveLength(6);
+    expect(asCleaner.rows[0]).toHaveLength(7);
   });
 });
 

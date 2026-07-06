@@ -20,7 +20,10 @@ export type Job = {
   claimed_by_name: string | null;   // resolved full name (or null)
   scheduled_date: string | null;
   service: string | null;
+  description: string | null;
   price: number | null;             // null = not visible (non-admin) or unset — admin-only
+  created_at: string;
+  updated_at: string;
   customer_name: string;
   address: string | null;
   phone: string | null;
@@ -37,6 +40,9 @@ export type JobRow = {
   claimed_by: string | null;
   scheduled_date: string | null;
   service: string | null;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
 };
 export type JobCustomer = {
   id: number;
@@ -64,7 +70,10 @@ export function buildJobs(
       claimed_by_name: r.claimed_by ? (names.get(r.claimed_by) ?? null) : null,
       scheduled_date: r.scheduled_date,
       service: r.service,
+      description: r.description,
       price: priceById ? (priceById.get(r.id) ?? null) : null,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
       customer_name: c?.name ?? 'Unknown',
       address: c?.address ?? null,
       phone: c?.phone ?? null,
@@ -98,4 +107,26 @@ export function canTransition(role: Role | null, uid: string, job: Job, to: JobS
     return true;                               // claimed/in_progress/done
   }
   return false; // rep / roleless: view-only
+}
+
+export type JobInput = {
+  customer_id: number; service: string; description: string | null;
+  scheduled_date: string | null; price: number | null;
+};
+
+export function parseJobForm(
+  fd: FormData
+): { ok: true; value: JobInput } | { ok: false; error: string } {
+  const customer_id = Number(fd.get('customer_id'));
+  if (!Number.isFinite(customer_id) || customer_id <= 0) return { ok: false, error: 'Customer is required' };
+  const service = String(fd.get('service') ?? '').trim();
+  if (!service) return { ok: false, error: 'Service is required' };
+  const description = String(fd.get('description') ?? '').trim() || null;
+  const dateRaw = String(fd.get('scheduled_date') ?? '').trim();
+  if (dateRaw && !/^\d{4}-\d{2}-\d{2}$/.test(dateRaw)) return { ok: false, error: 'Date must be YYYY-MM-DD' };
+  const priceRaw = String(fd.get('price') ?? '').trim();
+  const price = priceRaw === '' ? null : Number(priceRaw);
+  if (price !== null && !Number.isFinite(price)) return { ok: false, error: 'Invalid number' };
+  if (price !== null && price < 0) return { ok: false, error: 'Numbers cannot be negative' };
+  return { ok: true, value: { customer_id, service, description, scheduled_date: dateRaw || null, price } };
 }
