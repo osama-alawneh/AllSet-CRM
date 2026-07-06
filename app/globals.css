@@ -237,3 +237,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .login-form { display: flex; flex-direction: column; gap: 8px; }
 .login-form .lbl { margin-top: 8px; }
 .login-form button { margin-top: 14px; padding: 11px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; border-radius: 4px; }
+
+/* destructive action (Plan 9) */
+.btn-danger { background: transparent; color: var(--lost); border: 1.5px solid var(--lost); }
+.btn-danger:hover { background: var(--lost); color: #fff; }

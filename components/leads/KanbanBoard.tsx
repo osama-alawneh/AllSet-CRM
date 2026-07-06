@@ -61,17 +61,24 @@ export function KanbanBoard({
         <span className="cap" style={{ fontSize: 11, color: 'var(--muted)' }}>
           drag cards between columns to change status
         </span>
-        <button
-          className="btn sec"
-          type="button"
-          onClick={() => {
-            // Export the committed `leads` prop, NOT the optimistic drag state.
-            const t = leadsCsvTable(leads, admin);
-            downloadCSV('clearview-leads.csv', toCSV(t.headers, t.rows));
-          }}
-        >
-          ⬇ Export CSV
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            className="btn sec"
+            type="button"
+            onClick={() => {
+              // Export the committed `leads` prop, NOT the optimistic drag state.
+              const t = leadsCsvTable(leads, admin);
+              downloadCSV('clearview-leads.csv', toCSV(t.headers, t.rows));
+            }}
+          >
+            ⬇ Export CSV
+          </button>
+          {canEdit && (
+            <button className="btn" type="button" onClick={() => router.push('/leads?new=1', { scroll: false })}>
+              + New lead
+            </button>
+          )}
+        </div>
       </div>
       {error && <p style={{ color: 'var(--lost)', fontSize: 12 }}>{error}</p>}
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>

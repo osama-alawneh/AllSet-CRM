@@ -108,16 +108,23 @@ export function JobsBoard({
         <span className="cap" style={{ fontSize: 11, color: 'var(--muted)' }}>
           drag between statuses · claim to lock
         </span>
-        <button
-          className="btn sec"
-          type="button"
-          onClick={() => {
-            const t = jobsCsvTable(jobs, admin);
-            downloadCSV('clearview-jobs.csv', toCSV(t.headers, t.rows));
-          }}
-        >
-          ⬇ Export CSV
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            className="btn sec"
+            type="button"
+            onClick={() => {
+              const t = jobsCsvTable(jobs, admin);
+              downloadCSV('clearview-jobs.csv', toCSV(t.headers, t.rows));
+            }}
+          >
+            ⬇ Export CSV
+          </button>
+          {admin && (
+            <button className="btn" type="button" onClick={() => router.push('/jobs?new=1', { scroll: false })}>
+              + New job
+            </button>
+          )}
+        </div>
       </div>
       {error && <p style={{ color: 'var(--lost)', fontSize: 12 }}>{error}</p>}
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>

@@ -93,6 +93,13 @@ describe('parseInvoiceForm', () => {
     const empty = parseInvoiceForm(fd({ customer_id: '1', status: 'draft', items: JSON.stringify([{ description: '', qty: '0', unit_price: '0' }]) }));
     expect(empty.ok).toBe(false);
   });
+  it('drops a line with no description and no price regardless of qty', () => {
+    const fd = new FormData();
+    fd.set('customer_id', '1');
+    fd.set('status', 'draft');
+    fd.set('items', JSON.stringify([{ description: '', qty: 1, unit_price: 0 }]));
+    expect(parseInvoiceForm(fd)).toEqual({ ok: false, error: 'At least one line item is required' });
+  });
   it('rejects malformed items JSON', () => {
     const r = parseInvoiceForm(fd({ customer_id: '1', status: 'draft', items: 'not json' }));
     expect(r.ok).toBe(false);

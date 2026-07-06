@@ -74,7 +74,7 @@ export function parseInvoiceForm(
     const qty = Number(r?.qty) || 0;
     const unit_price = Number(r?.unit_price) || 0;
     if (qty < 0 || unit_price < 0) return { ok: false, error: 'Quantities and prices cannot be negative' };
-    if (!description && qty === 0 && unit_price === 0) continue; // skip empty lines
+    if (!description && unit_price === 0) continue; // placeholder-only line: no text, no money — not a real item
     items.push({ description: description || 'Item', qty, unit_price });
   }
   if (items.length === 0) return { ok: false, error: 'At least one line item is required' };
