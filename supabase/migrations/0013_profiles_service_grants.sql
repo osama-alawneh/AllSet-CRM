@@ -1,0 +1,11 @@
+-- Plan 7 Task 4 introduced the first table WRITES performed by the service-role client
+-- (createUser inserts a profile; setUserRole updates role then reads back the id). The
+-- service-role key bypasses RLS but still needs table-level GRANTs, and — like the shared
+-- `authenticated` role (see 0004/0005/0012) — local Supabase does not auto-grant them to
+-- `service_role`. Without this, both admin actions fail with "permission denied for table
+-- profiles" (createUser then rolls back the auth user, so no account is ever created).
+--
+-- Scope is exactly what the two actions touch: INSERT (createUser), UPDATE + SELECT
+-- (setUserRole's update ... select('id')). RLS is intentionally bypassed here — these are
+-- admin-gated server actions and no insert/update policy exists on profiles by design.
+grant select, insert, update on profiles to service_role;

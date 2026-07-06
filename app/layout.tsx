@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const theme = (await cookies()).get('theme')?.value === 'dark' ? 'dark' : 'light';
+  const theme = (await cookies()).get('theme')?.value === 'light' ? 'light' : 'dark';
   return (
     <html lang="en" data-theme={theme}>
       <body>
