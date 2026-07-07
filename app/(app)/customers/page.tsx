@@ -39,7 +39,7 @@ export default async function CustomersPage({
   }));
 
   // drawer data
-  const isNew = newParam === '1';
+  const isNew = newParam === '1' && role !== 'cleaner'; // create is admin+rep (RLS 0005); cleaners get no form
   const cid = cParam ? Number(cParam) : null;
   let drawerCustomer: DrawerCustomer | null = null;
   let drawerJobs: DrawerJob[] = [];
