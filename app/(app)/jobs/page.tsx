@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getRole, getSession } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
+import { logQueryError } from '@/lib/log';
 import { buildJobs, visibleJobs, type JobRow, type JobCustomer } from '@/lib/jobs';
 import { JobsBoard } from '@/components/jobs/JobsBoard';
 import { JobsListSection } from '@/components/jobs/JobsListSection';
@@ -24,14 +25,29 @@ export default async function JobsPage({
 
   // Role-split fetch: admins read base jobs (incl. price); everyone else reads the
   // jobs_public view (no price column — money stays server-side).
+  const jobsQuery = admin
+    ? sb
+        .from('jobs')
+        .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price')
+        .order('id')
+    : sb
+        .from('jobs_public')
+        .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at')
+        .order('id');
+
+  const [jobsRes, csRes, psRes] = await Promise.all([
+    jobsQuery,
+    sb.from('customers').select('id,name,address,phone,email'),
+    sb.from('profiles').select('id,full_name'),
+  ]);
+  logQueryError('jobs.page.jobs', jobsRes.error);
+  logQueryError('jobs.page.customers', csRes.error);
+  logQueryError('jobs.page.profiles', psRes.error);
+
   let jobRows: JobRow[] = [];
   let priceById: Map<number, number> | null = null;
   if (admin) {
-    const { data } = await sb
-      .from('jobs')
-      .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price')
-      .order('id');
-    const rows = data ?? [];
+    const rows = (jobsRes.data ?? []) as Array<JobRow & { price: number | null }>;
     jobRows = rows.map(r => ({
       id: r.id,
       customer_id: r.customer_id,
@@ -46,15 +62,11 @@ export default async function JobsPage({
     }));
     priceById = new Map(rows.map(r => [r.id, Number(r.price ?? 0)]));
   } else {
-    const { data } = await sb
-      .from('jobs_public')
-      .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at')
-      .order('id');
-    jobRows = (data ?? []) as JobRow[];
+    jobRows = (jobsRes.data ?? []) as JobRow[];
   }
 
-  const { data: cs } = await sb.from('customers').select('id,name,address,phone,email');
-  const { data: ps } = await sb.from('profiles').select('id,full_name');
+  const cs = csRes.data;
+  const ps = psRes.data;
   const names = new Map((ps ?? []).map(p => [p.id as string, p.full_name as string]));
 
   const all = buildJobs(jobRows, (cs ?? []) as JobCustomer[], priceById, names);
@@ -69,18 +81,20 @@ export default async function JobsPage({
   let leadDetail = null;
   if (selected?.lead_id != null) {
     if (admin) {
-      const { data: ld } = await sb
+      const { data: ld, error } = await sb
         .from('leads')
         .select('stories,panes,note,description,quote_value')
         .eq('id', selected.lead_id)
         .single();
+      logQueryError('jobs.page.leadDetail', error);
       leadDetail = ld ? { ...ld, quote_value: Number(ld.quote_value ?? 0) } : null;
     } else {
-      const { data: ld } = await sb
+      const { data: ld, error } = await sb
         .from('leads_public')
         .select('stories,panes,note,description')
         .eq('id', selected.lead_id)
         .single();
+      logQueryError('jobs.page.leadDetail', error);
       leadDetail = ld ? { ...ld, quote_value: null } : null; // money structurally absent for non-admins
     }
   }

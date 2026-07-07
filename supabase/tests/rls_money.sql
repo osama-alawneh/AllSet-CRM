@@ -1,16 +1,25 @@
 begin;
-select plan(6);
+select plan(11);
 insert into auth.users (id, instance_id, aud, role, email) values
   ('90000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t-admin@test.dev'),
-  ('90000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t-rep@test.dev');
+  ('90000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t-rep@test.dev'),
+  ('90000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t-cleaner-a@test.dev'),
+  ('90000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t-cleaner-b@test.dev');
 insert into profiles(id,full_name,role) values
   ('90000000-0000-0000-0000-000000000001','Admin One','admin'),
-  ('90000000-0000-0000-0000-000000000002','Rep Two','rep');
+  ('90000000-0000-0000-0000-000000000002','Rep Two','rep'),
+  ('90000000-0000-0000-0000-000000000003','Cleaner A','cleaner'),
+  ('90000000-0000-0000-0000-000000000004','Cleaner B','cleaner');
 insert into customers(id,name) overriding system value values (900001,'Seed Co');
 insert into invoices(id,customer_id,number) overriding system value values (900001,900001,'INV-900001');
 -- lead fixture for the rep money-write-denial tests below (superuser insert bypasses grants+RLS).
 insert into leads(id,customer_id,status,service,quote_value) overriding system value
   values (900001,900001,'new','Money guard',500);
+-- SEC-3 fixtures: one unclaimed job (visible to everyone) and one job claimed by
+-- Cleaner B (must stay invisible to Cleaner A through jobs_public).
+insert into jobs(id,customer_id,status,claimed_by) overriding system value values
+  (900002,900001,'unclaimed',null),
+  (900003,900001,'claimed','90000000-0000-0000-0000-000000000004');
 
 -- Structural guard: the money-free views must NOT surface money columns. This is the
 -- primary defence (reps read leads/jobs only through these views), so it stays pinned
@@ -29,6 +38,24 @@ select throws_ok($$ update leads set quote_value=999 where id=900001 $$, '42501'
   'rep cannot UPDATE quote_value directly (column grant withheld)');
 select throws_ok($$ insert into leads(customer_id,status,service,quote_value) values (900001,'new','x',999) $$,
   '42501', null, 'rep cannot INSERT quote_value directly (column grant withheld)');
+-- SEC-4 (0016): audit columns are stamped by the definer RPCs only — a rep must not be
+-- able to spoof created_by (or created_at/updated_at) via direct PostgREST writes. Same
+-- column-ACL mechanism as quote_value above: referencing a withheld column raises 42501.
+select throws_ok($$ update leads set created_by='90000000-0000-0000-0000-000000000001' where id=900001 $$,
+  '42501', null, 'rep cannot UPDATE created_by directly (column grant withheld)');
+select throws_ok($$ insert into leads(customer_id,status,service,created_by) values (900001,'new','x','90000000-0000-0000-0000-000000000001') $$,
+  '42501', null, 'rep cannot INSERT created_by directly (column grant withheld)');
+
+-- SEC-3: cleaner sees only unclaimed + own rows through jobs_public — never another
+-- cleaner's claimed job, even though claimed_by itself is a visible column on rows they
+-- are allowed to see.
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000003"}';
+select is((select count(*)::int from jobs_public where claimed_by is not null and claimed_by <> auth.uid()), 0,
+  'cleaner sees zero rows in jobs_public claimed by another user');
+select is((select count(*)::int from jobs_public where id=900003), 0,
+  'cleaner cannot see the specific job claimed by another cleaner via jobs_public');
+select is((select count(*)::int from jobs_public where id=900002), 1,
+  'cleaner still sees the unclaimed job via jobs_public (filter is not over-broad)');
 
 set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000001"}';
 select isnt_empty($$ select 1 from invoices $$, 'admin sees invoice rows');

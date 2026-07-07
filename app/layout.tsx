@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import { SWRegister } from '@/components/shell/SWRegister';
 import './globals.css';
@@ -6,6 +6,16 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'ClearView CRM',
   description: 'Window-cleaning CRM — Blueprint+',
+  appleWebApp: { statusBarStyle: 'black-translucent', title: 'ClearView' },
+  icons: { apple: '/apple-touch-icon.png' },
+  // Next 16 emits only the modern `mobile-web-app-capable` tag; iOS < 17.4 honors
+  // only the legacy tag below, without which home-screen launches open in a Safari tab.
+  other: { 'apple-mobile-web-app-capable': 'yes' },
+};
+
+export const viewport: Viewport = {
+  viewportFit: 'cover',
+  themeColor: '#070d18',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,5 +1,6 @@
 import { getRole } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
+import { logQueryError } from '@/lib/log';
 import { buildLeads, statusLabel, type Pin, type LeadPublicRow, type CustomerGeo } from '@/lib/leads';
 import { MapView } from '@/components/map/MapView';
 import { LeadDrawer } from '@/components/leads/LeadDrawer';
@@ -15,16 +16,24 @@ export default async function MapPage({
   const canCreate = role === 'admin' || role === 'rep';
   const sb = await supabaseServer();
 
-  const { data: lp } = await sb
-    .from('leads_public')
-    .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at')
-    .order('id');
-  const { data: cs } = await sb.from('customers').select('id,name,address,phone,email,lat,lng');
+  const [lpRes, csRes, baseRes] = await Promise.all([
+    sb
+      .from('leads_public')
+      .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at')
+      .order('id'),
+    sb.from('customers').select('id,name,address,phone,email,lat,lng'),
+    admin ? sb.from('leads').select('id,quote_value') : Promise.resolve({ data: null, error: null }),
+  ]);
+  logQueryError('map.page.leads_public', lpRes.error);
+  logQueryError('map.page.customers', csRes.error);
+  logQueryError('map.page.leads', baseRes.error);
+
+  const lp = lpRes.data;
+  const cs = csRes.data;
 
   let quoteById: Map<number, number> | null = null;
   if (admin) {
-    const { data: base } = await sb.from('leads').select('id,quote_value');
-    quoteById = new Map((base ?? []).map(b => [b.id, Number(b.quote_value ?? 0)]));
+    quoteById = new Map((baseRes.data ?? []).map(b => [b.id, Number(b.quote_value ?? 0)]));
   }
 
   const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], quoteById);

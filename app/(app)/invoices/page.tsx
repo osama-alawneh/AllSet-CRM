@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getRole } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
+import { logQueryError } from '@/lib/log';
 import { buildInvoices, type InvoiceRow, type InvoiceItem, type InvoiceCustomer } from '@/lib/invoices';
 import { InvoicesTable } from '@/components/invoices/InvoicesTable';
 import { InvoiceDrawer, type InvoiceCustomerFull } from '@/components/invoices/InvoiceDrawer';
@@ -15,17 +16,21 @@ export default async function InvoicesPage({
   if (role !== 'admin') redirect('/dashboard'); // money is admin-only
   const sb = await supabaseServer();
 
-  const { data: invRows } = await sb
-    .from('invoices')
-    .select('id,customer_id,job_id,number,issue_date,status,tax,deposit')
-    .order('id', { ascending: false });
-  const { data: itemRows } = await sb
-    .from('invoice_items')
-    .select('invoice_id,description,qty,unit_price');
-  const { data: custRows } = await sb
-    .from('customers')
-    .select('id,name,address,phone,email')
-    .order('name');
+  const [invRes, itemsRes, custRes] = await Promise.all([
+    sb
+      .from('invoices')
+      .select('id,customer_id,job_id,number,issue_date,status,tax,deposit')
+      .order('id', { ascending: false }),
+    sb.from('invoice_items').select('invoice_id,description,qty,unit_price'),
+    sb.from('customers').select('id,name,address,phone,email').order('name'),
+  ]);
+  logQueryError('invoices.page.invoices', invRes.error);
+  logQueryError('invoices.page.invoice_items', itemsRes.error);
+  logQueryError('invoices.page.customers', custRes.error);
+
+  const invRows = invRes.data;
+  const itemRows = itemsRes.data;
+  const custRows = custRes.data;
 
   const itemsByInvoice = new Map<number, InvoiceItem[]>();
   for (const it of itemRows ?? []) {
