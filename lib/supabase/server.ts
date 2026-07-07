@@ -9,10 +9,20 @@ export const supabaseServer = async () => {
     {
       cookies: {
         getAll: () => store.getAll(),
-        setAll: (cookiesToSet) =>
-          cookiesToSet.forEach(({ name, value, options }) =>
-            store.set(name, value, options)
-          ),
+        setAll: (cookiesToSet) => {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              store.set(name, value, options)
+            );
+          } catch {
+            // `setAll` is called from a Server Component render (e.g. when GoTrue
+            // refreshes a stale token). Next.js forbids cookie writes there and
+            // throws "Cookies can only be modified in a Server Action or Route
+            // Handler." Swallowing is safe because proxy.ts refreshes the session
+            // on every request where cookie writes ARE allowed and persists the
+            // rotated tokens via Set-Cookie. See proxy.ts.
+          }
+        },
       },
     }
   );
