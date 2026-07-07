@@ -13,11 +13,11 @@ export function JobsListTable({ jobs, admin, onOpen }: { jobs: Job[]; admin: boo
     <div className="panel box">
       <input placeholder="🔍 filter jobs…" style={{ width: 220, marginBottom: 12 }} value={q} onChange={e => setQ(e.target.value)} aria-label="Filter jobs" />
       <div className="tblwrap">
-        <table className="tbl">
+        <table className="tbl" aria-label="Jobs">
           <thead>
             <tr>
-              <th>#</th><th>Customer</th><th>Service</th><th>Date</th>
-              <th>Status</th><th>Claimed by</th><th>Created</th>{admin && <th>Price</th>}
+              <th scope="col">#</th><th scope="col">Customer</th><th scope="col">Service</th><th scope="col">Date</th>
+              <th scope="col">Status</th><th scope="col">Claimed by</th><th scope="col">Created</th>{admin && <th scope="col">Price</th>}
             </tr>
           </thead>
           <tbody>

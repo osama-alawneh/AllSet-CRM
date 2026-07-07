@@ -50,7 +50,7 @@ export default async function InvoicesPage({
     <>
       <InvoicesTable invoices={invoices} />
       {(isNew || selected) && (
-        <InvoiceDrawer key={selected?.id ?? 'new'} invoice={selected} isNew={isNew} customers={customers} />
+        <InvoiceDrawer key={selected?.id ?? 'new'} invoice={selected} isNew={isNew && !selected} customers={customers} />
       )}
     </>
   );
