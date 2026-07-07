@@ -37,6 +37,7 @@
 * { box-sizing: border-box; }
 body {
   margin: 0; font-family: var(--font-blueprint); color: var(--ink); min-height: 100vh;
+  min-height: 100dvh;
   background: linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 26px 26px,
     linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 26px 26px, var(--paper);
   transition: background .3s, color .3s;
@@ -50,7 +51,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 12px; background: var(--accent); color: var(--on-accent); border-radius: 4px; font-size: 12px; }
 .skip-link:focus-visible { left: 8px; top: 8px; }
 
-.app { display: grid; grid-template-columns: 212px 1fr; gap: 20px; padding: 20px; min-height: 100vh; }
+.app { display: grid; grid-template-columns: 212px 1fr; gap: 20px; padding: 20px; min-height: 100vh; min-height: 100dvh; }
 @media (max-width: 860px) { .app { grid-template-columns: 1fr; padding: 12px; gap: 12px; } }
 
 .box { background: var(--card); border: 1.5px solid var(--ink); border-radius: 4px; box-shadow: 4px 4px 0 var(--shadow); }
@@ -240,7 +241,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .kanban .card2 { touch-action: none; }
 
 /* login (Plan 7) */
-.login { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+.login { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 20px; }
 .login-card { width: min(360px, 92vw); padding: 26px; }
 .login-card .brand { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1.5px dashed var(--line); }
 .login-form { display: flex; flex-direction: column; gap: 8px; }
@@ -250,3 +251,27 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 /* destructive action (Plan 9) */
 .btn-danger { background: transparent; color: var(--lost); border: 1.5px solid var(--lost); }
 .btn-danger:hover { background: var(--lost); color: var(--on-status); }
+
+/* Wave 2: phone-first fixes (review findings MOB-H3, M1-M4) */
+
+/* iOS zooms any focused input under 16px — only on touch devices, desktop keeps 12px. */
+@media (pointer: coarse) {
+  input, select, textarea { font-size: 16px; }
+  /* 44px minimum touch targets (Apple HIG) */
+  .btn, .iconbtn, .claim, .drawer .close, .viewtoggle button, .acts button, .pop .go, .pop .x,
+  .statuspick button { min-height: 44px; }
+  .nav a { min-height: 44px; align-items: center; }
+  /* Map pins stay 16px visually; expand the hit area invisibly. */
+  .mpin::after { content: ""; position: absolute; inset: -14px; }
+}
+
+/* Notch / home-indicator safe areas (inert until viewport-fit=cover ships — Wave 1). */
+@media (max-width: 860px) {
+  .app {
+    padding-left: calc(12px + env(safe-area-inset-left));
+    padding-right: calc(12px + env(safe-area-inset-right));
+    padding-top: calc(12px + env(safe-area-inset-top));
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+}
+.drawer { padding-top: calc(22px + env(safe-area-inset-top)); padding-bottom: calc(22px + env(safe-area-inset-bottom)); }
