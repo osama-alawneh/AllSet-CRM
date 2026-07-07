@@ -5,6 +5,7 @@ import { Drawer } from '@/components/ui/Drawer';
 import {
   LEAD_STATUSES, statusLabel, statusColor, type Lead, type LeadStatus,
 } from '@/lib/leads';
+import { blankMoneyToZero } from '@/lib/forms';
 import { setLeadStatus, createLead, updateLead, deleteLead } from '@/app/(app)/leads/actions';
 
 const fmt = (n: number) => '$' + Number(n || 0).toLocaleString();
@@ -40,6 +41,10 @@ export function LeadDrawer({
 
   const submit = (fd: FormData) => {
     setError(null);
+    // Admin blanking the (prefilled) quote is a deliberate "clear to $0". The quote input
+    // is {admin &&}-gated, so present-in-fd ⇒ admin; absent (rep) stays absent and the RPC
+    // keeps ignoring it. Safe on create too (blank quote already stores 0 there).
+    blankMoneyToZero(fd, 'quote');
     startTransition(async () => {
       const res = isNew ? await createLead(fd) : await updateLead(lead!.id, fd);
       if (res?.error) setError(res.error);

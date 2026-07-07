@@ -6,6 +6,7 @@ import {
   JOB_STATUSES, jobStatusLabel, jobStatusColor, canTransition, type Job, type JobStatus,
 } from '@/lib/jobs';
 import type { Role } from '@/lib/auth';
+import { blankMoneyToZero } from '@/lib/forms';
 import { claimJob, setJobStatus, createJob, updateJob, deleteJob } from '@/app/(app)/jobs/actions';
 import { createInvoiceFromJob } from '@/app/(app)/invoices/actions';
 
@@ -66,6 +67,10 @@ export function JobDrawer({
   };
   const submit = (fd: FormData) => {
     setError(null);
+    // Admin blanking the (prefilled) price is a deliberate "clear to $0". The whole job
+    // edit form is admin-only (Edit button is {admin &&}-gated), so a present-but-blank
+    // price means clear, not "keep old value". Safe on create too.
+    blankMoneyToZero(fd, 'price');
     startTransition(async () => {
       const res = isNew ? await createJob(fd) : await updateJob(job!.id, fd);
       if (res?.error) setError(res.error);
