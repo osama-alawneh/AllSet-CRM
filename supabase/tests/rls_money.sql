@@ -1,5 +1,5 @@
 begin;
-select plan(8);
+select plan(11);
 insert into auth.users (id, instance_id, aud, role, email) values
   ('90000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t-admin@test.dev'),
   ('90000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t-rep@test.dev'),
@@ -38,6 +38,13 @@ select throws_ok($$ update leads set quote_value=999 where id=900001 $$, '42501'
   'rep cannot UPDATE quote_value directly (column grant withheld)');
 select throws_ok($$ insert into leads(customer_id,status,service,quote_value) values (900001,'new','x',999) $$,
   '42501', null, 'rep cannot INSERT quote_value directly (column grant withheld)');
+-- SEC-4 (0016): audit columns are stamped by the definer RPCs only — a rep must not be
+-- able to spoof created_by (or created_at/updated_at) via direct PostgREST writes. Same
+-- column-ACL mechanism as quote_value above: referencing a withheld column raises 42501.
+select throws_ok($$ update leads set created_by='90000000-0000-0000-0000-000000000001' where id=900001 $$,
+  '42501', null, 'rep cannot UPDATE created_by directly (column grant withheld)');
+select throws_ok($$ insert into leads(customer_id,status,service,created_by) values (900001,'new','x','90000000-0000-0000-0000-000000000001') $$,
+  '42501', null, 'rep cannot INSERT created_by directly (column grant withheld)');
 
 -- SEC-3: cleaner sees only unclaimed + own rows through jobs_public — never another
 -- cleaner's claimed job, even though claimed_by itself is a visible column on rows they
@@ -47,6 +54,8 @@ select is((select count(*)::int from jobs_public where claimed_by is not null an
   'cleaner sees zero rows in jobs_public claimed by another user');
 select is((select count(*)::int from jobs_public where id=900003), 0,
   'cleaner cannot see the specific job claimed by another cleaner via jobs_public');
+select is((select count(*)::int from jobs_public where id=900002), 1,
+  'cleaner still sees the unclaimed job via jobs_public (filter is not over-broad)');
 
 set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000001"}';
 select isnt_empty($$ select 1 from invoices $$, 'admin sees invoice rows');
