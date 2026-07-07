@@ -1,7 +1,7 @@
 const CACHE = 'clearview-v2';
 const PRECACHE = ['/offline', '/icon.svg', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png'];
 
-// install: precache ONLY the offline page + icon (never role-specific HTML).
+// install: precache ONLY the offline page + app icons (never role-specific HTML).
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(PRECACHE)));
 });
