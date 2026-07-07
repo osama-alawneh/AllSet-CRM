@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useOptimistic, useState, useTransition } from 'react';
+import { useOptimistic, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   DndContext,
@@ -16,10 +16,10 @@ import {
   type JobStatus,
 } from '@/lib/jobs';
 import type { Role } from '@/lib/auth';
-import { supabaseBrowser } from '@/lib/supabase/client';
 import { claimJob, setJobStatus } from '@/app/(app)/jobs/actions';
 import { toCSV, downloadCSV, jobsCsvTable } from '@/lib/csv';
 import { filterJobs } from '@/lib/search';
+import { useJobsRealtime } from '@/lib/hooks/useJobsRealtime';
 import { ViewToggle } from '@/components/ui/ViewToggle';
 import { JobColumn } from './JobColumn';
 
@@ -48,33 +48,7 @@ export function JobsBoard({
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const grouped = groupJobsByStatus(filterJobs(optimistic, q));
 
-  // Realtime: subscribe to the private 'jobs' broadcast topic. The DB trigger
-  // (0011) sends a tiny {id,status} ping on any job insert/update; we debounce it
-  // (250ms trailing) into router.refresh(), which re-runs the role-split server fetch.
-  // Sensitive data (price/names) is NEVER in the ping — it comes back through RLS.
-  useEffect(() => {
-    const sb = supabaseBrowser();
-    let channel: ReturnType<typeof sb.channel> | null = null;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    let cancelled = false;
-    const refresh = () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => router.refresh(), 250);
-    };
-    (async () => {
-      await sb.realtime.setAuth(); // attach the current session token for RLS on realtime.messages
-      if (cancelled) return; // effect cleaned up while awaiting — don't subscribe an orphaned channel
-      channel = sb
-        .channel('jobs', { config: { private: true } })
-        .on('broadcast', { event: 'change' }, refresh)
-        .subscribe();
-    })();
-    return () => {
-      cancelled = true;
-      if (timer) clearTimeout(timer);
-      if (channel) sb.removeChannel(channel);
-    };
-  }, [router]);
+  useJobsRealtime();
 
   const onDragEnd = (e: DragEndEvent) => {
     if (pending) return; // ignore drops while a claim/status action is already in flight
