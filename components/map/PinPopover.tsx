@@ -50,7 +50,7 @@ export function PinPopover({
               key={st}
               type="button"
               className={sel ? 'sel' : ''}
-              style={sel ? { background: statusColor[st], color: '#fff', borderColor: 'transparent' } : undefined}
+              style={sel ? { background: statusColor[st], color: 'var(--on-status)', borderColor: 'transparent' } : undefined}
               onClick={() => setStatus(st)}
             >
               {statusLabel[st]}

@@ -168,7 +168,7 @@ export function JobDrawer({
                   <button
                     key={st} type="button" className={sel ? 'sel' : ''} aria-pressed={sel}
                     disabled={pending || !allowed}
-                    style={sel ? { background: jobStatusColor[st], color: '#fff', borderColor: 'transparent' } : undefined}
+                    style={sel ? { background: jobStatusColor[st], color: 'var(--on-status)', borderColor: 'transparent' } : undefined}
                     onClick={() => change(st)}
                   >
                     {jobStatusLabel[st]}

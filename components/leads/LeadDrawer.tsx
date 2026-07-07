@@ -124,7 +124,7 @@ export function LeadDrawer({
                   return (
                     <button
                       key={st} type="button" className={sel ? 'sel' : ''} aria-pressed={sel} disabled={pending}
-                      style={sel ? { background: statusColor[st], color: '#fff', borderColor: 'transparent' } : undefined}
+                      style={sel ? { background: statusColor[st], color: 'var(--on-status)', borderColor: 'transparent' } : undefined}
                       onClick={() => change(st)}
                     >
                       {statusLabel[st]}
