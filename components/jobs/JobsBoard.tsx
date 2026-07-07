@@ -3,7 +3,9 @@ import { useOptimistic, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   DndContext,
-  PointerSensor,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -44,8 +46,14 @@ export function JobsBoard({
     jobs,
     (state: Job[], p: Patch) => state.map(j => (j.id === p.id ? { ...j, ...p } : j))
   );
-  // 5px activation distance so a tap still fires the card's onClick (opens drawer).
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  // Mouse: 5px so click still opens the drawer. Touch: long-press (200ms) so a normal
+  // swipe scrolls the column instead of dragging the card. Keyboard: Enter picks up,
+  // arrows move, Enter drops (dnd-kit default bindings).
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(KeyboardSensor)
+  );
   const grouped = groupJobsByStatus(filterJobs(optimistic, q));
 
   useJobsRealtime();

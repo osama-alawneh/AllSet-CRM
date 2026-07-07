@@ -38,7 +38,14 @@ export function LeadCard({
       }}
       {...attributes}
     >
-      <span className="addr">{lead.customer_name}</span>
+      <button
+        type="button"
+        className="cardlink addr"
+        onClick={e => { e.stopPropagation(); onOpen(lead.id); }}
+        onPointerDown={e => e.stopPropagation()} /* don't start a drag from the button */
+      >
+        {lead.customer_name}
+      </button>
       <span className="meta">
         {lead.address ?? '—'} · {lead.phone ?? '—'}
         <br />

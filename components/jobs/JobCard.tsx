@@ -41,7 +41,14 @@ export function JobCard({
       }}
       {...attributes}
     >
-      <span className="addr">{job.customer_name}</span>
+      <button
+        type="button"
+        className="cardlink addr"
+        onClick={e => { e.stopPropagation(); onOpen(job.id); }}
+        onPointerDown={e => e.stopPropagation()} /* don't start a drag from the button */
+      >
+        {job.customer_name}
+      </button>
       <span className="meta">
         {job.address ?? '—'}
         <br />

@@ -168,6 +168,8 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .card2 .addr { font-size: 12px; font-weight: 700; display: block; margin-bottom: 3px; }
 .card2 .meta { font-size: 10px; color: var(--muted); line-height: 1.5; }
 .card2 .val { font-size: 11px; font-weight: 700; color: var(--won); margin-top: 6px; }
+/* Card titles are real buttons so keyboard users can open the drawer; visually inherit. */
+.cardlink { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
 
 /* tables */
 .tbl { width: 100%; border-collapse: collapse; font-size: 12px; } .tblwrap { overflow-x: auto; }
@@ -237,8 +239,8 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .userform { display: grid; grid-template-columns: 1fr 1fr 1fr auto auto; gap: 8px; }
 @media (max-width: 900px) { .userform { grid-template-columns: 1fr; } }
 
-/* Plan 3: dnd-kit pointer dragging on Kanban cards */
-.kanban .card2 { touch-action: none; }
+/* Plan 3: allow touch-scroll of the column; long-press (TouchSensor delay) still wins for drags */
+.kanban .card2 { touch-action: manipulation; }
 
 /* login (Plan 7) */
 .login { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 20px; }
