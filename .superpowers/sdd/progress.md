@@ -162,3 +162,4 @@ Task 5 + FINAL: complete (battery green [pgTAP 80/80, unit 106/106, lint, build]
 
 HARDENING WAVE (feat/hardening, post-phase-1.5):
 Hardening: complete (commit 18262fa merged, migration 0015 revokes table-level leads insert/update, re-grants all columns except quote_value+id; pgTAP 84/84 [+4 guards: views have no money columns, rep 42501 on quote_value write], 106/106 unit, lint+build clean, review approved. Minor backlog: same-file positive-control lives_ok in rls_money.sql; status grant kept for leads_map.sql legacy test)
+Polish wave: complete (commits 4661115..ee98b52 merged — useJobsRealtime extraction, th scope+aria-label, conditional empty states, customers new=1 cleaner gate, invoices isNew&&!selected; 106/106, lint+build clean, review approved, no findings)
