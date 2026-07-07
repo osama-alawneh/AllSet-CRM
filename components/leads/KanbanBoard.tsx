@@ -3,7 +3,9 @@ import { useOptimistic, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   DndContext,
-  PointerSensor,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -38,8 +40,14 @@ export function KanbanBoard({
     (state: Lead[], move: { id: number; status: LeadStatus }) =>
       state.map(l => (l.id === move.id ? { ...l, status: move.status } : l))
   );
-  // 5px activation distance so a tap still fires the card's onClick (opens drawer).
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  // Mouse: 5px so click still opens the drawer. Touch: long-press (200ms) so a normal
+  // swipe scrolls the column instead of dragging the card. Keyboard: Enter picks up,
+  // arrows move, Enter drops (dnd-kit default bindings).
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(KeyboardSensor)
+  );
   const grouped = groupByStatus(filterLeads(optimistic, q));
 
   const onDragEnd = (e: DragEndEvent) => {

@@ -33,6 +33,7 @@ export function MapboxMap({
         [MAP_BOUNDS.maxLng, MAP_BOUNDS.maxLat],
       ],
       fitBoundsOptions: { padding: 30 },
+      cooperativeGestures: true,
     });
     mapRef.current = map;
     map.on('click', e => {

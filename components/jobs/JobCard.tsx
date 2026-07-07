@@ -30,18 +30,35 @@ export function JobCard({
       ref={setNodeRef}
       style={style}
       className={`card2${isDragging ? ' dragging' : ''}`}
-      onPointerDown={e => {
-        downPos.current = { x: e.clientX, y: e.clientY };
-        listeners?.onPointerDown?.(e);
-      }}
       onClick={e => {
         const d = downPos.current;
         if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 5) return;
         onOpen(job.id);
       }}
       {...attributes}
+      {...listeners} /* sensor activators: onMouseDown, onTouchStart, onKeyDown */
+      /* Own handler placed AFTER the listeners spread so it wins if a sensor ever
+         claims onPointerDown again; pointerdown fires for both mouse and touch, so
+         one handler covers travel tracking for both. No forwarding — each sensor
+         receives its own activator event via the spread above. */
+      onPointerDown={e => {
+        downPos.current = { x: e.clientX, y: e.clientY };
+      }}
     >
-      <span className="addr">{job.customer_name}</span>
+      <button
+        type="button"
+        className="cardlink addr"
+        onClick={e => { e.stopPropagation(); onOpen(job.id); }}
+        /* Stop sensor-activator event types (mousedown, touchstart, keydown) from
+           reaching the root's spread listeners (react synthetic events propagate per
+           event type). pointerdown deliberately bubbles so the root's downPos travel
+           tracking stays fresh. */
+        onMouseDown={e => e.stopPropagation()}
+        onTouchStart={e => e.stopPropagation()}
+        onKeyDown={e => e.stopPropagation()}
+      >
+        {job.customer_name}
+      </button>
       <span className="meta">
         {job.address ?? '—'}
         <br />
@@ -55,11 +72,18 @@ export function JobCard({
             className="claim"
             disabled={pending}
             onClick={e => { e.stopPropagation(); onClaim(job.id); }}
+            /* keep Enter/Space claiming instead of triggering KeyboardSensor pick-up */
+            onKeyDown={e => e.stopPropagation()}
           >
             Claim
           </button>
         ) : job.claimed_by_name ? (
-          <button type="button" className="claim locked" onClick={e => e.stopPropagation()}>
+          <button
+            type="button"
+            className="claim locked"
+            onClick={e => e.stopPropagation()}
+            onKeyDown={e => e.stopPropagation()}
+          >
             🔒 {firstName}
           </button>
         ) : null}
