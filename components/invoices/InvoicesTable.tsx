@@ -66,7 +66,7 @@ export function InvoicesTable({ invoices }: { invoices: Invoice[] }) {
                 </tr>
               ))}
               {shown.length === 0 && (
-                <tr><td colSpan={6} className="cap" style={{ color: 'var(--muted)' }}>No invoices match.</td></tr>
+                <tr><td colSpan={6} className="cap" style={{ color: 'var(--muted)' }}>{q ? 'No invoices match.' : 'No invoices yet.'}</td></tr>
               )}
             </tbody>
           </table>

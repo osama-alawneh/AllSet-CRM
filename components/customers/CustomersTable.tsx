@@ -80,7 +80,7 @@ export function CustomersTable({ rows, admin }: { rows: CustomerRow[]; admin: bo
               {shown.length === 0 && (
                 <tr>
                   <td colSpan={admin ? 5 : 4} style={{ color: 'var(--muted)' }}>
-                    No customers match.
+                    {q ? 'No customers match.' : 'No customers yet.'}
                   </td>
                 </tr>
               )}
