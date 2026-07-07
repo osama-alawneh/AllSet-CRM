@@ -46,12 +46,10 @@ export function LeadCard({
         type="button"
         className="cardlink addr"
         onClick={e => { e.stopPropagation(); onOpen(lead.id); }}
-        /* Stop every sensor-activator event type from reaching the root's spread
-           listeners (react synthetic events propagate per event type): mousedown
-           (MouseSensor), touchstart (TouchSensor), keydown (KeyboardSensor —
-           which would also preventDefault and swallow this button's Enter/Space
-           click). pointerdown kept for the root's travel tracking. */
-        onPointerDown={e => e.stopPropagation()}
+        /* Stop sensor-activator event types (mousedown, touchstart, keydown) from
+           reaching the root's spread listeners (react synthetic events propagate per
+           event type). pointerdown deliberately bubbles so the root's downPos travel
+           tracking stays fresh. */
         onMouseDown={e => e.stopPropagation()}
         onTouchStart={e => e.stopPropagation()}
         onKeyDown={e => e.stopPropagation()}

@@ -240,7 +240,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 @media (max-width: 900px) { .userform { grid-template-columns: 1fr; } }
 
 /* Plan 3: allow touch-scroll of the column; long-press (TouchSensor delay) still wins for drags */
-.kanban .card2 { touch-action: manipulation; }
+.kanban .card2 { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
 /* login (Plan 7) */
 .login { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 20px; }
@@ -267,7 +267,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
   .mpin::after { content: ""; position: absolute; inset: -14px; }
 }
 
-/* Notch / home-indicator safe areas (inert until viewport-fit=cover ships — Wave 1). */
+/* Notch / home-indicator safe areas (requires viewport-fit=cover — shipped in Wave 1). */
 @media (max-width: 860px) {
   .app {
     padding-left: calc(12px + env(safe-area-inset-left));
