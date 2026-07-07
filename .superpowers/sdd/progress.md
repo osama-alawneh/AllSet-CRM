@@ -159,3 +159,5 @@ Task 2: complete (commit 97ba38d, grouped role-aware global search, 4-way fanout
 Task 3: complete (commit 381d32b, local filters on leads/jobs boards + invoices table; CSV full-export + drag-state integrity verified; 106/106, lint+build clean, review approved. Minor backlog: empty-state wording, kanban no-match state)
 Task 4: complete (commit 8e560f0, board/list toggle + LeadsListTable/JobsListTable + view-preserving backTo; 106/106, lint+build clean, live role checks, review approved. Minor backlog: useJobsRealtime hook extraction [plan-mandated copy], th scope=col, table captions)
 Task 5 + FINAL: complete (battery green [pgTAP 80/80, unit 106/106, lint, build], live 3-role walkthrough PASS, fable review READY TO MERGE no fixes, merged to main. Backlog: dropdown reopen after dismiss, Enter stale first-hit, buildEntityOrFilter empty-fields guard, search hits drop ?view=list, leads not searchable by customer name [plan choice], fmt/day dedup, pgTAP view-money-column guard assertion, useJobsRealtime hook, th scope/captions. PLAN 10 COMPLETE — PHASE 1.5 DONE, ALL 4 PLANS MERGED)
+
+HARDENING WAVE (feat/hardening, post-phase-1.5):
