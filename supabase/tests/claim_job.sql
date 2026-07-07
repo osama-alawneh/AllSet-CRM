@@ -1,5 +1,5 @@
 begin;
-select plan(3);
+select plan(4);
 insert into auth.users (id, instance_id, aud, role, email) values
   ('90000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t-cleaner@test.dev'),
   ('90000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t-rep-c@test.dev');
@@ -20,5 +20,9 @@ select throws_ok($$ select claim_job(900098) $$, 'P0001', 'Not authorized to cla
 set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000002"}';
 select lives_ok($$ select claim_job(900099) $$, 'first claim succeeds');
 select throws_ok($$ select claim_job(900099) $$, 'P0001', 'Job already claimed', 'second claim rejected');
+
+-- SEC-1: claim_job must not return the jobs row (price leak); it returns the claimed id.
+select function_returns('public', 'claim_job', array['bigint'], 'bigint',
+  'claim_job returns bigint (id), not the jobs row');
 select * from finish();
 rollback;
