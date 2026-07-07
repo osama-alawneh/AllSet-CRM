@@ -13,11 +13,11 @@ export function LeadsListTable({ leads, admin, onOpen }: { leads: Lead[]; admin:
     <div className="panel box">
       <input placeholder="🔍 filter leads…" style={{ width: 220, marginBottom: 12 }} value={q} onChange={e => setQ(e.target.value)} aria-label="Filter leads" />
       <div className="tblwrap">
-        <table className="tbl">
+        <table className="tbl" aria-label="Leads">
           <thead>
             <tr>
-              <th>#</th><th>Customer</th><th>Service</th><th>Status</th>
-              <th>Stories</th><th>Panes</th><th>Created</th>{admin && <th>Quote</th>}
+              <th scope="col">#</th><th scope="col">Customer</th><th scope="col">Service</th><th scope="col">Status</th>
+              <th scope="col">Stories</th><th scope="col">Panes</th><th scope="col">Created</th>{admin && <th scope="col">Quote</th>}
             </tr>
           </thead>
           <tbody>
