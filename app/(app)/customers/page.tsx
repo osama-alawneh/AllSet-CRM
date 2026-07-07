@@ -1,5 +1,6 @@
 import { getRole } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
+import { logQueryError } from '@/lib/log';
 import { CustomersTable } from '@/components/customers/CustomersTable';
 import {
   CustomerDrawer,
@@ -20,12 +21,18 @@ export default async function CustomersPage({
   const admin = role === 'admin';
   const sb = await supabaseServer();
 
-  const { data: customers } = await sb
-    .from('customers')
-    .select('id,name,phone,email,address,type,notes')
-    .order('name');
-  const { data: jobRows } = await sb.from('jobs_public').select('customer_id');
-  const { data: invRows } = admin ? await sb.from('invoices').select('customer_id') : { data: null };
+  const [customersRes, jobRowsRes, invRowsRes] = await Promise.all([
+    sb.from('customers').select('id,name,phone,email,address,type,notes').order('name'),
+    sb.from('jobs_public').select('customer_id'),
+    admin ? sb.from('invoices').select('customer_id') : Promise.resolve({ data: null, error: null }),
+  ]);
+  logQueryError('customers.page.customers', customersRes.error);
+  logQueryError('customers.page.jobs', jobRowsRes.error);
+  logQueryError('customers.page.invoices', invRowsRes.error);
+
+  const customers = customersRes.data;
+  const jobRows = jobRowsRes.data;
+  const invRows = invRowsRes.data;
 
   const jobCount = new Map<number, number>();
   for (const j of jobRows ?? []) jobCount.set(j.customer_id, (jobCount.get(j.customer_id) ?? 0) + 1);
@@ -49,24 +56,27 @@ export default async function CustomersPage({
   if (cid && Number.isFinite(cid)) {
     drawerCustomer = rows.find(r => r.id === cid) ?? null;
     if (drawerCustomer) {
-      const { data: js } = await sb
+      const { data: js, error: jsErr } = await sb
         .from('jobs_public')
         .select('id,service,status,scheduled_date')
         .eq('customer_id', cid)
         .order('id', { ascending: false });
+      logQueryError('customers.page.drawerJobs', jsErr);
       drawerJobs = js ?? [];
-      const { data: ls } = await sb
+      const { data: ls, error: lsErr } = await sb
         .from('leads_public')
         .select('id,service,status')
         .eq('customer_id', cid)
         .order('id', { ascending: false });
+      logQueryError('customers.page.drawerLeads', lsErr);
       drawerLeads = ls ?? [];
       if (admin) {
-        const { data: is } = await sb
+        const { data: is, error: isErr } = await sb
           .from('invoices')
           .select('id,number,issue_date,status,invoice_items(qty,unit_price)')
           .eq('customer_id', cid)
           .order('id', { ascending: false });
+        logQueryError('customers.page.drawerInvoices', isErr);
         drawerInvoices = (is ?? []).map(i => ({
           id: i.id,
           number: i.number,
