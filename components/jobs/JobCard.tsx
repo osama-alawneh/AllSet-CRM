@@ -16,7 +16,7 @@ export function JobCard({
   onOpen: (id: number) => void;
   onClaim: (id: number) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } = useDraggable({
     id: String(job.id),
     disabled: !draggable,
   });
@@ -24,6 +24,13 @@ export function JobCard({
   // dnd-kit fires a native click on mouseup after a completed drag; suppress onOpen when
   // pointer travel between down and click exceeds the 5px threshold (LeadCard pattern).
   const downPos = useRef<{ x: number; y: number } | null>(null);
+  // Root keeps only the mouse/touch activators (drag-from-anywhere-on-the-card stays
+  // intact); onKeyDown is deliberately excluded here and lives only on the .draghandle
+  // button below (via the full `listeners` spread there) so Enter/Space on the title,
+  // Claim, or locked buttons can never be misread as a keyboard drag pick-up.
+  const pointerListeners: typeof listeners = listeners
+    ? Object.fromEntries(Object.entries(listeners).filter(([key]) => key !== 'onKeyDown'))
+    : listeners;
   const firstName = job.claimed_by_name ? job.claimed_by_name.split(' ')[0] : '';
   return (
     <div
@@ -35,8 +42,7 @@ export function JobCard({
         if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 5) return;
         onOpen(job.id);
       }}
-      {...attributes}
-      {...listeners} /* sensor activators: onMouseDown, onTouchStart, onKeyDown */
+      {...pointerListeners} /* sensor activators: onMouseDown, onTouchStart (no onKeyDown — see above) */
       /* Own handler placed AFTER the listeners spread so it wins if a sensor ever
          claims onPointerDown again; pointerdown fires for both mouse and touch, so
          one handler covers travel tracking for both. No forwarding — each sensor
@@ -47,15 +53,25 @@ export function JobCard({
     >
       <button
         type="button"
+        className="draghandle"
+        ref={setActivatorNodeRef}
+        {...attributes}
+        {...listeners}
+        aria-label="Move job"
+      >
+        ⠿
+      </button>
+      <button
+        type="button"
         className="cardlink addr"
         onClick={e => { e.stopPropagation(); onOpen(job.id); }}
-        /* Stop sensor-activator event types (mousedown, touchstart, keydown) from
-           reaching the root's spread listeners (react synthetic events propagate per
-           event type). pointerdown deliberately bubbles so the root's downPos travel
-           tracking stays fresh. */
+        /* Title stays a mouse/touch drag dead zone (Step 2 option: keep these stops
+           rather than duplicating the downPos travel check) — a drag can never start
+           here, so a plain click always reaches onOpen. onKeyDown stop removed: the
+           root no longer carries a keydown listener (see above), so there is nothing
+           left to shield Enter/Space from. */
         onMouseDown={e => e.stopPropagation()}
         onTouchStart={e => e.stopPropagation()}
-        onKeyDown={e => e.stopPropagation()}
       >
         {job.customer_name}
       </button>
@@ -72,8 +88,6 @@ export function JobCard({
             className="claim"
             disabled={pending}
             onClick={e => { e.stopPropagation(); onClaim(job.id); }}
-            /* keep Enter/Space claiming instead of triggering KeyboardSensor pick-up */
-            onKeyDown={e => e.stopPropagation()}
           >
             Claim
           </button>
@@ -82,7 +96,6 @@ export function JobCard({
             type="button"
             className="claim locked"
             onClick={e => e.stopPropagation()}
-            onKeyDown={e => e.stopPropagation()}
           >
             🔒 {firstName}
           </button>

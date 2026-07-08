@@ -13,7 +13,7 @@ export function LeadCard({
   draggable: boolean;
   onOpen: (id: number) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } = useDraggable({
     id: String(lead.id),
     disabled: !draggable,
   });
@@ -22,6 +22,13 @@ export function LeadCard({
   // distance only gates when the drag *starts*, not the trailing click). Suppress
   // onOpen when pointer travel between down and click exceeds a small threshold.
   const downPos = useRef<{ x: number; y: number } | null>(null);
+  // Root keeps only the mouse/touch activators (drag-from-anywhere-on-the-card stays
+  // intact); onKeyDown is deliberately excluded here and lives only on the .draghandle
+  // button below (via the full `listeners` spread there) so Enter/Space on the title
+  // button can never be misread as a keyboard drag pick-up.
+  const pointerListeners: typeof listeners = listeners
+    ? Object.fromEntries(Object.entries(listeners).filter(([key]) => key !== 'onKeyDown'))
+    : listeners;
   return (
     <div
       ref={setNodeRef}
@@ -32,8 +39,7 @@ export function LeadCard({
         if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 5) return;
         onOpen(lead.id);
       }}
-      {...attributes}
-      {...listeners} /* sensor activators: onMouseDown, onTouchStart, onKeyDown */
+      {...pointerListeners} /* sensor activators: onMouseDown, onTouchStart (no onKeyDown — see above) */
       /* Own handler placed AFTER the listeners spread so it wins if a sensor ever
          claims onPointerDown again; pointerdown fires for both mouse and touch, so
          one handler covers travel tracking for both. No forwarding — each sensor
@@ -44,15 +50,25 @@ export function LeadCard({
     >
       <button
         type="button"
+        className="draghandle"
+        ref={setActivatorNodeRef}
+        {...attributes}
+        {...listeners}
+        aria-label="Move card"
+      >
+        ⠿
+      </button>
+      <button
+        type="button"
         className="cardlink addr"
         onClick={e => { e.stopPropagation(); onOpen(lead.id); }}
-        /* Stop sensor-activator event types (mousedown, touchstart, keydown) from
-           reaching the root's spread listeners (react synthetic events propagate per
-           event type). pointerdown deliberately bubbles so the root's downPos travel
-           tracking stays fresh. */
+        /* Title stays a mouse/touch drag dead zone (Step 2 option: keep these stops
+           rather than duplicating the downPos travel check) — a drag can never start
+           here, so a plain click always reaches onOpen. onKeyDown stop removed: the
+           root no longer carries a keydown listener (see above), so there is nothing
+           left to shield Enter/Space from. */
         onMouseDown={e => e.stopPropagation()}
         onTouchStart={e => e.stopPropagation()}
-        onKeyDown={e => e.stopPropagation()}
       >
         {lead.customer_name}
       </button>

@@ -174,6 +174,10 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .card2 .val { font-size: 11px; font-weight: 700; color: var(--won); margin-top: 6px; }
 /* Card titles are real buttons so keyboard users can open the drawer; visually inherit. */
 .cardlink { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+/* Dedicated drag activator (Task 7): keeps the card root free of a nested-widget
+   ARIA violation — the handle carries the draggable role/keyboard interaction. */
+.draghandle { background: none; border: 0; padding: 2px 6px; color: var(--muted); cursor: grab; font-size: 12px; }
+.draghandle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* tables */
 .tbl { width: 100%; border-collapse: collapse; font-size: 12px; } .tblwrap { overflow-x: auto; }
