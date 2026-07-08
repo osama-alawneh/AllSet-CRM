@@ -35,6 +35,7 @@ export function MapSearch({ token, onSelect }: { token: string; onSelect: (s: Ge
       try {
         const res = await fetch(geocodeUrl(query, token), { signal: ctl.signal });
         if (!res.ok) {
+          console.error('geocode http', res.status);
           resultsForRef.current = query;
           setItems([]); setFailed(true); setActive(-1); setOpen(true);
           return;
