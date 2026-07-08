@@ -4,7 +4,13 @@ import { useRouter } from 'next/navigation';
 import { filterCustomers, type CustomerRow } from '@/lib/customers';
 import { toCSV, downloadCSV, customersCsvTable } from '@/lib/csv';
 
-export function CustomersTable({ rows, admin }: { rows: CustomerRow[]; admin: boolean }) {
+export function CustomersTable({
+  rows, admin, canCreate,
+}: {
+  rows: CustomerRow[];
+  admin: boolean;
+  canCreate: boolean;
+}) {
   const [q, setQ] = useState('');
   const router = useRouter();
   const shown = filterCustomers(rows, q);
@@ -29,9 +35,11 @@ export function CustomersTable({ rows, admin }: { rows: CustomerRow[]; admin: bo
           >
             ⬇ Export CSV
           </button>
-          <button className="btn" onClick={() => router.push('/customers?new=1', { scroll: false })}>
-            + New customer
-          </button>
+          {canCreate && (
+            <button className="btn" onClick={() => router.push('/customers?new=1', { scroll: false })}>
+              + New customer
+            </button>
+          )}
         </div>
       </div>
       <div className="panel box">

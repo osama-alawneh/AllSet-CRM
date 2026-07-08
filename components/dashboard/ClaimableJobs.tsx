@@ -29,7 +29,7 @@ export function ClaimableJobs({ jobs }: { jobs: ClaimableJob[] }) {
   }
   return (
     <div className="rowlist">
-      {error && <p style={{ color: 'var(--lost)', fontSize: 12 }}>{error}</p>}
+      {error && <p className="form-err" role="alert">{error}</p>}
       {jobs.map(j => (
         <div className="lrow" key={j.id}>
           <div className="pin-sq" style={{ background: 'var(--sched)' }} />

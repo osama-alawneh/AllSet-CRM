@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getRole, guardDecision, getSession } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
@@ -14,12 +15,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await getSession();
   const sb = await supabaseServer();
   const { data: profile } = await sb.from('profiles').select('full_name').eq('id', user!.id).single();
+  // Same cookie RootLayout reads for the <html data-theme> attribute — keeps ThemeToggle's
+  // initial render in sync with the server-rendered theme (no client-side sniffing/flash).
+  const theme = (await cookies()).get('theme')?.value === 'light' ? 'light' : 'dark';
   return (
     <div className="app">
       <a href="#main" className="skip-link">Skip to content</a>
       <Sidebar role={role} name={profile?.full_name ?? 'Unknown'} />
       <main className="main" id="main">
-        <Topbar search={<GlobalSearch role={role} />} nav={<Sidebar role={role} name={profile?.full_name ?? 'Unknown'} />} />
+        <Topbar
+          search={<GlobalSearch role={role} />}
+          nav={<Sidebar role={role} name={profile?.full_name ?? 'Unknown'} />}
+          theme={theme}
+        />
         {children}
       </main>
     </div>

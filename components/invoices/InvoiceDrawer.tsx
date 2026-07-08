@@ -197,7 +197,7 @@ export function InvoiceDrawer({
         </div>
       </div>
 
-      {error && <p style={{ color: 'var(--lost)', fontSize: 12 }}>{error}</p>}
+      {error && <p className="form-err" role="alert">{error}</p>}
 
       <div className="acts">
         {!editing && (

@@ -36,10 +36,10 @@ export function UsersPanel({ users, meId }: { users: PanelUser[]; meId: string }
         <h3>Create user</h3>
         <p className="cap">Login is active immediately (email pre-confirmed).</p>
         <form ref={formRef} action={submit} className="userform">
-          <input name="full_name" placeholder="Full name" required />
-          <input name="email" type="email" placeholder="email@company.com" required />
-          <input name="password" type="password" placeholder="Password (min 8)" required minLength={8} />
-          <select name="role" defaultValue="rep">
+          <input name="full_name" placeholder="Full name" aria-label="Full name" required />
+          <input name="email" type="email" placeholder="email@company.com" aria-label="Email" required />
+          <input name="password" type="password" placeholder="Password (min 8)" aria-label="Password" required minLength={8} />
+          <select name="role" defaultValue="rep" aria-label="Role">
             {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
           <button className="btn" type="submit" disabled={pending}>{pending ? '…' : '+ Create'}</button>

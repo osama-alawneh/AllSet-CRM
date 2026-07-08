@@ -4,7 +4,13 @@ import { titleFor } from '@/lib/nav';
 import { ThemeToggle } from './ThemeToggle';
 import { MobileNav } from './MobileNav';
 
-export function Topbar({ search, nav }: { search?: React.ReactNode; nav?: React.ReactNode }) {
+export function Topbar({
+  search, nav, theme,
+}: {
+  search?: React.ReactNode;
+  nav?: React.ReactNode;
+  theme: 'light' | 'dark';
+}) {
   const pathname = usePathname();
   const [title, ref] = titleFor(pathname);
   return (
@@ -16,7 +22,7 @@ export function Topbar({ search, nav }: { search?: React.ReactNode; nav?: React.
       </div>
       <div className="ctrls">
         {search}
-        <ThemeToggle />
+        <ThemeToggle initial={theme} />
       </div>
     </div>
   );

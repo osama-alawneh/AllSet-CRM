@@ -93,7 +93,7 @@ export default async function CustomersPage({
 
   return (
     <>
-      <CustomersTable rows={rows} admin={admin} />
+      <CustomersTable rows={rows} admin={admin} canCreate={role !== 'cleaner'} />
       {(isNew || drawerCustomer) && role && (
         <CustomerDrawer
           key={drawerCustomer?.id ?? 'new'}

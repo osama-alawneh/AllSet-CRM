@@ -33,13 +33,18 @@ export function PinPopover({
   };
 
   return (
-    <div className="pop box" style={{ left: `${xPct}%`, top: `${yPct}%` }}>
+    <div
+      className="pop box"
+      style={{ left: `min(max(${xPct}%, 120px), calc(100% - 120px))`, top: `${yPct}%` }}
+      onKeyDown={e => { if (e.key === 'Escape') onCancel(); }}
+    >
       <h4>New pin</h4>
       <p>{lat.toFixed(4)}°, {lng.toFixed(4)}°</p>
       <input
         placeholder="House / address"
         value={addr}
         onChange={e => setAddr(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Escape') onCancel(); }}
         autoFocus
       />
       <div className="statuspick">
@@ -58,7 +63,7 @@ export function PinPopover({
           );
         })}
       </div>
-      {error && <p style={{ color: 'var(--lost)' }}>{error}</p>}
+      {error && <p className="form-err" role="alert">{error}</p>}
       <div className="row">
         <button type="button" className="go" disabled={pending} onClick={create}>
           {pending ? 'Creating…' : 'Create lead'}

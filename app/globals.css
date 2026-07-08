@@ -110,9 +110,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .btn.sec { background: transparent; color: var(--ink); border-color: var(--line); }
 .btn.sec:hover { border-color: var(--ink); }
 
-.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-@media (max-width: 1080px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 520px) { .kpis { grid-template-columns: 1fr; } }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
 .kpi { padding: 15px; position: relative; }
 .kpi .tag { position: absolute; top: 9px; right: 11px; font-size: 9px; color: var(--accent); }
 .kpi .val { font-size: 26px; font-weight: 700; letter-spacing: -.03em; margin-top: 12px; font-variant-numeric: tabular-nums; }
@@ -232,6 +230,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .items td { padding: 4px 6px; border-top: 1px dashed var(--line); }
 .items input { width: 100%; } .items .num { width: 64px; text-align: right; }
 .money-hidden { letter-spacing: 2px; }
+.form-err { color: var(--lost); font-size: 12px; }
 
 /* print (Plan 5 reuses) */
 #printArea { display: none; }

@@ -7,6 +7,7 @@ import {
 } from '@/lib/jobs';
 import type { Role } from '@/lib/auth';
 import { blankMoneyToZero } from '@/lib/forms';
+import { rowNav } from '@/lib/rowNav';
 import { claimJob, setJobStatus, createJob, updateJob, deleteJob } from '@/app/(app)/jobs/actions';
 import { createInvoiceFromJob } from '@/app/(app)/invoices/actions';
 
@@ -111,7 +112,7 @@ export function JobDrawer({
         <>
           <div className="sec">
             <span className="lbl">Customer</span>
-            <div className="minirow" onClick={() => router.push(`/customers?c=${job.customer_id}`, { scroll: false })}>
+            <div className="minirow" {...rowNav(router, `/customers?c=${job.customer_id}`)}>
               <span><b>{job.customer_name}</b> · {job.address ?? '—'}</span>
               <span>→</span>
             </div>
@@ -152,7 +153,7 @@ export function JobDrawer({
                 )}
                 <span className="k">Lead note</span><span className="v">{leadDetail.note ?? '—'}</span>
               </div>
-              <div className="minirow" onClick={() => router.push(`/leads?l=${job.lead_id}`, { scroll: false })}>
+              <div className="minirow" {...rowNav(router, `/leads?l=${job.lead_id}`)}>
                 <span>Open origin lead</span><span>→</span>
               </div>
             </div>
@@ -178,7 +179,7 @@ export function JobDrawer({
             </div>
           </div>
 
-          {error && <p style={{ color: 'var(--lost)', fontSize: 12 }}>{error}</p>}
+          {error && <p className="form-err" role="alert">{error}</p>}
           <div className="acts">
             {canClaim && (
               <button className="btn-p" type="button" disabled={pending} onClick={claim}>Claim job</button>
@@ -230,7 +231,7 @@ export function JobDrawer({
             <span className="lbl">Description (what exactly to do)</span>
             <textarea name="description" defaultValue={job?.description ?? ''} placeholder="e.g. 22 panes in+out, screens, hard-water treatment on back slider" style={{ width: '100%', minHeight: 70 }} />
           </div>
-          {error && <p style={{ color: 'var(--lost)', fontSize: 12 }}>{error}</p>}
+          {error && <p className="form-err" role="alert">{error}</p>}
           <div className="acts">
             <button className="btn-p" type="submit" disabled={pending}>
               {pending ? 'Saving…' : isNew ? 'Create job' : 'Save'}

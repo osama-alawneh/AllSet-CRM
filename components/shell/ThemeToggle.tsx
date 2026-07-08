@@ -1,10 +1,8 @@
 'use client';
 import { useState } from 'react';
 
-export function ThemeToggle() {
-  const [dark, setDark] = useState(
-    () => typeof document !== 'undefined' && document.documentElement.dataset.theme === 'dark'
-  );
+export function ThemeToggle({ initial }: { initial: 'light' | 'dark' }) {
+  const [dark, setDark] = useState(initial === 'dark');
   const toggle = () => {
     const next = dark ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;

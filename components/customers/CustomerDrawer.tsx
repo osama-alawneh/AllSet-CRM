@@ -5,6 +5,7 @@ import { Drawer } from '@/components/ui/Drawer';
 import { Tabs } from '@/components/ui/Tabs';
 import { saveCustomer, createCustomer } from '@/app/(app)/customers/actions';
 import type { Role } from '@/lib/auth';
+import { rowNav } from '@/lib/rowNav';
 
 const JOB_COLORS: Record<string, string> = {
   unclaimed: 'var(--new)', claimed: 'var(--sched)', in_progress: 'var(--prog)', done: 'var(--done)',
@@ -43,18 +44,6 @@ export function CustomerDrawer({
   const [editing, setEditing] = useState(isNew);
   const canEdit = role !== 'cleaner';
   const close = () => router.push('/customers', { scroll: false });
-  // Keyboard-accessible row nav, mirroring the row pattern in CustomersTable/InvoicesTable.
-  const rowNav = (href: string) => ({
-    role: 'button' as const,
-    tabIndex: 0,
-    onClick: () => router.push(href, { scroll: false }),
-    onKeyDown: (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        router.push(href, { scroll: false });
-      }
-    },
-  });
 
   if (!isNew && !customer) return null;
   const c = customer;
@@ -74,7 +63,7 @@ export function CustomerDrawer({
       label: `Jobs (${jobs.length})`,
       content: jobs.length ? (
         jobs.map(j => (
-          <div className="minirow" key={j.id} {...rowNav(`/jobs?j=${j.id}`)}>
+          <div className="minirow" key={j.id} {...rowNav(router, `/jobs?j=${j.id}`)}>
             <span>{j.service ?? 'Job'} · {j.scheduled_date ?? 'TBD'}</span>
             <span className="badge" style={{ background: 'var(--chip)', color: JOB_COLORS[j.status] }}>
               {JOB_NAMES[j.status] ?? j.status}
@@ -91,7 +80,7 @@ export function CustomerDrawer({
           label: `Invoices (${invoices.length})`,
           content: invoices.length ? (
             invoices.map(i => (
-              <div className="minirow" key={i.id} {...rowNav(`/invoices?i=${i.id}`)}>
+              <div className="minirow" key={i.id} {...rowNav(router, `/invoices?i=${i.id}`)}>
                 <span>{i.number} · {i.issue_date}</span>
                 <span>
                   {fmt(i.total)}{' '}
@@ -111,7 +100,7 @@ export function CustomerDrawer({
       label: `Leads (${leads.length})`,
       content: leads.length ? (
         leads.map(l => (
-          <div className="minirow" key={l.id} {...rowNav(`/leads?l=${l.id}`)}>
+          <div className="minirow" key={l.id} {...rowNav(router, `/leads?l=${l.id}`)}>
             <span>{l.service ?? 'Lead'}</span>
             <span className="badge" style={{ background: 'var(--chip)', color: LEAD_COLORS[l.status] }}>
               {LEAD_NAMES[l.status] ?? l.status}

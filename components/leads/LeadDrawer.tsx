@@ -6,6 +6,7 @@ import {
   LEAD_STATUSES, statusLabel, statusColor, type Lead, type LeadStatus,
 } from '@/lib/leads';
 import { blankMoneyToZero } from '@/lib/forms';
+import { rowNav } from '@/lib/rowNav';
 import { setLeadStatus, createLead, updateLead, deleteLead } from '@/app/(app)/leads/actions';
 
 const fmt = (n: number) => '$' + Number(n || 0).toLocaleString();
@@ -85,7 +86,7 @@ export function LeadDrawer({
         <>
           <div className="sec">
             <span className="lbl">Customer</span>
-            <div className="minirow" onClick={() => router.push(`/customers?c=${lead.customer_id}`, { scroll: false })}>
+            <div className="minirow" {...rowNav(router, `/customers?c=${lead.customer_id}`)}>
               <span><b>{lead.customer_name}</b> · {lead.address ?? '—'}</span>
               <span>→</span>
             </div>
@@ -135,7 +136,7 @@ export function LeadDrawer({
             </div>
           )}
 
-          {error && <p style={{ color: 'var(--lost)', fontSize: 12 }}>{error}</p>}
+          {error && <p className="form-err" role="alert">{error}</p>}
           <div className="acts">
             {canEdit && (
               <button className="btn-p" type="button" disabled={pending} onClick={() => { setError(null); setEditing(true); }}>
@@ -198,7 +199,7 @@ export function LeadDrawer({
             <span className="lbl">Internal note</span>
             <textarea name="note" defaultValue={lead?.note ?? ''} placeholder="gate code, best call time…" style={{ width: '100%', minHeight: 50 }} />
           </div>
-          {error && <p style={{ color: 'var(--lost)', fontSize: 12 }}>{error}</p>}
+          {error && <p className="form-err" role="alert">{error}</p>}
           <div className="acts">
             <button className="btn-p" type="submit" disabled={pending}>
               {pending ? 'Saving…' : isNew ? 'Create lead' : 'Save'}
