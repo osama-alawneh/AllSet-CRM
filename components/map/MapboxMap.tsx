@@ -7,11 +7,16 @@ import { pinColor } from '@/lib/mapPins';
 import type { MapImplProps } from './SchematicMap';
 
 export function MapboxMap({
-  pins, canCreate, overlay, onMapClick, onPinClick, token, height, interactive = true,
-}: MapImplProps & { token: string; interactive?: boolean }) {
+  pins, canCreate, overlay, onMapClick, onPinClick, token, height, interactive = true, flyTo = null,
+}: MapImplProps & {
+  token: string;
+  interactive?: boolean;
+  flyTo?: { lat: number; lng: number; seq: number } | null;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const searchMarkerRef = useRef<mapboxgl.Marker | null>(null);
   // Keep the latest callbacks reachable from the once-bound map click handler.
   // Synced in an effect (not during render) — mutating a ref's `.current` while
   // rendering trips the `react-hooks/refs` lint rule.
@@ -38,6 +43,8 @@ export function MapboxMap({
     });
     mapRef.current = map;
     map.on('click', e => {
+      searchMarkerRef.current?.remove();
+      searchMarkerRef.current = null;
       if (!canCreateRef.current) return;
       const p = map.project(e.lngLat);
       const rect = containerRef.current!.getBoundingClientRect();
@@ -46,6 +53,8 @@ export function MapboxMap({
       clickRef.current(e.lngLat.lat, e.lngLat.lng, xPct, yPct);
     });
     return () => {
+      searchMarkerRef.current?.remove();
+      searchMarkerRef.current = null;
       map.remove();
       mapRef.current = null;
     };
@@ -78,6 +87,19 @@ export function MapboxMap({
       markersRef.current.push(marker);
     }
   }, [pins, onPinClick]);
+
+  // Fly to a searched address and drop a temporary highlight marker. `seq` changes
+  // on every selection, so re-picking the same address still re-flies. The marker
+  // clears on the next selection or any map click.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !flyTo) return;
+    map.flyTo({ center: [flyTo.lng, flyTo.lat], zoom: 16 });
+    searchMarkerRef.current?.remove();
+    searchMarkerRef.current = new mapboxgl.Marker({ color: '#f5a623' })
+      .setLngLat([flyTo.lng, flyTo.lat])
+      .addTo(map);
+  }, [flyTo]);
 
   return (
     <div

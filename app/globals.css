@@ -164,6 +164,25 @@ button.mpin:focus-visible { outline: 2px solid var(--accent); outline-offset: 2p
 
 .legend { display: flex; gap: 16px; margin-top: 12px; font-size: 11px; color: var(--muted); flex-wrap: wrap; }
 .legend span { display: flex; align-items: center; gap: 6px; } .lg { width: 9px; height: 9px; border-radius: 2px; transform: rotate(45deg); }
+
+/* Map toolbar: address search combobox + layer toggle chips */
+.searchbox { position: relative; flex: 1 1 220px; max-width: 340px; }
+.searchbox input { width: 100%; min-height: 44px; font-size: 16px; padding: 8px 12px;
+  border: 1.5px solid var(--line); border-radius: 4px; background: var(--card); color: inherit; }
+.searchbox-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 30;
+  margin: 0; padding: 4px; list-style: none; background: var(--card);
+  border: 1.5px solid var(--line); border-radius: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.searchbox-list li { padding: 12px; min-height: 44px; border-radius: 3px; cursor: pointer;
+  font-size: 13px; display: flex; align-items: center; }
+.searchbox-list li.active, .searchbox-list li:hover { background: var(--line); }
+.searchbox-list li.empty { color: var(--muted); cursor: default; }
+.searchbox-list li.empty:hover { background: transparent; }
+.layer-toggles { display: flex; gap: 8px; }
+.chip { min-height: 44px; padding: 6px 12px; font-size: 12px; border-radius: 999px;
+  border: 1.5px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+.chip[aria-pressed="true"] { color: var(--ink); border-color: var(--ink); }
+[data-theme="dark"] .chip[aria-pressed="true"] { color: inherit; border-color: var(--muted); }
+
 .pop { position: absolute; z-index: 20; width: 230px; padding: 13px; transform: translate(-50%, 12px); }
 .pop h4 { margin: 0 0 3px; font-size: 12px; text-transform: uppercase; } .pop p { margin: 0 0 10px; font-size: 10px; color: var(--muted); }
 .pop input { width: 100%; margin-bottom: 8px; }
