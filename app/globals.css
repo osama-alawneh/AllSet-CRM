@@ -212,6 +212,8 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; padding: 8px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: -1.5px; }
 .tabs button.on { color: var(--ink); border-bottom-color: var(--accent); }
 .tabpane { display: none; margin-top: 14px; } .tabpane.on { display: block; }
+/* Native hidden must beat .tabpane.on (author rules override the UA [hidden] rule). */
+.tabpane[hidden] { display: none; }
 .minirow { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px dashed var(--line); font-size: 11px; cursor: pointer; }
 .minirow:hover { color: var(--accent); }
 .timeline { display: flex; flex-direction: column; gap: 10px; font-size: 11px; }
