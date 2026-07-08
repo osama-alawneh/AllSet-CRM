@@ -4,9 +4,11 @@
 
 > **SUPERSEDES** `2026-07-07-wave3-mobilenav-a11y-polish.md` and `2026-07-07-map-search-jobs-pins.md`. Those two plans collide on `SchematicMap.tsx`, `MapboxMap.tsx`, `MiniMap.tsx`, and `globals.css`; this document merges them with the collisions resolved (Wave 3's pin-button a11y fix is baked into the map rewrite tasks instead of applied before/after them).
 
-**Goal:** Hamburger mobile nav + dialog/tabs/combobox ARIA + route loading/error states + kanban drag handles (Wave 3), then job pins / address search / layer toggles on the map (map feature), then review-rider sweep — as one sequential wave.
+**Goal:** Hamburger mobile nav + dialog/tabs/combobox ARIA + route loading/error states + kanban drag handles (Wave 3), then job pins / address search / layer toggles on the map (map feature), then review-rider sweep, then CRM-owner quick wins and medium changes (Tiers 1–2 of the 2026-07-08 owner request list) — as one sequential wave.
 
-**Architecture:** Phase A (Tasks 1–7) is Wave 3's shell/a11y work, none of which touches map files. Phase B (Tasks 8–12) is the map feature; its whole-file rewrites of `SchematicMap`/`MapView`/`Legend`/`MiniMap` now ship pins as real `<button>`s (Wave 3 finding UI-12) and the schematic street/block chrome (UI-9), so nothing is reverted. Phase C (Tasks 13–14) is the riders sweep and full verification. Task 1 must precede Task 2 (mobile nav reuses the upgraded Drawer). Tasks within a phase that both append to `globals.css` must run sequentially, not as parallel workers.
+**Architecture:** Phase A (Tasks 1–7) is Wave 3's shell/a11y work, none of which touches map files. Phase B (Tasks 8–12) is the map feature; its whole-file rewrites of `SchematicMap`/`MapView`/`Legend`/`MiniMap` now ship pins as real `<button>`s (Wave 3 finding UI-12) and the schematic street/block chrome (UI-9), so nothing is reverted. Phase C (Tasks 13–14) is the riders sweep and mid-wave verification. Phase D (Tasks 15–18) is the owner's Tier-1 quick wins (spinners, autofill, copy button, invoice statuses, service option set, job datetime). Phase E (Tasks 19–23) is Tier 2 (customer lookup combobox, customer deactivation, lead/job soft-delete history + restore, lead rep attribution, final verification). Task 1 must precede Task 2 (mobile nav reuses the upgraded Drawer); Task 19 reuses Task 12's `.searchbox` CSS. Tasks within a phase that both append to `globals.css` must run sequentially, not as parallel workers.
+
+**Deferred (Tier 3, separate spec + brainstorm before planning):** job money split (`price` vs `cleaner_amount`), join requests + multi-owner jobs, expenses/true revenue, cleaner earnings board + leaderboard, recurring jobs, user-profile earnings totals. Owner decisions already locked 2026-07-08: waived/cancelled are two distinct invoice statuses; `cleaner_amount` typed manually per job; first claimer auto-approved as owner; co-owner cleaners may see the shared cleaner pool (but never `price`).
 
 **Tech Stack:** Next.js 16.2.10 App Router (`loading.tsx`/`error.tsx` conventions — verify in `node_modules/next/dist/docs/`), React 19, mapbox-gl (already installed), Supabase (`jobs_public` view), Vitest (node env; jsdom added in Task 13), plain CSS tokens.
 
@@ -1589,3 +1591,617 @@ git commit -m "fix(wave): post-verification polish" # only if fixes were needed
 ```
 
 - [ ] **Step 5: Out of scope (unchanged from Wave 3)** — SW skipWaiting/refresh prompt (MOB-L3), `supabase gen types`, DB tests for money-blank persistence.
+
+---
+
+## PHASE D — CRM-owner quick wins (Tier 1, requests of 2026-07-08)
+
+### Task 15: Input quick wins — no spinners, zero defaults, autofill fix, copy-number button
+
+**Files:**
+- Modify: `app/globals.css` (number-input spinner removal, `.copybtn` if needed)
+- Modify: `components/leads/LeadDrawer.tsx` (stories/panes defaults + CopyButton)
+- Modify: `components/jobs/JobDrawer.tsx` (CopyButton)
+- Modify: `components/customers/CustomerDrawer.tsx` (CopyButton)
+- Modify: `components/settings/UsersPanel.tsx` (autofill suppression)
+- Create: `components/ui/CopyButton.tsx`
+
+**Interfaces:**
+- Produces: `CopyButton({ value, label? })` client component — reusable anywhere a copy-to-clipboard affordance is needed.
+
+- [ ] **Step 1: Kill number-input spinner arrows globally (owner request #1)**
+
+Append to `app/globals.css`:
+
+```css
+/* No spinner arrows on number fields (owner request): values are typed; the
+   1-step arrows are useless for stories/panes/money and misfire on touch. */
+input[type='number'] { appearance: textfield; -moz-appearance: textfield; }
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+```
+
+- [ ] **Step 2: Stories/panes default 0 (owner request: "default value (0) (unknown)")**
+
+`LeadDrawer.tsx:182,184` — change `defaultValue={lead?.stories ?? ''}` → `defaultValue={lead?.stories ?? 0}` and `defaultValue={lead?.panes ?? ''}` → `defaultValue={lead?.panes ?? 0}`; delete the `placeholder="2"` / `placeholder="14"` attributes. Check `parseLeadForm` in `lib/leads.ts`: `0` must persist as `0` (not be coerced to null); if the parser nulls falsy values, fix it and extend `tests/unit/leads.test.ts` with a `stories: '0' → 0` assertion.
+
+- [ ] **Step 3: Create-user autofill suppression (owner request #9 — the "Osama + dummy password" the owner saw is BROWSER CREDENTIAL AUTOFILL, not code placeholders; grep confirms no such strings exist)**
+
+`UsersPanel.tsx:39-41` create form: add `autoComplete="off"` to the `<form>` element and the full_name + email inputs, and `autoComplete="new-password"` to the password input (the standards-blessed way to stop credential managers from injecting the admin's own saved login).
+
+- [ ] **Step 4: CopyButton component + wire next to Call/Text/Email (owner request #8)**
+
+`tel:` links already dial for real on phones — keep 📞 Call / 💬 Text / ✉ Email and ADD copy. Create `components/ui/CopyButton.tsx`:
+
+```tsx
+'use client';
+import { useState } from 'react';
+
+export function CopyButton({ value, label = 'Copy phone number' }: { value: string; label?: string }) {
+  const [ok, setOk] = useState(false);
+  if (!value) return null;
+  return (
+    <button
+      type="button"
+      className="copybtn"
+      aria-label={label}
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(value);
+          setOk(true);
+          setTimeout(() => setOk(false), 1500);
+        } catch {
+          // clipboard unavailable (insecure context / permission) — silent no-op beats a crash
+        }
+      }}
+    >
+      {ok ? '✓ Copied' : '⧉ Copy'}
+    </button>
+  );
+}
+```
+
+Wire `<CopyButton value={lead.phone ?? ''} />` into the quick-action rows: `LeadDrawer.tsx:93-95`, `JobDrawer.tsx:119-121`, `CustomerDrawer.tsx:141-143` (after the Email anchor; read each row's container first and match the sibling anchors' styling — if the anchors carry a shared class, add CSS `.copybtn { /* same font-size/padding as those anchors, background: none, border: 0, cursor: pointer, color: var(--accent) or the anchors' color */ }` reusing whatever the row uses; 44px min tap height per wave-2 convention).
+
+- [ ] **Step 5: Verify + commit**
+
+Gates: `npm run lint && npx tsc --noEmit && npm test` — clean.
+Manual: number inputs show no arrows (leads stories/panes, job price, invoice qty/unit_price); new-lead form shows 0/0; create-user form no longer pre-fills admin credentials (test in a browser that had them saved); Copy button copies the phone and flips to "✓ Copied".
+
+```bash
+git add app/globals.css components/ui/CopyButton.tsx components/leads/LeadDrawer.tsx components/jobs/JobDrawer.tsx components/customers/CustomerDrawer.tsx components/settings/UsersPanel.tsx lib/leads.ts tests/unit/leads.test.ts
+git commit -m "fix(ux): remove number spinners, stories/panes default 0, user-form autofill guard, copy-phone button"
+```
+
+---
+
+### Task 16: Invoice statuses `waived` + `cancelled` (two distinct statuses — owner decision 2026-07-08)
+
+**Files:**
+- Create: `supabase/migrations/0017_invoice_status_waived_cancelled.sql`
+- Modify: `lib/invoices.ts` (status list/labels/colors — read first for exact export names)
+- Modify: `tests/unit/invoices.test.ts` (status enumeration specs)
+- Check: `components/invoices/InvoiceDrawer.tsx:188` (select — if it maps over the lib status array it updates for free), `components/invoices/InvoicesTable.tsx` (badge rendering), `supabase/tests/invoices_write.sql` (whether it enumerates statuses)
+
+**Interfaces:**
+- Produces: `invoice_status` enum gains `'waived' | 'cancelled'`; `InvoiceStatus` TS type widens to match. Tier-3 expenses/true-revenue logic will later treat these as non-revenue terminal states.
+
+- [ ] **Step 1: Write the failing test**
+
+In `tests/unit/invoices.test.ts`, extend the status specs (adapt to the file's actual export names — likely a `INVOICE_STATUSES` array and label/color maps):
+
+```ts
+it('includes waived and cancelled as distinct statuses', () => {
+  expect(INVOICE_STATUSES).toContain('waived');
+  expect(INVOICE_STATUSES).toContain('cancelled');
+  expect(invoiceStatusLabel.waived).toBe('Waived');
+  expect(invoiceStatusLabel.cancelled).toBe('Cancelled');
+});
+```
+
+Run: `npm test -- tests/unit/invoices.test.ts` — FAIL.
+
+- [ ] **Step 2: Migration**
+
+Create `supabase/migrations/0017_invoice_status_waived_cancelled.sql`:
+
+```sql
+-- Owner request 2026-07-08: two DISTINCT terminal states (different logic later:
+-- waived = forgiven debt, cancelled = void). ALTER TYPE ADD VALUE is fine inside
+-- a migration as long as the new values aren't USED in this same migration.
+alter type invoice_status add value if not exists 'waived';
+alter type invoice_status add value if not exists 'cancelled';
+```
+
+Run: `npx supabase db reset` — applies clean.
+
+- [ ] **Step 3: Widen the TS side**
+
+In `lib/invoices.ts`: add `'waived' | 'cancelled'` to the `InvoiceStatus` type, append both to the status array, labels `Waived`/`Cancelled`, colors `waived: 'var(--follow)'` (amber — money intentionally forgone), `cancelled: 'var(--lost)'` (red — void). Reuse existing tokens only. If `InvoiceDrawer`/`InvoicesTable` hardcode status lists instead of importing the array, fix them to import it.
+
+- [ ] **Step 4: Verify + commit**
+
+Run: `npm test` — PASS (incl. new spec). `npm run test:db` — existing invoice pgTAP still green (update any assertion that enumerates the enum). Gates + build clean.
+Manual: InvoiceDrawer status select shows all 5, saving `waived` persists and badge renders amber.
+
+```bash
+git add supabase/migrations/0017_invoice_status_waived_cancelled.sql lib/invoices.ts tests/unit/invoices.test.ts components/invoices/
+git commit -m "feat(invoices): waived + cancelled statuses (distinct terminal states)"
+```
+
+---
+
+### Task 17: Lead/job service type option set
+
+**Files:**
+- Modify: `lib/leads.ts` (add `SERVICE_TYPES` const)
+- Modify: `components/leads/LeadDrawer.tsx` (service text input → select)
+- Modify: `components/jobs/JobDrawer.tsx` (same, for consistency — jobs carry `service` too)
+- Test: `tests/unit/leads.test.ts`
+
+**Interfaces:**
+- Produces: `SERVICE_TYPES = ['Window Cleaning', 'Car Detailing', 'Pressure Washing', 'Snow Plow'] as const` from `@/lib/leads`. DB column stays `text` (legacy seed values like "exterior windows" must keep displaying); a check constraint can come later once data is normalized.
+
+- [ ] **Step 1: Add the constant + tiny spec**
+
+`lib/leads.ts`:
+
+```ts
+// Owner-defined option set 2026-07-08. Column stays text: legacy rows keep their
+// free-text value and render as an extra <option> until edited.
+export const SERVICE_TYPES = ['Window Cleaning', 'Car Detailing', 'Pressure Washing', 'Snow Plow'] as const;
+```
+
+Spec in `tests/unit/leads.test.ts`: `expect(SERVICE_TYPES).toHaveLength(4)` + exact contents (guards accidental renames that would strand stored values).
+
+- [ ] **Step 2: Swap the inputs**
+
+In LeadDrawer's edit/create form, replace the service `<input>` with:
+
+```tsx
+<select name="service" defaultValue={lead?.service ?? ''}>
+  <option value="">— select —</option>
+  {lead?.service && !SERVICE_TYPES.includes(lead.service as never) && (
+    <option value={lead.service}>{lead.service} (legacy)</option>
+  )}
+  {SERVICE_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
+</select>
+```
+
+Same pattern in JobDrawer (`job?.service`). Read both files first for the exact current input markup/row structure.
+
+- [ ] **Step 3: Verify + commit**
+
+Gates clean. Manual: new lead offers the 4 options; a seed lead with legacy text shows it selected as "(legacy)".
+
+```bash
+git add lib/leads.ts tests/unit/leads.test.ts components/leads/LeadDrawer.tsx components/jobs/JobDrawer.tsx
+git commit -m "feat(leads): service type option set (window/car/pressure/snow), legacy values preserved"
+```
+
+---
+
+### Task 18: Job scheduled date → date + time
+
+**Files:**
+- Create: `supabase/migrations/0018_job_datetime.sql`
+- Modify: `lib/jobs.ts` (`parseJobForm` date validation + display formatter — read first)
+- Modify: `components/jobs/JobDrawer.tsx` (input type), `components/jobs/JobCard.tsx` + `components/jobs/JobsListTable.tsx` if they render the date (grep `scheduled_date`)
+- Modify: `tests/unit/jobs.test.ts`
+- Check: `supabase/tests/schema.sql` (may assert the column's type), CSV builders in `lib/csv.ts` (jobs export includes the date?)
+
+**Interfaces:**
+- Produces: `jobs.scheduled_date` becomes `timestamptz`; forms use `<input type="datetime-local">` (`YYYY-MM-DDTHH:MM` format). Tier-3 recurring jobs will build on this column.
+
+- [ ] **Step 1: Migration — CAREFUL, `jobs_public` depends on the column**
+
+Read `supabase/migrations/0016_security_hardening.sql` (and 0014) FIRST for the exact current `jobs_public` definition, its `security_invoker` option, and its grants — the recreate below must be a verbatim copy except the underlying type change. Create `supabase/migrations/0018_job_datetime.sql`:
+
+```sql
+-- Owner request 2026-07-08: jobs need a time, not just a day.
+-- jobs_public selects scheduled_date, so it must be dropped and recreated
+-- verbatim (copy the CURRENT definition from 0016 — do not improvise).
+drop view if exists jobs_public;
+
+alter table jobs
+  alter column scheduled_date type timestamptz
+  using scheduled_date::timestamptz;  -- existing dates become midnight local server time
+
+-- >>> recreate jobs_public EXACTLY as 0016 defines it (same columns, same
+-- security_invoker option) and re-issue its grants, e.g.:
+-- create view jobs_public with (security_invoker = ...) as select ...;
+-- grant select on jobs_public to authenticated;
+```
+
+Run: `npx supabase db reset` — applies clean. Run `npm run test:db` — if `schema.sql` pgTAP asserts `scheduled_date` is `date`, update the assertion to `timestamptz`.
+
+- [ ] **Step 2: Form + parser**
+
+JobDrawer: `<input name="scheduled_date" type="date" ...>` → `type="datetime-local"` with `defaultValue` sliced to `YYYY-MM-DDTHH:MM` (`job?.scheduled_date?.slice(0, 16) ?? ''`). In `lib/jobs.ts`, `parseJobForm`'s date validation currently accepts `YYYY-MM-DD` (format-only validation, per Plan 8 backlog note) — widen to accept `YYYY-MM-DDTHH:MM` (regex `/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/` — keep accepting bare dates so nothing existing breaks). Extend `tests/unit/jobs.test.ts`: datetime accepted, bare date still accepted, garbage rejected.
+
+- [ ] **Step 3: Display**
+
+Grep `scheduled_date` across `components/` + `lib/`: wherever it renders as a bare day, format date + time when a time is present (e.g. extend the existing `day()`/`fmt` helper in `lib/jobs.ts` with a `dayTime()` that appends `HH:MM` when the timestamp has one; midnight-exactly renders date-only so migrated rows don't all show "00:00"). Update its unit spec.
+
+- [ ] **Step 4: Verify + commit**
+
+Gates + `npm run test:db` + build clean. Manual: schedule a job for today 14:30, board card + drawer + list view show the time; a pre-existing seed job shows date only.
+
+```bash
+git add supabase/migrations/0018_job_datetime.sql lib/jobs.ts tests/unit/jobs.test.ts components/jobs/ supabase/tests/schema.sql
+git commit -m "feat(jobs): scheduled_date carries time (timestamptz + datetime-local input)"
+```
+
+---
+
+## PHASE E — CRM-owner medium changes (Tier 2)
+
+### Task 19: CustomerLookup combobox replaces the raw customer `<select>` (lead/job/invoice forms)
+
+**Files:**
+- Create: `lib/customerLookup.ts` (pure filter), `components/customers/CustomerLookup.tsx`
+- Modify: `components/leads/LeadDrawer.tsx:168-171`, `components/jobs/JobDrawer.tsx:210-213`, `components/invoices/InvoiceDrawer.tsx:135-136` (replace selects)
+- Modify: the pages that feed `customers` props to those drawers (grep the drawers' call sites): the option arrays must widen from `{id, name}` to `{id, name, phone, address}` — every page already queries `customers` with those columns or can add them to the select list.
+- Modify: `app/globals.css` (lookup row layout on top of Task 12's `.searchbox` styles)
+- Test: `tests/unit/customerLookup.test.ts`
+
+**Interfaces:**
+- Consumes: Task 12's `.searchbox` / `.searchbox-list` CSS (already 44px rows, 16px input).
+- Produces:
+  - `type CustomerOption = { id: number; name: string; phone: string | null; address: string | null }`
+  - `filterCustomers(q: string, customers: CustomerOption[]): CustomerOption[]` — case-insensitive substring match on name OR phone OR address, max 8 hits, `[]` for empty query.
+  - `CustomerLookup({ customers, name, required?, initialId?, onPick? })` — emits the picked id through a hidden input named `name` (uncontrolled forms: LeadDrawer/JobDrawer) and/or the `onPick` callback (controlled: InvoiceDrawer).
+
+- [ ] **Step 1: Write the failing filter test**
+
+Create `tests/unit/customerLookup.test.ts`:
+
+```ts
+import { describe, it, expect } from 'vitest';
+import { filterCustomers, type CustomerOption } from '@/lib/customerLookup';
+
+const cs: CustomerOption[] = [
+  { id: 1, name: 'Ahmad One', phone: '555-0101', address: '1 First St' },
+  { id: 2, name: 'Ahmad Two', phone: '555-0202', address: '2 Second St' },
+  { id: 3, name: 'Zoe', phone: null, address: null },
+];
+
+describe('filterCustomers', () => {
+  it('matches name case-insensitively', () => {
+    expect(filterCustomers('ahmad', cs)).toHaveLength(2);
+  });
+  it('disambiguates duplicate names by phone and address', () => {
+    expect(filterCustomers('0202', cs).map(c => c.id)).toEqual([2]);
+    expect(filterCustomers('first st', cs).map(c => c.id)).toEqual([1]);
+  });
+  it('handles null phone/address without throwing', () => {
+    expect(filterCustomers('zoe', cs).map(c => c.id)).toEqual([3]);
+  });
+  it('returns [] for empty query and caps at 8 hits', () => {
+    expect(filterCustomers('', cs)).toEqual([]);
+    const many = Array.from({ length: 20 }, (_, i) => ({ id: i, name: `Bob ${i}`, phone: null, address: null }));
+    expect(filterCustomers('bob', many)).toHaveLength(8);
+  });
+});
+```
+
+Run: `npm test -- tests/unit/customerLookup.test.ts` — FAIL (module missing).
+
+- [ ] **Step 2: Implement `lib/customerLookup.ts`**
+
+```ts
+export type CustomerOption = { id: number; name: string; phone: string | null; address: string | null };
+
+// Owner request 2026-07-08: a dropdown dies at 1000 customers and can't tell
+// 20 Ahmads apart — filter across name, phone AND address.
+export function filterCustomers(q: string, customers: CustomerOption[]): CustomerOption[] {
+  const s = q.trim().toLowerCase();
+  if (!s) return [];
+  return customers
+    .filter(c =>
+      c.name.toLowerCase().includes(s) ||
+      (c.phone ?? '').toLowerCase().includes(s) ||
+      (c.address ?? '').toLowerCase().includes(s))
+    .slice(0, 8);
+}
+```
+
+Run the test — PASS.
+
+- [ ] **Step 3: Create `components/customers/CustomerLookup.tsx`**
+
+```tsx
+'use client';
+import type React from 'react';
+import { useId, useMemo, useState } from 'react';
+import { filterCustomers, type CustomerOption } from '@/lib/customerLookup';
+
+// Combobox over the page-provided customer list. Local filtering (no fetch):
+// the pages already load all customers for the old <select>; same data, usable UI.
+export function CustomerLookup({
+  customers, name, required = false, initialId = null, onPick,
+}: {
+  customers: CustomerOption[];
+  name: string;                       // hidden-input field name carrying the picked id
+  required?: boolean;
+  initialId?: number | null;
+  onPick?: (c: CustomerOption) => void;
+}) {
+  const uid = useId();
+  const initial = initialId != null ? customers.find(c => c.id === initialId) ?? null : null;
+  const [q, setQ] = useState(initial?.name ?? '');
+  const [picked, setPicked] = useState<CustomerOption | null>(initial);
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(-1);
+
+  const hits = useMemo(() => filterCustomers(q, customers), [q, customers]);
+
+  const pick = (c: CustomerOption) => {
+    setPicked(c); setQ(c.name); setOpen(false); setActive(-1);
+    onPick?.(c);
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') e.preventDefault(); // never submit the form from the combobox
+    if (!open || hits.length === 0) {
+      if (e.key === 'Escape') setOpen(false);
+      return;
+    }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActive(a => (a + 1) % hits.length); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(a => (a <= 0 ? hits.length - 1 : a - 1)); }
+    else if (e.key === 'Enter' && active >= 0) pick(hits[active]);
+    else if (e.key === 'Escape') setOpen(false);
+  };
+
+  return (
+    <div className="searchbox lookup">
+      <input type="hidden" name={name} value={picked?.id ?? ''} />
+      <input
+        type="text"
+        role="combobox"
+        aria-expanded={open}
+        aria-controls={`${uid}-list`}
+        aria-autocomplete="list"
+        aria-activedescendant={active >= 0 ? `${uid}-opt-${active}` : undefined}
+        placeholder="Search name, phone, address…"
+        required={required && !picked}   /* browser blocks submit until something's typed; server re-validates the id */
+        value={q}
+        onChange={e => { setQ(e.target.value); setPicked(null); setOpen(true); setActive(-1); }}
+        onFocus={() => { if (hits.length > 0) setOpen(true); }}
+        onKeyDown={onKeyDown}
+      />
+      {open && hits.length > 0 && (
+        <ul className="searchbox-list" id={`${uid}-list`} role="listbox">
+          {hits.map((c, i) => (
+            <li
+              key={c.id}
+              id={`${uid}-opt-${i}`}
+              role="option"
+              aria-selected={i === active}
+              className={i === active ? 'active' : undefined}
+              onPointerDown={e => { e.preventDefault(); pick(c); }}
+            >
+              <span>{c.name}</span>
+              <small>{[c.phone, c.address].filter(Boolean).join(' · ') || 'no phone / address'}</small>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 4: Lookup row CSS**
+
+Append to `app/globals.css` (after Task 12's searchbox rules):
+
+```css
+/* CustomerLookup rows: two-line hits (name + phone·address) on the shared searchbox chrome */
+.searchbox.lookup { max-width: none; }
+.searchbox.lookup .searchbox-list li { flex-direction: column; align-items: flex-start; gap: 2px; }
+.searchbox.lookup .searchbox-list li small { color: var(--muted); font-size: 11px; }
+```
+
+- [ ] **Step 5: Replace the three call sites**
+
+- LeadDrawer create form (`select name="customer_id"`): `<CustomerLookup customers={customers} name="customer_id" required />`. The `customers` prop type widens to `CustomerOption[]` — update the prop type and the leads page's option-building query to select `id,name,phone,address`.
+- JobDrawer create form: same swap; jobs page (and map page after Task 11 — it builds `customerOptions` too) widen to `id,name,phone,address`.
+- InvoiceDrawer (`:135`, controlled state): `<CustomerLookup customers={customers} name="customer_lookup_display" initialId={customerId} onPick={c => setCustomerId(c.id)} />` — the drawer keeps its `customerId` state as the source of truth; the hidden input is inert here. Invoices page widens its customer query the same way.
+- Verify server actions still receive `customer_id` (LeadDrawer/JobDrawer post the hidden input; grep `parseLeadForm`/`parseJobForm` expectations — the field name is unchanged).
+
+- [ ] **Step 6: Verify + commit**
+
+Gates + build clean. Manual: create-lead lookup finds by partial phone; two same-name customers distinguishable by the second line; Enter never submits the form early; InvoiceDrawer bill-to switches customers; empty lookup blocks submit on required forms.
+
+```bash
+git add lib/customerLookup.ts tests/unit/customerLookup.test.ts components/customers/CustomerLookup.tsx components/leads/LeadDrawer.tsx components/jobs/JobDrawer.tsx components/invoices/InvoiceDrawer.tsx app/globals.css
+# plus the touched pages (leads/jobs/map/invoices) — stage what the grep found
+git commit -m "feat(customers): typeahead lookup (name/phone/address) replaces customer dropdowns"
+```
+
+---
+
+### Task 20: Customer deactivation (soft — no hard delete; invoices/jobs history must survive)
+
+**Files:**
+- Create: `supabase/migrations/0019_customer_active.sql`
+- Modify: `components/customers/CustomerDrawer.tsx` (admin Deactivate/Reactivate button), `app/(app)/customers/page.tsx` (inactive filter + toggle), `app/(app)/customers/actions.ts` (or wherever saveCustomer lives — read it first)
+- Check: every customer-feeding query from Task 19 (lookup lists must exclude inactive)
+- Test: `supabase/tests/customers_write.sql` (extend)
+
+**Interfaces:**
+- Produces: `customers.active boolean not null default true`; `setCustomerActive(id, active)` server action (admin-only). Owner request #3 resolved as SOFT deactivation: customers FK-cascade to leads and restrict invoices — hard delete would orphan/destroy billing history. Hard delete stays available to admins via SQL only.
+
+- [ ] **Step 1: Migration**
+
+```sql
+-- Owner request 2026-07-08 ("delete customers... or make their account inactive"):
+-- soft flag. Hard delete would cascade leads/jobs and break invoice history.
+alter table customers add column active boolean not null default true;
+```
+
+Read `0005_customer_writes.sql` + `0004_grants.sql` first: if customer UPDATE grants are column-scoped, extend them with `active`; if table-wide, nothing more needed. Existing RLS already restricts who may update customers — deactivation rides the same policy, BUT the UI only offers it to admins.
+
+- [ ] **Step 2: pgTAP**
+
+Extend `supabase/tests/customers_write.sql`: admin updates `active=false` → 1 row; cleaner attempt → 0 rows/denied (mirror the file's existing assertion style). Run `npm run test:db` — green.
+
+- [ ] **Step 3: Server action + UI**
+
+- Action (same file as the existing customer save action, same auth pattern): `setCustomerActive(id: number, active: boolean)` — require admin role (mirror how other admin-only actions check), update, `revalidatePath('/customers')`.
+- CustomerDrawer (admin, edit mode): danger-zone row at the bottom — `active` customer shows `Deactivate customer` button (btn styling + `var(--lost)` text), inactive shows `Reactivate`. Inactive drawer header gets an `INACTIVE` chip (`.lbl` styling).
+- Customers page: default query filters `eq('active', true)`; admin gets a `Show inactive` toggle (searchParam `?inactive=1`, same pattern as the existing `?view=` param) listing only inactive customers with the Reactivate path available.
+- Task 19 lookup feeds + any create-form option queries: add `.eq('active', true)`.
+
+- [ ] **Step 4: Verify + commit**
+
+Gates + test:db + build. Manual: deactivate → customer leaves list + lookups; `?inactive=1` shows it; reactivate restores; existing invoices/jobs for the inactive customer still render fine.
+
+```bash
+git add supabase/migrations/0019_customer_active.sql supabase/tests/customers_write.sql components/customers/CustomerDrawer.tsx "app/(app)/customers/"
+git commit -m "feat(customers): soft deactivation with admin toggle + inactive filter"
+```
+
+---
+
+### Task 21: Lead/job soft-delete history + restore
+
+**Files:**
+- Create: `supabase/migrations/0020_soft_delete_history.sql`
+- Modify: `app/(app)/leads/page.tsx`, `app/(app)/jobs/page.tsx` (+ their actions files), the leads/jobs list-view tables (add History toggle + Restore)
+- Check/modify: EVERY RPC that targets leads/jobs by id — read `0003_claim_job.sql`, `0007_set_lead_status.sql`, `0009`, `0010_set_job_status.sql`, `0014_crud_columns_rpcs.sql` — each `where id = ...` gains `and deleted_at is null`
+- Test: `supabase/tests/crud_rpcs.sql` (extend)
+
+**Interfaces:**
+- Produces: `leads.deleted_at` / `jobs.deleted_at timestamptz`; `delete_lead`/`delete_job` become soft (set `deleted_at`); new `restore_lead(p_id)` / `restore_job(p_id)` SECURITY DEFINER RPCs (admin-only, raise on 0 rows — copy the role-check + raise pattern from 0014's delete RPCs verbatim); `leads_public`/`jobs_public` exclude deleted rows. Owner request #10.
+
+- [ ] **Step 1: Migration**
+
+Create `supabase/migrations/0020_soft_delete_history.sql`. Read 0014 (delete RPC bodies + role checks), 0016 (current view definitions), and 0018 (this plan's jobs_public recreate) FIRST. Contents, in order:
+
+```sql
+alter table leads add column deleted_at timestamptz;
+alter table jobs  add column deleted_at timestamptz;
+
+-- 1) Views hide deleted rows: recreate leads_public + jobs_public with their
+--    CURRENT definitions (0016 / this wave's 0018) + `where deleted_at is null`.
+--    Verbatim copies otherwise — same columns, same security_invoker, re-grant select.
+
+-- 2) delete_lead / delete_job: create or replace, same signatures + role checks
+--    as 0014, body becomes:
+--      update leads set deleted_at = now()
+--        where id = p_id and deleted_at is null;
+--      if not found then raise exception 'Lead % not found', p_id; end if;
+--    (jobs likewise). Keep SECURITY DEFINER + the existing admin-only guard.
+
+-- 3) restore_lead / restore_job: same skeleton, sets deleted_at = null
+--      where id = p_id and deleted_at is not null.
+
+-- 4) Sweep: claim_job (0003/0009), set_lead_status (0007), set_job_status (0010),
+--    update_lead/update_job (0014) — every `where id =` on leads/jobs gains
+--    `and deleted_at is null` so soft-deleted rows are dead to all mutations.
+```
+
+Write the actual SQL by copying each current RPC body and applying the described change — the comments above are the checklist, not the migration. Run `npx supabase db reset`.
+
+- [ ] **Step 2: pgTAP**
+
+Extend `supabase/tests/crud_rpcs.sql`: admin `delete_lead` → row still exists in base table with `deleted_at` set, absent from `leads_public`; `set_lead_status` on the deleted lead raises; `restore_lead` brings it back into the view; rep/cleaner `restore_lead` raises not-authorized; same trio for jobs + `claim_job` on a deleted job raises. Run `npm run test:db` — green.
+
+- [ ] **Step 3: Admin queries exclude deleted**
+
+Admin pages read base `leads`/`jobs` (for money) — grep those queries (leads page quote map, jobs page, dashboard, map page after Task 11) and add `.is('deleted_at', null)` — EXCEPT the history fetches below. Non-admin paths go through the views and are already filtered.
+
+- [ ] **Step 4: History UI + restore actions**
+
+- Server actions `restoreLead`/`restoreJob` wrapping the RPCs (same file/pattern as the existing delete actions from Plan 8 Task 4; revalidate the board + history paths).
+- Leads + jobs pages: admin-only `🕘 History` toggle next to the existing board/list view toggle (searchParam `?deleted=1`, same URL-state pattern). When set: fetch `deleted_at is not null` rows (base table, admin) ordered by `deleted_at desc`, render the existing list-table component's markup with a `Deleted` column and a `Restore` button per row (form posting the restore action). Non-admins never see the toggle (and the RPC blocks them anyway).
+
+- [ ] **Step 5: Verify + commit**
+
+Gates + test:db + build. Manual: delete lead from drawer → gone from board; History shows it with timestamp; Restore → back on board with same status; deleted job can't be claimed (RPC raises); cleaner sees no History toggle.
+
+```bash
+git add supabase/migrations/0020_soft_delete_history.sql supabase/tests/crud_rpcs.sql "app/(app)/leads/" "app/(app)/jobs/" components/leads/ components/jobs/
+git commit -m "feat(history): soft-delete leads/jobs with admin history view + restore"
+```
+
+---
+
+### Task 22: Lead rep attribution (default: current user) — commission foundation
+
+**Files:**
+- Create: `supabase/migrations/0021_lead_rep.sql`
+- Modify: `lib/leads.ts` (`Lead` type + `parseLeadForm` + builders), `components/leads/LeadDrawer.tsx` (rep select on create/edit + display row), `app/(app)/leads/page.tsx` (+ map page if it opens LeadDrawer with create/edit — read Task 11's version)
+- Test: `tests/unit/leads.test.ts`, `supabase/tests/crud_rpcs.sql`
+
+**Interfaces:**
+- Produces: `leads.rep_id uuid references profiles(id)` exposed through `leads_public` (not money); `parseLeadForm` accepts optional `rep_id`; create/update RPCs carry `p_rep_id`. Tier-3 rep commissions will read this column. Owner request #17: "select rep user (can be admin), by default the current logged-in user".
+
+- [ ] **Step 1: Migration**
+
+Read 0014 (create_lead/update_lead signatures), 0015 (column-scoped lead grants), and 0020 (this wave's leads_public recreate) FIRST. Create `supabase/migrations/0021_lead_rep.sql`:
+
+```sql
+-- Commission attribution: which rep/admin brought the lead in.
+alter table leads add column rep_id uuid references profiles(id);
+update leads set rep_id = created_by where rep_id is null;  -- backfill: creator ≈ getter
+
+-- leads_public: recreate CURRENT definition (0020's) + rep_id column (not money — safe for all roles).
+-- create_lead / update_lead RPCs: create or replace with an added p_rep_id uuid
+--   default null parameter; create_lead falls back to auth.uid() when null:
+--   rep_id = coalesce(p_rep_id, auth.uid()). Keep every existing check verbatim.
+-- 0015 column grants: add rep_id to the granted insert/update column lists for authenticated.
+```
+
+As in Task 21: the comments are the checklist; write real SQL by copying current definitions. `npx supabase db reset` clean.
+
+- [ ] **Step 2: pgTAP + unit**
+
+pgTAP: `create_lead` without `p_rep_id` sets `rep_id = auth.uid()`; with explicit `p_rep_id` persists it; rep can read `rep_id` via `leads_public`. Unit: `parseLeadForm` passes `rep_id` through when present, omits when blank (extend existing form-parse specs).
+
+- [ ] **Step 3: UI**
+
+- Leads page (and map page's LeadDrawer render path): fetch `profiles` where role in ('admin','rep') (`id, full_name` — profiles read-all policy from 0008 covers it) + the current uid; pass both to LeadDrawer.
+- LeadDrawer create/edit form: `Rep` row — `<select name="rep_id" defaultValue={lead?.rep_id ?? uid}>` mapping the rep/admin profiles to options. Read view: `Rep` row showing the name (resolve id → full_name from the same list).
+- Server actions: thread `rep_id` into the RPC call params (names must match Step 1's `p_rep_id`).
+
+- [ ] **Step 4: Verify + commit**
+
+Gates + test:db + build. Manual: new lead as rep defaults the select to self; admin can attribute a lead to any rep; drawer shows the rep name; kanban unaffected.
+
+```bash
+git add supabase/migrations/0021_lead_rep.sql lib/leads.ts tests/unit/leads.test.ts supabase/tests/crud_rpcs.sql components/leads/LeadDrawer.tsx "app/(app)/leads/" "app/(app)/map/"
+git commit -m "feat(leads): rep attribution field, defaults to current user (commission foundation)"
+```
+
+---
+
+### Task 23: Phase D/E verification pass
+
+**Files:** none new.
+
+- [ ] **Step 1: Full battery**
+
+`npm run lint && npx tsc --noEmit && npm test && npm run build` clean; `npm run test:db` green (baseline + Task 13 rep-arm + Tasks 16/18/20/21/22 additions); `npx supabase db reset` applies 0001–0021 + seed clean.
+
+- [ ] **Step 2: Owner-request acceptance walkthrough (dev server, all three roles)**
+
+- No spinner arrows on any number field; stories/panes default 0.
+- Create-user form: no autofilled credentials; creating a user still works end-to-end.
+- Copy button on lead/job/customer quick actions; Call/Text/Email still live.
+- Invoice: set waived → amber badge; cancelled → red; CSV export carries the status text.
+- New lead: service select (4 options); legacy seed value still displays.
+- Job scheduled 14:30 today: time visible on card, drawer, list.
+- Customer lookup on lead/job/invoice create: find by phone fragment; duplicate names distinguishable.
+- Deactivate customer → gone from lists/lookups; history intact; reactivate works.
+- Delete lead + job → History toggle (admin only) → Restore → back on board; deleted job unclaimable.
+- New lead as rep: rep defaults to self; admin can reassign.
+
+- [ ] **Step 3: Commit stragglers**
+
+```bash
+git status
+git commit -m "fix(wave): phase D/E post-verification polish" # only if fixes were needed
+```
