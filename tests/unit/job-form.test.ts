@@ -24,7 +24,7 @@ describe('parseJobForm', () => {
     expect(parseJobForm(fd({ customer_id: '3', service: '' }))).toEqual({ ok: false, error: 'Service is required' });
   });
   it('rejects a malformed date and negative price', () => {
-    expect(parseJobForm(fd({ customer_id: '3', service: 'x', scheduled_date: '10/07/2026' }))).toEqual({ ok: false, error: 'Date must be YYYY-MM-DD' });
+    expect(parseJobForm(fd({ customer_id: '3', service: 'x', scheduled_date: '10/07/2026' }))).toEqual({ ok: false, error: 'Date must be YYYY-MM-DD or YYYY-MM-DDTHH:MM' });
     expect(parseJobForm(fd({ customer_id: '3', service: 'x', price: '-1' }))).toEqual({ ok: false, error: 'Numbers cannot be negative' });
   });
   it('accepts a datetime-local value (date + time)', () => {
@@ -38,7 +38,7 @@ describe('parseJobForm', () => {
     });
   });
   it('rejects a datetime with a malformed time part', () => {
-    expect(parseJobForm(fd({ customer_id: '3', service: 'x', scheduled_date: '2026-07-10T14' }))).toEqual({ ok: false, error: 'Date must be YYYY-MM-DD' });
-    expect(parseJobForm(fd({ customer_id: '3', service: 'x', scheduled_date: '2026-07-10 14:30' }))).toEqual({ ok: false, error: 'Date must be YYYY-MM-DD' });
+    expect(parseJobForm(fd({ customer_id: '3', service: 'x', scheduled_date: '2026-07-10T14' }))).toEqual({ ok: false, error: 'Date must be YYYY-MM-DD or YYYY-MM-DDTHH:MM' });
+    expect(parseJobForm(fd({ customer_id: '3', service: 'x', scheduled_date: '2026-07-10 14:30' }))).toEqual({ ok: false, error: 'Date must be YYYY-MM-DD or YYYY-MM-DDTHH:MM' });
   });
 });

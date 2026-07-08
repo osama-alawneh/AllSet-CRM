@@ -133,7 +133,7 @@ export function parseJobForm(
   if (!service) return { ok: false, error: 'Service is required' };
   const description = String(fd.get('description') ?? '').trim() || null;
   const dateRaw = String(fd.get('scheduled_date') ?? '').trim();
-  if (dateRaw && !/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/.test(dateRaw)) return { ok: false, error: 'Date must be YYYY-MM-DD' };
+  if (dateRaw && !/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/.test(dateRaw)) return { ok: false, error: 'Date must be YYYY-MM-DD or YYYY-MM-DDTHH:MM' };
   const priceRaw = String(fd.get('price') ?? '').trim();
   const price = priceRaw === '' ? null : Number(priceRaw);
   if (price !== null && !Number.isFinite(price)) return { ok: false, error: 'Invalid number' };

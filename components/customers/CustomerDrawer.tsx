@@ -8,6 +8,7 @@ import { saveCustomer, createCustomer } from '@/app/(app)/customers/actions';
 import type { Role } from '@/lib/auth';
 import { rowNav } from '@/lib/rowNav';
 import { dayTime } from '@/lib/jobs';
+import { invoiceStatusColor, type InvoiceStatus } from '@/lib/invoices';
 
 const JOB_COLORS: Record<string, string> = {
   unclaimed: 'var(--new)', claimed: 'var(--sched)', in_progress: 'var(--prog)', done: 'var(--done)',
@@ -19,7 +20,6 @@ const LEAD_COLORS: Record<string, string> = {
   won: 'var(--won)', lost: 'var(--lost)', follow: 'var(--follow)', new: 'var(--new)',
 };
 const LEAD_NAMES: Record<string, string> = { won: 'Won', lost: 'Lost', follow: 'Follow-up', new: 'New' };
-const INV_COLORS: Record<string, string> = { paid: 'var(--paid)', sent: 'var(--sent)', draft: 'var(--draft)' };
 const fmt = (n: number) => '$' + Number(n || 0).toLocaleString();
 
 export type DrawerCustomer = {
@@ -86,7 +86,7 @@ export function CustomerDrawer({
                 <span>{i.number} · {i.issue_date}</span>
                 <span>
                   {fmt(i.total)}{' '}
-                  <span className="badge" style={{ background: 'var(--chip)', color: INV_COLORS[i.status] }}>
+                  <span className="badge" style={{ background: 'var(--chip)', color: invoiceStatusColor[i.status as InvoiceStatus] }}>
                     {i.status}
                   </span>
                 </span>

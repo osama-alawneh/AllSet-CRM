@@ -32,6 +32,8 @@ describe('status maps', () => {
     expect(INVOICE_STATUSES).toContain('cancelled');
     expect(invoiceStatusLabel.waived).toBe('Waived');
     expect(invoiceStatusLabel.cancelled).toBe('Cancelled');
+    expect(invoiceStatusColor.waived).toBe('var(--follow)');
+    expect(invoiceStatusColor.cancelled).toBe('var(--lost)');
   });
 });
 

@@ -83,6 +83,16 @@ describe('jobsCsvTable', () => {
     expect(asCleaner.headers).not.toContain('Price');
     expect(asCleaner.rows[0]).toHaveLength(7);
   });
+  it('renders a datetime scheduled_date via dayTime (date + time, not the raw ISO string)', () => {
+    const rows = [job({ scheduled_date: '2026-07-01T14:30:00+00:00' })];
+    const asAdmin = jobsCsvTable(rows, true);
+    expect(asAdmin.rows[0][6]).toBe('2026-07-01 14:30');
+  });
+  it('renders a null scheduled_date as null, not a truthiness artifact', () => {
+    const rows = [job({ scheduled_date: null })];
+    const asAdmin = jobsCsvTable(rows, true);
+    expect(asAdmin.rows[0][6]).toBe(null);
+  });
 });
 
 describe('invoicesCsvTable', () => {
