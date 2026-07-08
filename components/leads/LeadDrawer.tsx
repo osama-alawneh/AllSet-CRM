@@ -181,7 +181,7 @@ export function LeadDrawer({
               </span>
               <span className="k">Service</span>
               <span className="v">
-                <select name="service" defaultValue={lead?.service ?? ''}>
+                <select name="service" required defaultValue={lead?.service ?? ''}>
                   <option value="">— select —</option>
                   {lead?.service && !SERVICE_TYPES.includes(lead.service as never) && (
                     <option value={lead.service}>{lead.service} (legacy)</option>

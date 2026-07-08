@@ -224,7 +224,7 @@ export function JobDrawer({
               </span>
               <span className="k">Service</span>
               <span className="v">
-                <select name="service" defaultValue={job?.service ?? ''}>
+                <select name="service" required defaultValue={job?.service ?? ''}>
                   <option value="">— select —</option>
                   {job?.service && !SERVICE_TYPES.includes(job.service as never) && (
                     <option value={job.service}>{job.service} (legacy)</option>
