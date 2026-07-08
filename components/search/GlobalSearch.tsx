@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { buildEntityOrFilter, hitHref, type SearchHit } from '@/lib/search';
@@ -23,7 +23,14 @@ export function GlobalSearch({ role }: { role: Role }) {
   const canLeads = role === 'admin' || role === 'rep';
   const custFilter = buildEntityOrFilter(q, ['name', 'phone', 'address']);
   const visible = open && custFilter !== null;
-  const orderedHits = hits ? GROUP_ORDER.flatMap(kind => hits.filter(h => h.kind === kind)) : [];
+  // Single pass over hits, grouped by kind — avoids re-scanning hits once per group
+  // both here and again in the listbox render below.
+  const groupedHits = useMemo(() => {
+    const map = new Map<SearchHit['kind'], SearchHit[]>(GROUP_ORDER.map(k => [k, []]));
+    for (const h of hits ?? []) map.get(h.kind)!.push(h);
+    return map;
+  }, [hits]);
+  const orderedHits = GROUP_ORDER.flatMap(kind => groupedHits.get(kind)!);
 
   useEffect(() => {
     if (!custFilter) return;
@@ -110,11 +117,11 @@ export function GlobalSearch({ role }: { role: Role }) {
       <div className={`sresults box ${visible ? 'show' : ''}`} role="listbox" id={listId}>
         {hits?.length ? (
           GROUP_ORDER.map(kind => {
-            const group = hits.filter(h => h.kind === kind);
+            const group = groupedHits.get(kind)!;
             if (!group.length) return null;
             return (
-              <div key={kind}>
-                <div className="lbl" style={{ padding: '6px 10px 2px' }}>{GROUP_LABEL[kind]}</div>
+              <div key={kind} role="group" aria-label={GROUP_LABEL[kind]}>
+                <div className="lbl" role="presentation" style={{ padding: '6px 10px 2px' }}>{GROUP_LABEL[kind]}</div>
                 {group.map(h => {
                   optIndex++;
                   const i = optIndex;

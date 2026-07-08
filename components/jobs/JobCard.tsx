@@ -51,16 +51,18 @@ export function JobCard({
         downPos.current = { x: e.clientX, y: e.clientY };
       }}
     >
-      <button
-        type="button"
-        className="draghandle"
-        ref={setActivatorNodeRef}
-        {...attributes}
-        {...listeners}
-        aria-label="Move job"
-      >
-        ⠿
-      </button>
+      {draggable && (
+        <button
+          type="button"
+          className="draghandle"
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          aria-label="Move job"
+        >
+          ⠿
+        </button>
+      )}
       <button
         type="button"
         className="cardlink addr"

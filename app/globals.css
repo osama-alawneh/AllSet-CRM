@@ -6,7 +6,7 @@
   --font-blueprint: ui-monospace, "Cascadia Code", "Consolas", "SF Mono", monospace;
   --paper: #e9eef3; --grid: #ccd8e4; --card: #fbfcfe; --ink: #0e2036; --muted: #5f7188;
   --line: #d3dde8; --accent: #2f6df6; --accent-d: #1a4fc4; --shadow: rgba(14, 32, 54, .10);
-  --won: #0b7a4d; --lost: #d64848; --follow: #8f5f0a; --new: #5f7188;
+  --won: #0b7a4d; --lost: #c93b3b; --follow: #8f5f0a; --new: #5f7188;
   --sched: #7a5af0; --prog: #2f6df6; --done: #0b7a4d; --chip: #eef3f9;
   --paid: #0b7a4d; --sent: #8f5f0a; --draft: #5f7188;
   --on-accent: #ffffff;
@@ -99,7 +99,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .scard.active { background: var(--chip); }
 .scard b { font-size: 12px; display: block; }
 .scard small { font-size: 10px; color: var(--muted); display: block; line-height: 1.5; }
-.iconbtn { background: transparent; border: 1.5px solid var(--line); border-radius: 6px; padding: 7px 10px; font-size: 12px; color: var(--muted); }
+.iconbtn { background: transparent; border: 1.5px solid var(--line); border-radius: 6px; padding: 7px 10px; font-size: 12px; color: var(--muted); min-width: 44px; }
 .iconbtn:hover { color: var(--ink); border-color: var(--ink); }
 
 .screen { display: flex; flex-direction: column; gap: 18px; animation: fade .35s ease; }

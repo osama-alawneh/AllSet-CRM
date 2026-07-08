@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { supabaseServer } from '@/lib/supabase/server';
+import { logQueryError } from '@/lib/log';
 
 export type Role = 'admin' | 'rep' | 'cleaner';
 
@@ -19,7 +20,7 @@ export const getRole = cache(async (): Promise<Role | null> => {
   if (!u) return null;
   const sb = await supabaseServer();
   const { data, error } = await sb.from('profiles').select('role').eq('id', u.id).single();
-  if (error) console.error('[query:profiles.role]', error.message);
+  logQueryError('profiles.role', error);
   return normalizeRole(data?.role as string | undefined);
 });
 

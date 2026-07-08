@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getRole, getSession } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
+import { logQueryError } from '@/lib/log';
 import { buildJobs, visibleJobs, type JobRow, type JobCustomer } from '@/lib/jobs';
 import { buildLeads, statusLabel, type LeadPublicRow, type CustomerGeo, type Pin } from '@/lib/leads';
 import {
@@ -38,6 +39,12 @@ export default async function DashboardPage() {
     admin ? sb.from('invoices').select('id,status,issue_date') : Promise.resolve({ data: null }),
     admin ? sb.from('invoice_items').select('invoice_id,qty,unit_price') : Promise.resolve({ data: null }),
   ]);
+  logQueryError('dashboard.jobs', jobsRes.error);
+  logQueryError('dashboard.customers', csRes.error);
+  logQueryError('dashboard.profiles', psRes.error);
+  logQueryError('dashboard.leadsPublic', lpRes.error);
+  logQueryError('dashboard.invoices', 'error' in invRes ? invRes.error : null);
+  logQueryError('dashboard.invoiceItems', 'error' in itemRes ? itemRes.error : null);
 
   // ---- everyone: jobs (role-split price), leads (win rate + pins), customers ----
   let jobRows: JobRow[] = [];

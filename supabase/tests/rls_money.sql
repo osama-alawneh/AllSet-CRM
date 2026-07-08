@@ -1,5 +1,5 @@
 begin;
-select plan(11);
+select plan(12);
 insert into auth.users (id, instance_id, aud, role, email) values
   ('90000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t-admin@test.dev'),
   ('90000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t-rep@test.dev'),
@@ -45,6 +45,13 @@ select throws_ok($$ update leads set created_by='90000000-0000-0000-0000-0000000
   '42501', null, 'rep cannot UPDATE created_by directly (column grant withheld)');
 select throws_ok($$ insert into leads(customer_id,status,service,created_by) values (900001,'new','x','90000000-0000-0000-0000-000000000001') $$,
   '42501', null, 'rep cannot INSERT created_by directly (column grant withheld)');
+
+-- SEC-3 rep arm: the third predicate branch, coalesce(auth_role() in ('admin','rep'),
+-- false), was untested — only the cleaner (own/unclaimed) branches were covered above.
+-- A rep must see EVERY job through jobs_public, including 900003 which is claimed by
+-- a cleaner other than the rep (i.e. the filter is bypassed entirely for reps/admins).
+select is((select count(*)::int from jobs_public where id in (900002,900003)), 2,
+  'rep sees ALL jobs via jobs_public (unclaimed + claimed-by-another), not just own/unclaimed');
 
 -- SEC-3: cleaner sees only unclaimed + own rows through jobs_public — never another
 -- cleaner's claimed job, even though claimed_by itself is a visible column on rows they

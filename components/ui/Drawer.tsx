@@ -31,7 +31,11 @@ export function Drawer({
       if (e.key === 'Escape') { onClose(); return; }
       if (e.key !== 'Tab' || !ref.current) return;
       // Trap Tab inside the dialog (aria-modal promises this; the old version didn't deliver).
-      const f = Array.from(ref.current.querySelectorAll<HTMLElement>(FOCUSABLE));
+      // Tabs panes inside drawers (LeadDrawer/JobDrawer) render their inactive panels
+      // with [hidden]; their descendants still match FOCUSABLE but are not actually
+      // focusable/visible, so exclude anything inside a hidden subtree.
+      const f = Array.from(ref.current.querySelectorAll<HTMLElement>(FOCUSABLE))
+        .filter(el => !el.closest('[hidden]'));
       if (f.length === 0) { e.preventDefault(); ref.current.focus(); return; }
       const first = f[0], last = f[f.length - 1];
       const active = document.activeElement;

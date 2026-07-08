@@ -15,7 +15,7 @@ export function MobileNav({ children }: { children: React.ReactNode }) {
   }
   return (
     <>
-      <button type="button" className="iconbtn hamb" aria-label="Open navigation" aria-expanded={open} onClick={() => setOpen(true)}>
+      <button type="button" className="iconbtn hamb" aria-label="Open navigation" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
         ☰
       </button>
       {open && (

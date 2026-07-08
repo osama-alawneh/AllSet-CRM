@@ -47,8 +47,14 @@ export function MapView({
   const onMapClick = (lat: number, lng: number, xPct: number, yPct: number) => {
     if (canCreate) setPending({ lat, lng, xPct, yPct });
   };
-  const onPinClick = (pin: MapPin) =>
+  const onPinClick = (pin: MapPin) => {
+    // The openLeadId round-trip (above) only clears `pending` when ?l= changes, so a
+    // JOB pin click (which navigates to ?j=, never touching ?l=) left a pending
+    // create-lead popover stale/open. Any pin click — lead or job — should dismiss it
+    // immediately rather than waiting on a prop round-trip that may never happen.
+    setPending(null);
     router.push(pin.kind === 'job' ? `/map?j=${pin.id}` : `/map?l=${pin.id}`, { scroll: false });
+  };
   const onSearchSelect = (s: GeocodeSuggestion) =>
     setFlyTo(prev => ({ lat: s.lat, lng: s.lng, seq: (prev?.seq ?? 0) + 1 }));
 
