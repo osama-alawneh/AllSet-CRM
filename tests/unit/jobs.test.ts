@@ -100,6 +100,9 @@ describe('dayTime', () => {
   it('renders a past-midnight hour as 12-something AM', () => {
     expect(dayTime('2026-07-08T00:30:00+00:00')).toBe('2026-07-08 12:30 AM');
   });
+  it('renders a morning hour (01-11) as AM with no leading zero', () => {
+    expect(dayTime('2026-07-08T09:15:00+00:00')).toBe('2026-07-08 9:15 AM');
+  });
   it('renders noon-hour (12:xx) as PM, not AM', () => {
     expect(dayTime('2026-07-08T12:05:00+00:00')).toBe('2026-07-08 12:05 PM');
   });
