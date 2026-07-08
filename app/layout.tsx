@@ -13,13 +13,24 @@ export const metadata: Metadata = {
   other: { 'apple-mobile-web-app-capable': 'yes' },
 };
 
-export const viewport: Viewport = {
-  viewportFit: 'cover',
-  themeColor: '#070d18',
-};
+// Both the <meta name="theme-color"> and the html[data-theme] attribute must agree with
+// the same cookie, or the browser chrome (status bar / task switcher) flashes the wrong
+// color relative to the page. generateViewport (not the static `viewport` object) is
+// required here because the color depends on request data (the theme cookie).
+async function currentTheme(): Promise<'light' | 'dark'> {
+  return (await cookies()).get('theme')?.value === 'light' ? 'light' : 'dark';
+}
+
+export async function generateViewport(): Promise<Viewport> {
+  const theme = await currentTheme();
+  return {
+    viewportFit: 'cover',
+    themeColor: theme === 'light' ? '#e9eef3' : '#070d18', // matches --paper per theme (globals.css)
+  };
+}
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const theme = (await cookies()).get('theme')?.value === 'light' ? 'light' : 'dark';
+  const theme = await currentTheme();
   return (
     <html lang="en" data-theme={theme}>
       <body>

@@ -6,7 +6,7 @@
   --font-blueprint: ui-monospace, "Cascadia Code", "Consolas", "SF Mono", monospace;
   --paper: #e9eef3; --grid: #ccd8e4; --card: #fbfcfe; --ink: #0e2036; --muted: #5f7188;
   --line: #d3dde8; --accent: #2f6df6; --accent-d: #1a4fc4; --shadow: rgba(14, 32, 54, .10);
-  --won: #0b7a4d; --lost: #d64848; --follow: #8f5f0a; --new: #5f7188;
+  --won: #0b7a4d; --lost: #c93b3b; --follow: #8f5f0a; --new: #5f7188;
   --sched: #7a5af0; --prog: #2f6df6; --done: #0b7a4d; --chip: #eef3f9;
   --paid: #0b7a4d; --sent: #8f5f0a; --draft: #5f7188;
   --on-accent: #ffffff;
