@@ -2,6 +2,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Drawer } from '@/components/ui/Drawer';
+import { CopyButton } from '@/components/ui/CopyButton';
 import {
   LEAD_STATUSES, statusLabel, statusColor, type Lead, type LeadStatus,
 } from '@/lib/leads';
@@ -94,6 +95,7 @@ export function LeadDrawer({
               <a href={`tel:${lead.phone ?? ''}`}>📞 Call</a>
               <a href={`sms:${lead.phone ?? ''}`}>💬 Text</a>
               <a href={`mailto:${lead.email ?? ''}`}>✉ Email</a>
+              <CopyButton value={lead.phone ?? ''} />
             </div>
           </div>
 
@@ -180,9 +182,9 @@ export function LeadDrawer({
               <span className="k">Service</span>
               <span className="v"><input name="service" required defaultValue={lead?.service ?? ''} placeholder="e.g. In + out, screens" /></span>
               <span className="k">Stories</span>
-              <span className="v"><input name="stories" type="number" min={0} defaultValue={lead?.stories ?? ''} placeholder="2" /></span>
+              <span className="v"><input name="stories" type="number" min={0} defaultValue={lead?.stories ?? 0} /></span>
               <span className="k">Panes</span>
-              <span className="v"><input name="panes" type="number" min={0} defaultValue={lead?.panes ?? ''} placeholder="14" /></span>
+              <span className="v"><input name="panes" type="number" min={0} defaultValue={lead?.panes ?? 0} /></span>
               {admin && (
                 <>
                   <span className="k">Quote $</span>

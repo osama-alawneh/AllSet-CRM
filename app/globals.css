@@ -334,3 +334,16 @@ button.mpin:focus-visible { outline: 2px solid var(--accent); outline-offset: 2p
 .screen-fill { flex: 1; min-height: 0; }
 .screen-fill .map-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .screen-fill .map-panel .map { flex: 1; height: auto; min-height: 320px; }
+
+/* No spinner arrows on number fields (owner request): values are typed; the
+   1-step arrows are useless for stories/panes/money and misfire on touch. */
+input[type='number'] { appearance: textfield; -moz-appearance: textfield; }
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* Copy-to-clipboard button (owner request #8): sits in the .qa Call/Text/Email row and
+   mirrors those anchors' sizing/color so it reads as one row, but it's a real <button>
+   (no href) so border/background are stripped. min-height guarantees the 44px touch
+   target unconditionally, since .qa is stretch-aligned it also lifts the sibling anchors. */
+.copybtn { flex: 1; text-align: center; padding: 9px; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; background: none; border: 0; cursor: pointer; color: var(--muted); min-height: 44px; }
+.copybtn:hover { color: var(--accent); }

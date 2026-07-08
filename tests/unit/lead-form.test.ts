@@ -24,6 +24,14 @@ describe('parseLeadForm', () => {
       customer_id: 7, service: 'Solo', description: null, stories: null, panes: null, note: null, quote: null,
     }});
   });
+  it('stories/panes "0" persists as 0, not null (owner request: default 0, not blank)', () => {
+    const r = parseLeadForm(fd({ customer_id: '7', service: 'Solo', stories: '0', panes: '0' }));
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.value.stories).toBe(0);
+      expect(r.value.panes).toBe(0);
+    }
+  });
   it('requires a customer', () => {
     expect(parseLeadForm(fd({ customer_id: '', service: 'x' }))).toEqual({ ok: false, error: 'Customer is required' });
   });

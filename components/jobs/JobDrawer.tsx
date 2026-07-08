@@ -2,6 +2,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Drawer } from '@/components/ui/Drawer';
+import { CopyButton } from '@/components/ui/CopyButton';
 import {
   JOB_STATUSES, jobStatusLabel, jobStatusColor, canTransition, type Job, type JobStatus,
 } from '@/lib/jobs';
@@ -120,6 +121,7 @@ export function JobDrawer({
               <a href={`tel:${job.phone ?? ''}`}>📞 Call</a>
               <a href={`sms:${job.phone ?? ''}`}>💬 Text</a>
               <a href={`mailto:${job.email ?? ''}`}>✉ Email</a>
+              <CopyButton value={job.phone ?? ''} />
             </div>
           </div>
 

@@ -3,6 +3,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Drawer } from '@/components/ui/Drawer';
 import { Tabs } from '@/components/ui/Tabs';
+import { CopyButton } from '@/components/ui/CopyButton';
 import { saveCustomer, createCustomer } from '@/app/(app)/customers/actions';
 import type { Role } from '@/lib/auth';
 import { rowNav } from '@/lib/rowNav';
@@ -130,6 +131,7 @@ export function CustomerDrawer({
             <a href={`tel:${c!.phone ?? ''}`}>📞 Call</a>
             <a href={`sms:${c!.phone ?? ''}`}>💬 Text</a>
             <a href={`mailto:${c!.email ?? ''}`}>✉ Email</a>
+            <CopyButton value={c!.phone ?? ''} />
           </div>
         )}
         <div className="sec">
