@@ -7,8 +7,8 @@ import { statusColor } from '@/lib/leads';
 import type { MapImplProps } from './SchematicMap';
 
 export function MapboxMap({
-  pins, canCreate, overlay, onMapClick, onPinClick, token,
-}: MapImplProps & { token: string }) {
+  pins, canCreate, overlay, onMapClick, onPinClick, token, height, interactive = true,
+}: MapImplProps & { token: string; interactive?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -34,6 +34,7 @@ export function MapboxMap({
       ],
       fitBoundsOptions: { padding: 30 },
       cooperativeGestures: true,
+      interactive,
     });
     mapRef.current = map;
     map.on('click', e => {
@@ -48,7 +49,7 @@ export function MapboxMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [token]);
+  }, [token, interactive]);
 
   // Sync markers whenever pins change.
   useEffect(() => {
@@ -76,7 +77,11 @@ export function MapboxMap({
   }, [pins, onPinClick]);
 
   return (
-    <div className="map" ref={containerRef} style={{ cursor: canCreate ? 'crosshair' : 'default' }}>
+    <div
+      className="map"
+      ref={containerRef}
+      style={{ cursor: canCreate ? 'crosshair' : 'default', ...(height != null ? { height } : {}) }}
+    >
       {overlay}
     </div>
   );

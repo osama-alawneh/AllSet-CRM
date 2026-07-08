@@ -48,7 +48,7 @@ export function MapView({
   ) : null;
 
   return (
-    <div className="panel box">
+    <div className="panel box map-panel">
       <div className="maptools">
         <h3 style={{ marginRight: 'auto' }}>Pin map / neighborhood</h3>
         {canCreate && <span className="hint">✚ click empty space to drop a pin &amp; create a lead</span>}

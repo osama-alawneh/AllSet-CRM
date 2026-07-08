@@ -51,7 +51,7 @@ export default async function MapPage({
   const selected = lParam ? leads.find(l => l.id === Number(lParam)) ?? null : null;
 
   return (
-    <section className="screen">
+    <section className="screen screen-fill">
       <MapView pins={pins} token={token} canCreate={canCreate} openLeadId={lParam ?? null} />
       {selected && <LeadDrawer key={selected.id} lead={selected} admin={admin} canEdit={canCreate} backTo="/map" />}
     </section>

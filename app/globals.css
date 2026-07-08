@@ -277,3 +277,9 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
   }
 }
 .drawer { padding-top: calc(22px + env(safe-area-inset-top)); padding-bottom: calc(22px + env(safe-area-inset-bottom)); }
+
+/* Fullscreen map page: the screen stretches to fill .main, the map panel absorbs the
+   free space, and the .map inside grows past its default min(56vh, 520px) cap. */
+.screen-fill { flex: 1; min-height: 0; }
+.screen-fill .map-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.screen-fill .map-panel .map { flex: 1; height: auto; min-height: 320px; }

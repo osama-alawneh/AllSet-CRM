@@ -146,7 +146,7 @@ export default async function DashboardPage() {
       <div className="panel box">
         <h3>Neighborhood snapshot</h3>
         <p className="cap">tap to open full map →</p>
-        <MiniMap pins={pins} />
+        <MiniMap pins={pins} token={process.env.NEXT_PUBLIC_MAPBOX_TOKEN || null} />
         <div className="legend">
           <span><i className="lg" style={{ background: 'var(--won)' }} /> WON</span>
           <span><i className="lg" style={{ background: 'var(--follow)' }} /> FOLLOW-UP</span>
