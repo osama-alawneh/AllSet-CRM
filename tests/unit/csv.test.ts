@@ -86,7 +86,7 @@ describe('jobsCsvTable', () => {
   it('renders a datetime scheduled_date via dayTime (date + time, not the raw ISO string)', () => {
     const rows = [job({ scheduled_date: '2026-07-01T14:30:00+00:00' })];
     const asAdmin = jobsCsvTable(rows, true);
-    expect(asAdmin.rows[0][6]).toBe('2026-07-01 14:30');
+    expect(asAdmin.rows[0][6]).toBe('2026-07-01 2:30 PM');
   });
   it('renders a null scheduled_date as null, not a truthiness artifact', () => {
     const rows = [job({ scheduled_date: null })];

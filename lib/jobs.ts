@@ -116,7 +116,12 @@ export function canTransition(role: Role | null, uid: string, job: Job, to: JobS
 export function dayTime(s: string): string {
   const date = s.slice(0, 10);
   const time = s.slice(11, 16);
-  return time && time !== '00:00' ? `${date} ${time}` : date;
+  if (!time || time === '00:00') return date;
+  const [hh, mm] = time.split(':');
+  const h = Number(hh);
+  const period = h < 12 ? 'AM' : 'PM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${date} ${h12}:${mm} ${period}`;
 }
 
 export type JobInput = {

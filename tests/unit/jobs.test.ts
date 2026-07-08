@@ -94,8 +94,17 @@ describe('visibleJobs', () => {
 });
 
 describe('dayTime', () => {
-  it('appends HH:MM when the timestamp carries a non-midnight time', () => {
-    expect(dayTime('2026-07-08T14:30:00+00:00')).toBe('2026-07-08 14:30');
+  it('renders an afternoon hour in 12-hour PM form', () => {
+    expect(dayTime('2026-07-08T14:30:00+00:00')).toBe('2026-07-08 2:30 PM');
+  });
+  it('renders a past-midnight hour as 12-something AM', () => {
+    expect(dayTime('2026-07-08T00:30:00+00:00')).toBe('2026-07-08 12:30 AM');
+  });
+  it('renders noon-hour (12:xx) as PM, not AM', () => {
+    expect(dayTime('2026-07-08T12:05:00+00:00')).toBe('2026-07-08 12:05 PM');
+  });
+  it('renders a late-evening hour in 12-hour PM form', () => {
+    expect(dayTime('2026-07-08T23:45:00+00:00')).toBe('2026-07-08 11:45 PM');
   });
   it('renders date-only when the time is exactly midnight (migrated / bare-date rows)', () => {
     expect(dayTime('2026-07-08T00:00:00+00:00')).toBe('2026-07-08');
