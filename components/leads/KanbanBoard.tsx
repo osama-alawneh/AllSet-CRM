@@ -94,7 +94,8 @@ export function KanbanBoard({
         </div>
       </div>
       {error && <p style={{ color: 'var(--lost)', fontSize: 12 }}>{error}</p>}
-      <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+      {/* Stable id — see JobsBoard: dnd-kit auto ids drift between server and client. */}
+      <DndContext id="leads-board" sensors={sensors} onDragEnd={onDragEnd}>
         <div className="kanban">
           {LEAD_STATUSES.map(st => (
             <KanbanColumn

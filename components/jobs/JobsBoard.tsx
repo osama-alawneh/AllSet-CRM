@@ -114,7 +114,9 @@ export function JobsBoard({
         </div>
       </div>
       {error && <p style={{ color: 'var(--lost)', fontSize: 12 }}>{error}</p>}
-      <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+      {/* Stable id: dnd-kit's auto id comes from a module-scope counter that drifts
+          between server and client → hydration mismatch on aria-describedby. */}
+      <DndContext id="jobs-board" sensors={sensors} onDragEnd={onDragEnd}>
         <div className="kanban">
           {JOB_STATUSES.map(st => (
             <JobColumn
