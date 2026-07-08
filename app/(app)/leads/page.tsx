@@ -26,7 +26,7 @@ export default async function LeadsPage({
       .from('leads_public')
       .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at')
       .order('id'),
-    sb.from('customers').select('id,name,address,phone,email,lat,lng'),
+    sb.from('customers').select('id,name,address,phone,email,lat,lng,active'),
     admin ? sb.from('leads').select('id,quote_value') : Promise.resolve({ data: null, error: null }),
   ]);
   logQueryError('leads.page.leads_public', lpRes.error);
@@ -43,7 +43,11 @@ export default async function LeadsPage({
 
   const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], quoteById);
   const selected = lParam ? leads.find(l => l.id === Number(lParam)) ?? null : null;
-  const customerOptions = (cs ?? []).map(c => ({ id: c.id, name: c.name, phone: c.phone, address: c.address }));
+  // Task 20: the lookup picker only offers active customers; `cs` itself stays unfiltered
+  // above so existing leads against a since-deactivated customer still resolve name/address.
+  const customerOptions = (cs ?? [])
+    .filter(c => c.active)
+    .map(c => ({ id: c.id, name: c.name, phone: c.phone, address: c.address }));
 
   return (
     <>

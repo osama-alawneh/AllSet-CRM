@@ -3,7 +3,7 @@ import { filterCustomers, type CustomerRow } from '@/lib/customers';
 
 const row = (over: Partial<CustomerRow>): CustomerRow => ({
   id: 1, name: 'Sarah Kim', phone: '555-0142', email: null, address: '142 Maple Ave',
-  type: 'residential', notes: null, jobs: 0, invoices: null, ...over,
+  type: 'residential', notes: null, active: true, jobs: 0, invoices: null, ...over,
 });
 
 describe('filterCustomers', () => {

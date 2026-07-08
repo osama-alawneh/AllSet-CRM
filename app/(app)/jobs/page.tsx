@@ -37,7 +37,7 @@ export default async function JobsPage({
 
   const [jobsRes, csRes, psRes] = await Promise.all([
     jobsQuery,
-    sb.from('customers').select('id,name,address,phone,email'),
+    sb.from('customers').select('id,name,address,phone,email,active'),
     sb.from('profiles').select('id,full_name'),
   ]);
   logQueryError('jobs.page.jobs', jobsRes.error);
@@ -98,7 +98,11 @@ export default async function JobsPage({
       leadDetail = ld ? { ...ld, quote_value: null } : null; // money structurally absent for non-admins
     }
   }
-  const customerOptions = (cs ?? []).map(c => ({ id: c.id, name: c.name, phone: c.phone, address: c.address }));
+  // Task 20: the lookup picker only offers active customers; `cs` itself stays unfiltered
+  // above so existing jobs against a since-deactivated customer still resolve name/address.
+  const customerOptions = (cs ?? [])
+    .filter(c => c.active)
+    .map(c => ({ id: c.id, name: c.name, phone: c.phone, address: c.address }));
 
   return (
     <>

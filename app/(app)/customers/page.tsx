@@ -14,15 +14,23 @@ import type { CustomerRow } from '@/lib/customers';
 export default async function CustomersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ c?: string; new?: string }>;
+  searchParams: Promise<{ c?: string; new?: string; inactive?: string }>;
 }) {
-  const { c: cParam, new: newParam } = await searchParams;
+  const { c: cParam, new: newParam, inactive: inactiveParam } = await searchParams;
   const role = await getRole();
   const admin = role === 'admin';
+  // Owner request 2026-07-08 (#3, soft deactivation): default list is active-only; admin can
+  // flip to the inactive-only list via ?inactive=1 (same pattern as the jobs/leads ?view= param).
+  // Non-admins never see the inactive list regardless of the query string.
+  const showInactive = admin && inactiveParam === '1';
   const sb = await supabaseServer();
 
   const [customersRes, jobRowsRes, invRowsRes] = await Promise.all([
-    sb.from('customers').select('id,name,phone,email,address,type,notes').order('name'),
+    sb
+      .from('customers')
+      .select('id,name,phone,email,address,type,notes,active')
+      .eq('active', !showInactive)
+      .order('name'),
     sb.from('jobs_public').select('customer_id'),
     admin ? sb.from('invoices').select('customer_id') : Promise.resolve({ data: null, error: null }),
   ]);
@@ -46,6 +54,7 @@ export default async function CustomersPage({
   }));
 
   // drawer data
+  const backTo = showInactive ? '/customers?inactive=1' : '/customers'; // close() returns to the list you came from
   const isNew = newParam === '1' && role !== 'cleaner'; // create is admin+rep (RLS 0005); cleaners get no form
   const cid = cParam ? Number(cParam) : null;
   let drawerCustomer: DrawerCustomer | null = null;
@@ -93,7 +102,7 @@ export default async function CustomersPage({
 
   return (
     <>
-      <CustomersTable rows={rows} admin={admin} canCreate={role !== 'cleaner'} />
+      <CustomersTable rows={rows} admin={admin} canCreate={role !== 'cleaner'} showInactive={showInactive} />
       {(isNew || drawerCustomer) && role && (
         <CustomerDrawer
           key={drawerCustomer?.id ?? 'new'}
@@ -103,6 +112,7 @@ export default async function CustomersPage({
           invoices={drawerInvoices}
           role={role}
           isNew={isNew}
+          backTo={backTo}
         />
       )}
     </>

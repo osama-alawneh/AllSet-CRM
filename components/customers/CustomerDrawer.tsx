@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Drawer } from '@/components/ui/Drawer';
 import { Tabs } from '@/components/ui/Tabs';
 import { CopyButton } from '@/components/ui/CopyButton';
-import { saveCustomer, createCustomer } from '@/app/(app)/customers/actions';
+import { saveCustomer, createCustomer, setCustomerActive } from '@/app/(app)/customers/actions';
 import type { Role } from '@/lib/auth';
 import { rowNav } from '@/lib/rowNav';
 import { dayTime } from '@/lib/jobs';
@@ -25,13 +25,14 @@ const fmt = (n: number) => '$' + Number(n || 0).toLocaleString();
 export type DrawerCustomer = {
   id: number; name: string; phone: string | null; email: string | null;
   address: string | null; type: 'residential' | 'commercial'; notes: string | null;
+  active: boolean;
 };
 export type DrawerJob = { id: number; service: string | null; status: string; scheduled_date: string | null };
 export type DrawerLead = { id: number; service: string | null; status: string };
 export type DrawerInvoice = { id: number; number: string; issue_date: string; status: string; total: number };
 
 export function CustomerDrawer({
-  customer, jobs, leads, invoices, role, isNew,
+  customer, jobs, leads, invoices, role, isNew, backTo = '/customers',
 }: {
   customer: DrawerCustomer | null;
   jobs: DrawerJob[];
@@ -39,13 +40,15 @@ export function CustomerDrawer({
   invoices: DrawerInvoice[] | null; // null = non-admin
   role: Role;
   isNew: boolean;
+  backTo?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(isNew);
+  const admin = role === 'admin';
   const canEdit = role !== 'cleaner';
-  const close = () => router.push('/customers', { scroll: false });
+  const close = () => router.push(backTo, { scroll: false });
 
   if (!isNew && !customer) return null;
   const c = customer;
@@ -56,6 +59,19 @@ export function CustomerDrawer({
       const res = isNew ? await createCustomer(fd) : await saveCustomer(c!.id, fd);
       if (res?.error) setError(res.error);
       else if (!isNew) { setEditing(false); router.refresh(); }
+    });
+  };
+
+  // Owner request 2026-07-08 (#3): admin-only soft deactivate/reactivate. Reversible, so no
+  // confirm() (unlike LeadDrawer/JobDrawer's hard delete). router.refresh() re-fetches the
+  // page's active/inactive-scoped query — the drawer disappears once the row leaves that list.
+  const toggleActive = () => {
+    if (!c) return;
+    setError(null);
+    startTransition(async () => {
+      const res = await setCustomerActive(c.id, !c.active);
+      if (res?.error) setError(res.error);
+      else router.refresh();
     });
   };
 
@@ -123,6 +139,7 @@ export function CustomerDrawer({
             <span className="badge" style={{ background: 'var(--chip)', color: 'var(--muted)' }}>
               {isNew ? 'NEW' : `CUSTOMER #${String(c!.id).padStart(4, '0')}`}
             </span>
+            {!isNew && !c!.active && <span className="lbl" style={{ marginLeft: 8 }}>INACTIVE</span>}
             <h2 id="customer-drawer-title">{isNew ? 'New customer' : c!.name}</h2>
           </div>
           <button type="button" className="close" onClick={close} aria-label="Close">✕</button>
@@ -190,6 +207,17 @@ export function CustomerDrawer({
           )}
           {editing && !isNew && (
             <button className="btn-s" type="button" disabled={pending} onClick={() => { setError(null); setEditing(false); }}>Cancel</button>
+          )}
+          {admin && !isNew && !editing && (
+            c!.active ? (
+              <button className="btn-s btn-danger" type="button" disabled={pending} onClick={toggleActive}>
+                Deactivate customer
+              </button>
+            ) : (
+              <button className="btn-s" type="button" disabled={pending} onClick={toggleActive}>
+                Reactivate customer
+              </button>
+            )
           )}
           <button className="btn-s" type="button" onClick={close}>Close</button>
         </div>

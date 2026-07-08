@@ -38,7 +38,7 @@ export default async function MapPage({
       .from('leads_public')
       .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at')
       .order('id'),
-    sb.from('customers').select('id,name,address,phone,email,lat,lng'),
+    sb.from('customers').select('id,name,address,phone,email,lat,lng,active'),
     admin ? sb.from('leads').select('id,quote_value') : Promise.resolve({ data: null, error: null }),
     jobsQuery,
     sb.from('profiles').select('id,full_name'),
@@ -117,7 +117,11 @@ export default async function MapPage({
       leadDetail = ld ? { ...ld, quote_value: null } : null; // money structurally absent for non-admins
     }
   }
-  const customerOptions = ((cs ?? []) as CustomerGeo[]).map(c => ({ id: c.id, name: c.name, phone: c.phone, address: c.address }));
+  // Task 20: the lookup picker only offers active customers; `cs` itself stays unfiltered
+  // above so existing leads/jobs against a since-deactivated customer still resolve name/address.
+  const customerOptions = ((cs ?? []) as Array<CustomerGeo & { active: boolean }>)
+    .filter(c => c.active)
+    .map(c => ({ id: c.id, name: c.name, phone: c.phone, address: c.address }));
 
   return (
     <section className="screen screen-fill">

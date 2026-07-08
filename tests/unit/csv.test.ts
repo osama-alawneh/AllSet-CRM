@@ -110,7 +110,7 @@ describe('invoicesCsvTable', () => {
 
 const cust = (over: Partial<CustomerRow>): CustomerRow => ({
   id: 5, name: 'Acme Co', phone: '555', email: 'a@b.co', address: '2 Oak Ave',
-  type: 'commercial', notes: null, jobs: 3, invoices: 4, ...over,
+  type: 'commercial', notes: null, active: true, jobs: 3, invoices: 4, ...over,
 });
 
 describe('customersCsvTable', () => {
