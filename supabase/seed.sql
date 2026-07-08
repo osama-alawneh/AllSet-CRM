@@ -24,16 +24,16 @@ insert into profiles(id,full_name,role) values
 
 -- ===== customers =====
 insert into customers (id,name,phone,email,address,type,lat,lng,notes) overriding system value values
- (1,'Sarah Kim','555-0142','sarah.kim@mail.com','142 Maple Ave','residential',42.3310,-83.0450,'Repeat, every 8 wks. Gate 4417.'),
- (2,'Dan Ortiz','555-0077','dortiz@mail.com','7 Birch Court','residential',42.3365,-83.0398,'Bungalow, dog in yard.'),
- (3,'Priya Nair','555-0090','priya.n@mail.com','90 Cedar Lane','residential',42.3342,-83.0521,'Hard water on south windows.'),
- (4,'Greg Lowe','555-0033','glowe@mail.com','33 Elm Street','residential',42.3288,-83.0477,'Price sensitive.'),
- (5,'Wu Residence','555-0210','wu.family@mail.com','210 Oak Drive','residential',42.3401,-83.0333,'Big house, sunny side streaks.'),
- (6,'Marta Ruiz','555-0005','marta.r@mail.com','5 Pine Way','residential',42.3255,-83.0555,'Weekends only.'),
- (7,'Alex Park','555-0088','apark@mail.com','88 Willow Rd','residential',42.3377,-83.0444,'Inbound web lead.'),
- (8,'Ramirez Family','555-0012','ramirez@mail.com','12 Spruce Ct','residential',42.3299,-83.0511,'Screens add-on.'),
- (9,'Alicia Cole','555-0401','acole@mail.com','401 Rowan Ave','residential',42.3410,-83.0480,'Referral from Sarah Kim.'),
- (10,'Alan Webb — Webb Storefronts','555-0900','alan@webbstore.com','900 Market St','commercial',42.3350,-83.0300,'Storefront, monthly contract.');
+ (1,'Sarah Kim','555-0142','sarah.kim@mail.com','142 Maple Ave','residential',41.6590,-91.5330,'Repeat, every 8 wks. Gate 4417.'),
+ (2,'Dan Ortiz','555-0077','dortiz@mail.com','7 Birch Court','residential',41.6645,-91.5278,'Bungalow, dog in yard.'),
+ (3,'Priya Nair','555-0090','priya.n@mail.com','90 Cedar Lane','residential',41.6622,-91.5401,'Hard water on south windows.'),
+ (4,'Greg Lowe','555-0033','glowe@mail.com','33 Elm Street','residential',41.6568,-91.5357,'Price sensitive.'),
+ (5,'Wu Residence','555-0210','wu.family@mail.com','210 Oak Drive','residential',41.6681,-91.5213,'Big house, sunny side streaks.'),
+ (6,'Marta Ruiz','555-0005','marta.r@mail.com','5 Pine Way','residential',41.6535,-91.5435,'Weekends only.'),
+ (7,'Alex Park','555-0088','apark@mail.com','88 Willow Rd','residential',41.6657,-91.5324,'Inbound web lead.'),
+ (8,'Ramirez Family','555-0012','ramirez@mail.com','12 Spruce Ct','residential',41.6579,-91.5391,'Screens add-on.'),
+ (9,'Alicia Cole','555-0401','acole@mail.com','401 Rowan Ave','residential',41.6690,-91.5360,'Referral from Sarah Kim.'),
+ (10,'Alan Webb — Webb Storefronts','555-0900','alan@webbstore.com','900 Market St','commercial',41.6630,-91.5180,'Storefront, monthly contract.');
 
 -- ===== leads =====
 insert into leads (id,customer_id,status,service,stories,panes,quote_value,note) overriding system value values

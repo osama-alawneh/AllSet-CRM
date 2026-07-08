@@ -1,11 +1,11 @@
-// Pure equirectangular projection over a fixed Detroit bounding box. Bounds are the
+// Pure equirectangular projection over a fixed Iowa City bounding box. Bounds are the
 // extent of the seed coordinates (supabase/seed.sql lines 27-36) padded out so every
 // seed pin lands comfortably inside 0-100%. North (high lat) maps to the top (yPct 0).
 export const MAP_BOUNDS = {
-  minLat: 42.320,
-  maxLat: 42.345,
-  minLng: -83.060,
-  maxLng: -83.025,
+  minLat: 41.648,
+  maxLat: 41.673,
+  minLng: -91.548,
+  maxLng: -91.510,
 } as const;
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
