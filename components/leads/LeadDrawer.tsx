@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Drawer } from '@/components/ui/Drawer';
 import { CopyButton } from '@/components/ui/CopyButton';
 import {
-  LEAD_STATUSES, statusLabel, statusColor, type Lead, type LeadStatus,
+  LEAD_STATUSES, statusLabel, statusColor, SERVICE_TYPES, type Lead, type LeadStatus,
 } from '@/lib/leads';
 import { blankMoneyToZero } from '@/lib/forms';
 import { rowNav } from '@/lib/rowNav';
@@ -180,7 +180,15 @@ export function LeadDrawer({
                 )}
               </span>
               <span className="k">Service</span>
-              <span className="v"><input name="service" required defaultValue={lead?.service ?? ''} placeholder="e.g. In + out, screens" /></span>
+              <span className="v">
+                <select name="service" defaultValue={lead?.service ?? ''}>
+                  <option value="">— select —</option>
+                  {lead?.service && !SERVICE_TYPES.includes(lead.service as never) && (
+                    <option value={lead.service}>{lead.service} (legacy)</option>
+                  )}
+                  {SERVICE_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </span>
               <span className="k">Stories</span>
               <span className="v"><input name="stories" type="number" min={0} defaultValue={lead?.stories ?? 0} /></span>
               <span className="k">Panes</span>
