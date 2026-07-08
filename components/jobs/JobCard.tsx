@@ -1,7 +1,7 @@
 'use client';
 import { useRef } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import type { Job } from '@/lib/jobs';
+import { dayTime, type Job } from '@/lib/jobs';
 
 const fmt = (n: number) => '$' + Number(n || 0).toLocaleString();
 
@@ -80,7 +80,7 @@ export function JobCard({
       <span className="meta">
         {job.address ?? '—'}
         <br />
-        {job.service ?? 'TBD'} · {job.scheduled_date ?? 'TBD'}
+        {job.service ?? 'TBD'} · {job.scheduled_date ? dayTime(job.scheduled_date) : 'TBD'}
         {admin && job.price ? ` · ${fmt(job.price)}` : ''}
       </span>
       <div style={{ marginTop: 8 }}>

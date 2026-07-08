@@ -1,5 +1,5 @@
 import { statusLabel, type Lead } from '@/lib/leads';
-import { jobStatusLabel, type Job } from '@/lib/jobs';
+import { jobStatusLabel, dayTime, type Job } from '@/lib/jobs';
 import { invoiceTotal, type Invoice } from '@/lib/invoices';
 import type { CustomerRow } from '@/lib/customers';
 
@@ -47,7 +47,8 @@ export function leadsCsvTable(leads: Lead[], admin: boolean): CsvTable {
 export function jobsCsvTable(jobs: Job[], admin: boolean): CsvTable {
   const headers = ['ID', 'Customer', 'Service', 'Description', 'Status', 'Claimed by', 'Scheduled', ...(admin ? ['Price'] : [])];
   const rows: CsvCell[][] = jobs.map(j => [
-    j.id, j.customer_name, j.service, j.description, jobStatusLabel[j.status], j.claimed_by_name, j.scheduled_date,
+    j.id, j.customer_name, j.service, j.description, jobStatusLabel[j.status], j.claimed_by_name,
+    j.scheduled_date && dayTime(j.scheduled_date),
     ...(admin ? [j.price] : []),
   ]);
   return { headers, rows };

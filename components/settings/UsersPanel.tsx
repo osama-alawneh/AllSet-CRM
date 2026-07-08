@@ -35,10 +35,10 @@ export function UsersPanel({ users, meId }: { users: PanelUser[]; meId: string }
       <div className="panel box">
         <h3>Create user</h3>
         <p className="cap">Login is active immediately (email pre-confirmed).</p>
-        <form ref={formRef} action={submit} className="userform">
-          <input name="full_name" placeholder="Full name" aria-label="Full name" required />
-          <input name="email" type="email" placeholder="email@company.com" aria-label="Email" required />
-          <input name="password" type="password" placeholder="Password (min 8)" aria-label="Password" required minLength={8} />
+        <form ref={formRef} action={submit} className="userform" autoComplete="off">
+          <input name="full_name" placeholder="Full name" aria-label="Full name" required autoComplete="off" />
+          <input name="email" type="email" placeholder="email@company.com" aria-label="Email" required autoComplete="off" />
+          <input name="password" type="password" placeholder="Password (min 8)" aria-label="Password" required minLength={8} autoComplete="new-password" />
           <select name="role" defaultValue="rep" aria-label="Role">
             {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
           </select>

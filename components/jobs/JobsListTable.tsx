@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { jobStatusLabel, jobStatusColor, type Job } from '@/lib/jobs';
+import { jobStatusLabel, jobStatusColor, dayTime, type Job } from '@/lib/jobs';
 import { filterJobs } from '@/lib/search';
 
 const fmt = (n: number) => '$' + Number(n || 0).toLocaleString();
@@ -34,7 +34,7 @@ export function JobsListTable({ jobs, admin, onOpen }: { jobs: Job[]; admin: boo
                 <td>{j.id}</td>
                 <td><b>{j.customer_name}</b><br /><small style={{ color: 'var(--muted)' }}>{j.address ?? '—'}</small></td>
                 <td>{j.service ?? 'TBD'}</td>
-                <td>{j.scheduled_date ?? 'TBD'}</td>
+                <td>{j.scheduled_date ? dayTime(j.scheduled_date) : 'TBD'}</td>
                 <td><span className="badge" style={{ background: 'var(--chip)', color: jobStatusColor[j.status] }}>{jobStatusLabel[j.status]}</span></td>
                 <td>{j.claimed_by_name ?? '—'}</td>
                 <td>{day(j.created_at)}</td>

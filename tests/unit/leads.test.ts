@@ -5,6 +5,7 @@ import {
   statusColor,
   groupByStatus,
   buildLeads,
+  SERVICE_TYPES,
   type Lead,
   type LeadPublicRow,
   type CustomerGeo,
@@ -25,6 +26,13 @@ describe('status maps', () => {
       expect(statusLabel[s]).toBeTruthy();
       expect(statusColor[s]).toMatch(/^var\(--/);
     }
+  });
+});
+
+describe('SERVICE_TYPES', () => {
+  it('has exactly the four owner-defined service options', () => {
+    expect(SERVICE_TYPES).toHaveLength(4);
+    expect(SERVICE_TYPES).toEqual(['Window Cleaning', 'Car Detailing', 'Pressure Washing', 'Snow Plow']);
   });
 });
 

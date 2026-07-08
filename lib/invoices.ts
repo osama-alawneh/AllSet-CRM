@@ -1,9 +1,14 @@
-export type InvoiceStatus = 'draft' | 'sent' | 'paid';
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'waived' | 'cancelled';
 
-export const INVOICE_STATUSES: InvoiceStatus[] = ['draft', 'sent', 'paid'];
+export const INVOICE_STATUSES: InvoiceStatus[] = ['draft', 'sent', 'paid', 'waived', 'cancelled'];
 
 export const invoiceStatusColor: Record<InvoiceStatus, string> = {
   paid: 'var(--paid)', sent: 'var(--sent)', draft: 'var(--draft)',
+  waived: 'var(--follow)', cancelled: 'var(--lost)',
+};
+
+export const invoiceStatusLabel: Record<InvoiceStatus, string> = {
+  paid: 'Paid', sent: 'Sent', draft: 'Draft', waived: 'Waived', cancelled: 'Cancelled',
 };
 
 export type InvoiceItem = { description: string; qty: number; unit_price: number };

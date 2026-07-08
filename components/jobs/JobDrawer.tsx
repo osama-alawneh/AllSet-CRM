@@ -2,9 +2,11 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Drawer } from '@/components/ui/Drawer';
+import { CopyButton } from '@/components/ui/CopyButton';
 import {
-  JOB_STATUSES, jobStatusLabel, jobStatusColor, canTransition, type Job, type JobStatus,
+  JOB_STATUSES, jobStatusLabel, jobStatusColor, canTransition, dayTime, type Job, type JobStatus,
 } from '@/lib/jobs';
+import { SERVICE_TYPES } from '@/lib/leads';
 import type { Role } from '@/lib/auth';
 import { blankMoneyToZero } from '@/lib/forms';
 import { rowNav } from '@/lib/rowNav';
@@ -120,6 +122,7 @@ export function JobDrawer({
               <a href={`tel:${job.phone ?? ''}`}>📞 Call</a>
               <a href={`sms:${job.phone ?? ''}`}>💬 Text</a>
               <a href={`mailto:${job.email ?? ''}`}>✉ Email</a>
+              <CopyButton value={job.phone ?? ''} />
             </div>
           </div>
 
@@ -128,7 +131,7 @@ export function JobDrawer({
             <div className="kv">
               <span className="k">Service</span><span className="v">{job.service ?? 'TBD'}</span>
               <span className="k">Description</span><span className="v">{job.description ?? '—'}</span>
-              <span className="k">Date</span><span className="v">{job.scheduled_date ?? 'TBD'}</span>
+              <span className="k">Date</span><span className="v">{job.scheduled_date ? dayTime(job.scheduled_date) : 'TBD'}</span>
               <span className="k">Claimed by</span><span className="v">{job.claimed_by_name ?? '—'}</span>
               <span className="k">Price</span>
               {admin
@@ -220,9 +223,17 @@ export function JobDrawer({
                 )}
               </span>
               <span className="k">Service</span>
-              <span className="v"><input name="service" required defaultValue={job?.service ?? ''} placeholder="e.g. Full house" /></span>
+              <span className="v">
+                <select name="service" required defaultValue={job?.service ?? ''}>
+                  <option value="">— select —</option>
+                  {job?.service && !SERVICE_TYPES.includes(job.service as never) && (
+                    <option value={job.service}>{job.service} (legacy)</option>
+                  )}
+                  {SERVICE_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </span>
               <span className="k">Date</span>
-              <span className="v"><input name="scheduled_date" type="date" defaultValue={job?.scheduled_date ?? ''} /></span>
+              <span className="v"><input name="scheduled_date" type="datetime-local" defaultValue={job?.scheduled_date?.slice(0, 16) ?? ''} /></span>
               <span className="k">Price $</span>
               <span className="v"><input name="price" type="number" min={0} step="0.01" defaultValue={job?.price ?? ''} placeholder="0.00" /></span>
             </div>

@@ -1,5 +1,9 @@
 export type LeadStatus = 'new' | 'follow' | 'won' | 'lost';
 
+// Owner-defined option set 2026-07-08. Column stays text: legacy rows keep their
+// free-text value and render as an extra <option> until edited.
+export const SERVICE_TYPES = ['Window Cleaning', 'Car Detailing', 'Pressure Washing', 'Snow Plow'] as const;
+
 export const LEAD_STATUSES: LeadStatus[] = ['new', 'follow', 'won', 'lost'];
 
 export const statusLabel: Record<LeadStatus, string> = {

@@ -7,6 +7,7 @@ import {
   groupJobsByStatus,
   visibleJobs,
   canTransition,
+  dayTime,
   type Job,
   type JobRow,
   type JobCustomer,
@@ -89,6 +90,30 @@ describe('visibleJobs', () => {
   it('admin and rep see everything', () => {
     expect(visibleJobs('admin', 'me', jobs).map(j => j.id)).toEqual([1, 2, 3]);
     expect(visibleJobs('rep', 'me', jobs).map(j => j.id)).toEqual([1, 2, 3]);
+  });
+});
+
+describe('dayTime', () => {
+  it('renders an afternoon hour in 12-hour PM form', () => {
+    expect(dayTime('2026-07-08T14:30:00+00:00')).toBe('2026-07-08 2:30 PM');
+  });
+  it('renders a past-midnight hour as 12-something AM', () => {
+    expect(dayTime('2026-07-08T00:30:00+00:00')).toBe('2026-07-08 12:30 AM');
+  });
+  it('renders a morning hour (01-11) as AM with no leading zero', () => {
+    expect(dayTime('2026-07-08T09:15:00+00:00')).toBe('2026-07-08 9:15 AM');
+  });
+  it('renders noon-hour (12:xx) as PM, not AM', () => {
+    expect(dayTime('2026-07-08T12:05:00+00:00')).toBe('2026-07-08 12:05 PM');
+  });
+  it('renders a late-evening hour in 12-hour PM form', () => {
+    expect(dayTime('2026-07-08T23:45:00+00:00')).toBe('2026-07-08 11:45 PM');
+  });
+  it('renders date-only when the time is exactly midnight (migrated / bare-date rows)', () => {
+    expect(dayTime('2026-07-08T00:00:00+00:00')).toBe('2026-07-08');
+  });
+  it('renders date-only for a bare YYYY-MM-DD value with no time component at all', () => {
+    expect(dayTime('2026-07-08')).toBe('2026-07-08');
   });
 });
 

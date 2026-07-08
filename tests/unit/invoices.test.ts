@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   INVOICE_STATUSES,
   invoiceStatusColor,
+  invoiceStatusLabel,
   fmtMoney,
   invoiceTotal,
   parseInvoiceForm,
@@ -18,13 +19,21 @@ const fd = (o: Record<string, string>): FormData => {
 };
 
 describe('status maps', () => {
-  it('lists the three invoice statuses', () => {
-    expect(INVOICE_STATUSES).toEqual(['draft', 'sent', 'paid']);
+  it('lists the five invoice statuses', () => {
+    expect(INVOICE_STATUSES).toEqual(['draft', 'sent', 'paid', 'waived', 'cancelled']);
   });
   it('has a CSS-var color for each status', () => {
     expect(invoiceStatusColor.paid).toBe('var(--paid)');
     expect(invoiceStatusColor.sent).toBe('var(--sent)');
     expect(invoiceStatusColor.draft).toBe('var(--draft)');
+  });
+  it('includes waived and cancelled as distinct statuses', () => {
+    expect(INVOICE_STATUSES).toContain('waived');
+    expect(INVOICE_STATUSES).toContain('cancelled');
+    expect(invoiceStatusLabel.waived).toBe('Waived');
+    expect(invoiceStatusLabel.cancelled).toBe('Cancelled');
+    expect(invoiceStatusColor.waived).toBe('var(--follow)');
+    expect(invoiceStatusColor.cancelled).toBe('var(--lost)');
   });
 });
 
