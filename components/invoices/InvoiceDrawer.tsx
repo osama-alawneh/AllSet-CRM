@@ -44,7 +44,23 @@ export function InvoiceDrawer({
   const [printPayload, setPrintPayload] = useState<PrintData | null>(null);
 
   const close = () => router.push('/invoices', { scroll: false });
-  const cust = customers.find(c => c.id === customerId) ?? null;
+  // Bill-to for display/print: the picked customer from the ACTIVE-ONLY picker array if
+  // present; otherwise — while customerId is still the invoice's own customer — the invoice's
+  // resolved fields (buildInvoices joins the unfiltered customers query). A deactivated
+  // customer is absent from `customers` but their existing invoice must still render its
+  // bill-to (Task 20 review fix). Repicking in edit mode makes `picked` win.
+  const picked = customers.find(c => c.id === customerId) ?? null;
+  const cust: InvoiceCustomerFull | null =
+    picked ??
+    (invoice && customerId === invoice.customer_id
+      ? {
+          id: invoice.customer_id,
+          name: invoice.customer_name,
+          address: invoice.customer_address,
+          phone: invoice.customer_phone,
+          email: invoice.customer_email,
+        }
+      : null);
   const total = invoiceTotal(items, invoice?.tax ?? 0, invoice?.deposit ?? 0);
   const number = invoice?.number ?? 'INV-—';
   const issueDate = invoice?.issue_date ?? 'pending';

@@ -101,6 +101,7 @@ describe('invoicesCsvTable', () => {
       id: 1, customer_id: 10, job_id: null, number: 'INV-1001', issue_date: '2026-06-20',
       status: 'paid', tax: 0, deposit: 0,
       items: [{ description: 'A', qty: 2, unit_price: 100 }], customer_name: 'Sarah Kim',
+      customer_address: null, customer_phone: null, customer_email: null,
     };
     const t = invoicesCsvTable([inv]);
     expect(t.headers).toEqual(['Number', 'Customer', 'Date', 'Status', 'Total']);
