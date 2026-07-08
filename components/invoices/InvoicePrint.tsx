@@ -22,7 +22,7 @@ export function InvoicePrint({ data }: { data: PrintData }) {
     <div id="printArea">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1>ClearView</h1>
+          <h1>AllSet</h1>
           <div style={{ fontSize: 11 }}>Window Cleaning Co.</div>
         </div>
         <div style={{ textAlign: 'right' }}>

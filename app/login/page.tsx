@@ -10,7 +10,7 @@ export default async function LoginPage() {
         <div className="brand">
           <div className="logo">◇</div>
           <div>
-            <b>ClearView</b>
+            <b>AllSet</b>
             <small>BLUEPRINT+ CRM</small>
           </div>
         </div>

@@ -4,9 +4,9 @@ import { SWRegister } from '@/components/shell/SWRegister';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'ClearView CRM',
+  title: 'AllSet CRM',
   description: 'Window-cleaning CRM — Blueprint+',
-  appleWebApp: { statusBarStyle: 'black-translucent', title: 'ClearView' },
+  appleWebApp: { statusBarStyle: 'black-translucent', title: 'AllSet' },
   icons: { apple: '/apple-touch-icon.png' },
   // Next 16 emits only the modern `mobile-web-app-capable` tag; iOS < 17.4 honors
   // only the legacy tag below, without which home-screen launches open in a Safari tab.

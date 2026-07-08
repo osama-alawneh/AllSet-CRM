@@ -10,7 +10,7 @@ export function Sidebar({ role, name }: { role: Role; name: string }) {
       <div className="brand">
         <div className="logo">◇</div>
         <div>
-          <b>ClearView</b>
+          <b>AllSet</b>
           <small>BLUEPRINT+</small>
         </div>
       </div>

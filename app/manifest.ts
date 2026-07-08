@@ -5,8 +5,8 @@ import type { MetadataRoute } from 'next';
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',
-    name: 'ClearView CRM',
-    short_name: 'ClearView',
+    name: 'AllSet CRM',
+    short_name: 'AllSet',
     display: 'standalone',
     start_url: '/',
     background_color: '#070d18',

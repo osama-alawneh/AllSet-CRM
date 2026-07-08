@@ -34,7 +34,7 @@ export default function OfflinePage() {
       </div>
       <h1 style={{ margin: 0, fontSize: 20 }}>You&apos;re offline</h1>
       <p style={{ margin: 0, maxWidth: 320, fontSize: 14, color: '#42506b' }}>
-        ClearView needs a connection to load live data. Reconnect and try again.
+        AllSet needs a connection to load live data. Reconnect and try again.
       </p>
     </div>
   );
