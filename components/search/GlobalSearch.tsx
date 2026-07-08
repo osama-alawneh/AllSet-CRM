@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { buildEntityOrFilter, hitHref, type SearchHit } from '@/lib/search';
@@ -14,12 +14,16 @@ export function GlobalSearch({ role }: { role: Role }) {
   const [q, setQ] = useState('');
   const [hits, setHits] = useState<SearchHit[] | null>(null);
   const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(-1);
   const router = useRouter();
   const boxRef = useRef<HTMLDivElement>(null);
+  const listId = useId();
+  const optId = (i: number) => `${listId}-opt-${i}`;
   const admin = role === 'admin';
   const canLeads = role === 'admin' || role === 'rep';
   const custFilter = buildEntityOrFilter(q, ['name', 'phone', 'address']);
   const visible = open && custFilter !== null;
+  const orderedHits = hits ? GROUP_ORDER.flatMap(kind => hits.filter(h => h.kind === kind)) : [];
 
   useEffect(() => {
     if (!custFilter) return;
@@ -56,6 +60,7 @@ export function GlobalSearch({ role }: { role: Role }) {
         })),
       ];
       setHits(out);
+      setActive(-1);
       setOpen(true);
     }, 200);
     return () => { cancelled = true; clearTimeout(t); };
@@ -75,6 +80,8 @@ export function GlobalSearch({ role }: { role: Role }) {
     router.push(hitHref(h), { scroll: false });
   };
 
+  let optIndex = -1;
+
   return (
     <div className="search" ref={boxRef}>
       <input
@@ -84,12 +91,19 @@ export function GlobalSearch({ role }: { role: Role }) {
         onChange={e => setQ(e.target.value)}
         onFocus={() => hits && setOpen(true)}
         onKeyDown={e => {
-          if (e.key === 'Escape') setOpen(false);
-          if (e.key === 'Enter' && visible && hits?.length) pick(hits[0]);
+          if (e.key === 'ArrowDown') { e.preventDefault(); setActive(a => Math.min(a + 1, orderedHits.length - 1)); }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(a => Math.max(a - 1, -1)); }
+          else if (e.key === 'Enter' && active >= 0 && orderedHits[active]) { e.preventDefault(); pick(orderedHits[active]); }
+          else if (e.key === 'Escape') { setOpen(false); }
         }}
+        role="combobox"
+        aria-expanded={visible}
+        aria-controls={listId}
+        aria-activedescendant={active >= 0 ? optId(active) : undefined}
+        aria-autocomplete="list"
         aria-label="Search customers, leads, jobs, invoices"
       />
-      <div className={`sresults box ${visible ? 'show' : ''}`}>
+      <div className={`sresults box ${visible ? 'show' : ''}`} role="listbox" id={listId}>
         {hits?.length ? (
           GROUP_ORDER.map(kind => {
             const group = hits.filter(h => h.kind === kind);
@@ -97,12 +111,25 @@ export function GlobalSearch({ role }: { role: Role }) {
             return (
               <div key={kind}>
                 <div className="lbl" style={{ padding: '6px 10px 2px' }}>{GROUP_LABEL[kind]}</div>
-                {group.map(h => (
-                  <div className="scard" key={`${h.kind}-${h.id}`} onClick={() => pick(h)}>
-                    <b>{h.title}</b>
-                    <small>{h.sub}</small>
-                  </div>
-                ))}
+                {group.map(h => {
+                  optIndex++;
+                  const i = optIndex;
+                  return (
+                    <div
+                      key={`${h.kind}-${h.id}`}
+                      id={optId(i)}
+                      role="option"
+                      aria-selected={i === active}
+                      className={`scard${i === active ? ' active' : ''}`}
+                      onMouseEnter={() => setActive(i)}
+                      onMouseDown={e => e.preventDefault()}
+                      onClick={() => pick(h)}
+                    >
+                      <b>{h.title}</b>
+                      <small>{h.sub}</small>
+                    </div>
+                  );
+                })}
               </div>
             );
           })
