@@ -13,7 +13,7 @@ Extend the map page with:
 ## Decisions (user-confirmed)
 
 - Job pin click opens `JobDrawer` on the map page (`/map?j=<id>`), same pattern as lead pins with `/map?l=<id>`.
-- Job pins use a distinct shape (diamond) colored by job status; lead pins keep the existing teardrop with lead status color.
+- Job pins use a distinct shape (circle) colored by job status; lead pins keep the existing diamond (rotated square) with lead status color. (Corrected during planning: the existing `.mpin` is a diamond, not a teardrop, so jobs take the circle.)
 - Search select = fly to result + temporary highlight marker. Marker clears on next search or any map click. No form prefill.
 - Two toolbar layer toggles — Leads / Jobs — both on by default.
 - Autocomplete built as a custom combobox against the Mapbox Geocoding v6 forward endpoint. No new dependencies.
@@ -41,11 +41,11 @@ export type MapPin =
 ## 3. Markers, legend, drawers
 
 - `MapboxMap` and `SchematicMap` accept `MapPin[]` and branch on `kind`:
-  - `lead` → existing `.mpin` teardrop, `statusColor[status]`.
-  - `job` → new `.mpin` variant rendering a diamond (CSS-rotated square), `jobStatusColor[status]`.
+  - `lead` → existing `.mpin` diamond, `statusColor[status]`.
+  - `job` → new `.mpin` variant rendering a circle, `jobStatusColor[status]`.
 - Pin click callback carries the pin (or `kind` + `id`); `MapView` routes lead → `/map?l=<id>`, job → `/map?j=<id>` (soft navigation, `scroll: false`).
 - Map page renders `JobDrawer` when `?j=` matches a visible job, with `backTo="/map"`.
-- `Legend` gains a job-status row (unclaimed / claimed / in progress) and a shape key (teardrop = lead, diamond = job).
+- `Legend` gains a job-status row (unclaimed / claimed / in progress) and a shape key (diamond = lead, circle = job).
 
 ## 4. Search (`components/map/MapSearch.tsx` — new client component)
 
