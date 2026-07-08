@@ -3,7 +3,7 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { pickMapImpl } from '@/lib/geo';
-import type { Pin } from '@/lib/leads';
+import type { MapPin } from '@/lib/mapPins';
 import { SchematicMap } from './SchematicMap';
 import { PinPopover } from './PinPopover';
 import { Legend } from './Legend';
@@ -17,7 +17,7 @@ type Pending = { lat: number; lng: number; xPct: number; yPct: number };
 export function MapView({
   pins, token, canCreate, openLeadId,
 }: {
-  pins: Pin[];
+  pins: MapPin[];
   token: string | null;
   canCreate: boolean;
   openLeadId: string | null;
@@ -41,7 +41,8 @@ export function MapView({
   const onMapClick = (lat: number, lng: number, xPct: number, yPct: number) => {
     if (canCreate) setPending({ lat, lng, xPct, yPct });
   };
-  const onPinClick = (id: number) => router.push(`/map?l=${id}`, { scroll: false });
+  const onPinClick = (pin: MapPin) =>
+    router.push(pin.kind === 'job' ? `/map?j=${pin.id}` : `/map?l=${pin.id}`, { scroll: false });
 
   const overlay = pending ? (
     <PinPopover {...pending} onCancel={() => setPending(null)} />

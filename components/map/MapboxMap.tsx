@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css'; // imported ONLY here, never in a server file
 import { MAP_BOUNDS } from '@/lib/geo';
-import { statusColor } from '@/lib/leads';
+import { pinColor } from '@/lib/mapPins';
 import type { MapImplProps } from './SchematicMap';
 
 export function MapboxMap({
@@ -60,15 +60,18 @@ export function MapboxMap({
     for (const pin of pins) {
       // Mapbox owns the OUTER marker element's transform, so put .mpin styling on an
       // INNER child (its own rotate/translate does not fight Mapbox's positioning).
+      // Real <button>: focusable + named for AT (Wave 3 UI-12).
       const el = document.createElement('div');
-      const inner = document.createElement('div');
-      inner.className = 'mpin';
+      const inner = document.createElement('button');
+      inner.type = 'button';
+      inner.className = pin.kind === 'job' ? 'mpin mpin-job' : 'mpin';
       inner.title = pin.label;
-      inner.style.setProperty('--pc', statusColor[pin.status]);
+      inner.setAttribute('aria-label', pin.label);
+      inner.style.setProperty('--pc', pinColor(pin));
       inner.innerHTML = '<i></i>';
       inner.addEventListener('click', ev => {
         ev.stopPropagation();
-        onPinClick(pin.id);
+        onPinClick(pin);
       });
       el.appendChild(inner);
       const marker = new mapboxgl.Marker({ element: el }).setLngLat([pin.lng, pin.lat]).addTo(map);

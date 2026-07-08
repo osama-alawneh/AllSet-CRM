@@ -144,6 +144,24 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .mpin:hover { transform: translate(-50%, -50%) rotate(45deg) scale(1.35); z-index: 5; }
 .mpin.drop { animation: drop .4s cubic-bezier(.2, 1.3, .4, 1); }
 @keyframes drop { 0% { transform: translate(-50%, -140%) rotate(45deg); opacity: 0; } 100% { transform: translate(-50%, -50%) rotate(45deg); opacity: 1; } }
+
+/* Pins are real <button>s now (UI-12): reset UA button chrome; the existing .mpin
+   rule already sets border/size/position, so only background/padding/font need zeroing. */
+button.mpin { background: none; padding: 0; font: inherit; }
+button.mpin:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Job pins: same footprint as .mpin but round — shape is the lead/job discriminator.
+   The base .mpin rotate(45deg) is harmless on a circle, so hover/positioning rules
+   are inherited unchanged. */
+.mpin.mpin-job, .mpin.mpin-job i { border-radius: 50%; }
+.lg-round { border-radius: 50%; transform: none; }
+.lg-head { color: var(--ink); font-weight: 600; }
+[data-theme="dark"] .lg-head { color: var(--text, #e6e6e6); }
+
+/* Schematic map chrome (UI-9): streets/blocks were markup-only since the prototype port. */
+.map .street { position: absolute; background: var(--line); opacity: .6; }
+.map .block { position: absolute; background: var(--chip); border: 1px solid var(--line); border-radius: 2px; opacity: .5; }
+
 .legend { display: flex; gap: 16px; margin-top: 12px; font-size: 11px; color: var(--muted); flex-wrap: wrap; }
 .legend span { display: flex; align-items: center; gap: 6px; } .lg { width: 9px; height: 9px; border-radius: 2px; transform: rotate(45deg); }
 .pop { position: absolute; z-index: 20; width: 230px; padding: 13px; transform: translate(-50%, 12px); }

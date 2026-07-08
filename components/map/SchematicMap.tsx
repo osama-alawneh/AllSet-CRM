@@ -1,14 +1,14 @@
 'use client';
 import type React from 'react';
 import { project, unproject } from '@/lib/geo';
-import { statusColor, type Pin } from '@/lib/leads';
+import { pinColor, pinKey, type MapPin } from '@/lib/mapPins';
 
 export type MapImplProps = {
-  pins: Pin[];
+  pins: MapPin[];
   canCreate: boolean;
   overlay: React.ReactNode;
   onMapClick: (lat: number, lng: number, xPct: number, yPct: number) => void;
-  onPinClick: (id: number) => void;
+  onPinClick: (pin: MapPin) => void;
   height?: number | string;
 };
 
@@ -42,15 +42,17 @@ export function SchematicMap({ pins, canCreate, overlay, onMapClick, onPinClick,
       {pins.map(pin => {
         const { xPct, yPct } = project(pin.lat, pin.lng);
         return (
-          <div
-            key={pin.id}
-            className="mpin"
+          <button
+            key={pinKey(pin)}
+            type="button"
+            className={pin.kind === 'job' ? 'mpin mpin-job' : 'mpin'}
+            aria-label={pin.label}
             title={pin.label}
-            style={{ left: `${xPct}%`, top: `${yPct}%`, '--pc': statusColor[pin.status] } as React.CSSProperties}
-            onClick={e => { e.stopPropagation(); onPinClick(pin.id); }}
+            style={{ left: `${xPct}%`, top: `${yPct}%`, '--pc': pinColor(pin) } as React.CSSProperties}
+            onClick={e => { e.stopPropagation(); onPinClick(pin); }}
           >
             <i />
-          </div>
+          </button>
         );
       })}
 

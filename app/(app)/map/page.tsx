@@ -1,7 +1,8 @@
 import { getRole } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
 import { logQueryError } from '@/lib/log';
-import { buildLeads, statusLabel, type Pin, type LeadPublicRow, type CustomerGeo } from '@/lib/leads';
+import { buildLeads, type LeadPublicRow, type CustomerGeo } from '@/lib/leads';
+import { buildMapPins } from '@/lib/mapPins';
 import { MapView } from '@/components/map/MapView';
 import { LeadDrawer } from '@/components/leads/LeadDrawer';
 
@@ -37,15 +38,7 @@ export default async function MapPage({
   }
 
   const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], quoteById);
-  const pins: Pin[] = leads
-    .filter(l => l.lat != null && l.lng != null)
-    .map(l => ({
-      id: l.id,
-      lat: l.lat as number,
-      lng: l.lng as number,
-      status: l.status,
-      label: `${l.customer_name} — ${statusLabel[l.status]}`,
-    }));
+  const pins = buildMapPins(leads, [], new Map());
 
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || null; // empty string → null
   const selected = lParam ? leads.find(l => l.id === Number(lParam)) ?? null : null;
