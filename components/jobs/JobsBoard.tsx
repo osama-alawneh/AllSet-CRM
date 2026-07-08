@@ -23,6 +23,7 @@ import { toCSV, downloadCSV, jobsCsvTable } from '@/lib/csv';
 import { filterJobs } from '@/lib/search';
 import { useJobsRealtime } from '@/lib/hooks/useJobsRealtime';
 import { ViewToggle } from '@/components/ui/ViewToggle';
+import { HistoryToggle } from '@/components/ui/HistoryToggle';
 import { JobColumn } from './JobColumn';
 
 type Patch = { id: number; status: JobStatus; claimed_by?: string | null; claimed_by_name?: string | null };
@@ -91,6 +92,7 @@ export function JobsBoard({
     <section className="screen">
       <div className="scrhead">
         <ViewToggle view="board" base="/jobs" />
+        {admin && <HistoryToggle base="/jobs" active={false} />}
         <input placeholder="🔍 filter jobs…" style={{ width: 200 }} value={q} onChange={e => setQ(e.target.value)} aria-label="Filter jobs" />
         <span className="cap" style={{ fontSize: 11, color: 'var(--muted)' }}>
           drag between statuses · claim to lock

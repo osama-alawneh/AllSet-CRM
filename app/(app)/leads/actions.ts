@@ -50,9 +50,21 @@ export async function updateLead(id: number, fd: FormData): Promise<{ error?: st
   return {};
 }
 
+// 0020: soft delete — delete_lead now flips leads.deleted_at instead of removing the row,
+// so the lead survives in History and can be brought back with restoreLead below.
 export async function deleteLead(id: number): Promise<{ error?: string }> {
   const sb = await supabaseServer();
   const { error } = await sb.rpc('delete_lead', { p_lead_id: id });
+  if (error) return { error: error.message };
+  revalidatePath('/leads'); revalidatePath('/map'); revalidatePath('/customers'); revalidatePath('/dashboard');
+  return {};
+}
+
+// Admin-only History view restore (0020): mirrors deleteLead's pattern. restore_lead
+// raises for non-admins and for an already-active lead, surfaced here as {error}.
+export async function restoreLead(id: number): Promise<{ error?: string }> {
+  const sb = await supabaseServer();
+  const { error } = await sb.rpc('restore_lead', { p_lead_id: id });
   if (error) return { error: error.message };
   revalidatePath('/leads'); revalidatePath('/map'); revalidatePath('/customers'); revalidatePath('/dashboard');
   return {};

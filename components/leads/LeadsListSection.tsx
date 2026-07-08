@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { type Lead } from '@/lib/leads';
 import { toCSV, downloadCSV, leadsCsvTable } from '@/lib/csv';
 import { ViewToggle } from '@/components/ui/ViewToggle';
+import { HistoryToggle } from '@/components/ui/HistoryToggle';
 import { LeadsListTable } from './LeadsListTable';
 
 export function LeadsListSection({
@@ -19,6 +20,7 @@ export function LeadsListSection({
     <section className="screen">
       <div className="scrhead">
         <ViewToggle view="list" base="/leads" />
+        {admin && <HistoryToggle base="/leads" active={false} />}
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             className="btn sec"

@@ -27,6 +27,7 @@ export default async function MapPage({
     ? sb
         .from('jobs')
         .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price')
+        .is('deleted_at', null)
         .order('id')
     : sb
         .from('jobs_public')
@@ -39,7 +40,7 @@ export default async function MapPage({
       .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at')
       .order('id'),
     sb.from('customers').select('id,name,address,phone,email,lat,lng,active'),
-    admin ? sb.from('leads').select('id,quote_value') : Promise.resolve({ data: null, error: null }),
+    admin ? sb.from('leads').select('id,quote_value').is('deleted_at', null) : Promise.resolve({ data: null, error: null }),
     jobsQuery,
     sb.from('profiles').select('id,full_name'),
   ]);

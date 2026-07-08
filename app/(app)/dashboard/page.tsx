@@ -28,7 +28,7 @@ export default async function DashboardPage() {
   // invoice_items) are conditional; non-admins substitute a resolved { data: null } so the tuple
   // shape is stable. Money is still gated behind `if (admin)` below — nothing leaks.
   const jobsQuery = admin
-    ? sb.from('jobs').select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price').order('id')
+    ? sb.from('jobs').select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price').is('deleted_at', null).order('id')
     : sb.from('jobs_public').select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at').order('id');
 
   const [jobsRes, csRes, psRes, lpRes, invRes, itemRes] = await Promise.all([

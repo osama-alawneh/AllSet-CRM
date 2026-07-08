@@ -1,5 +1,5 @@
 begin;
-select plan(29);
+select plan(49);
 
 -- fixtures --------------------------------------------------------------------
 insert into auth.users (id, instance_id, aud, role, email) values
@@ -32,6 +32,11 @@ insert into leads(id,customer_id,status,service,description) overriding system v
   values (900032,900031,'won','Full clean','Front 12 panes, ladder needed');
 select is((select description from jobs where lead_id=900032), 'Front 12 panes, ladder needed',
           'won trigger copies description to the job');
+
+-- fixtures for the soft-delete + restore trio below (0020) — inserted as superuser like the
+-- rest, since authenticated's column-scoped grant on leads (0019) does not cover `id`.
+insert into leads(id,customer_id,status,service) overriding system value values (900033,900031,'follow','Restore lead me');
+insert into jobs(id,customer_id,status,service) overriding system value values (900097,900031,'unclaimed','Restore job me');
 
 -- (as rep) ---------------------------------------------------------------------
 set local role authenticated;
@@ -68,11 +73,49 @@ select is((select price from jobs where service='Manual job'), 240::numeric, 'ad
 select lives_ok($$ select update_job((select id from jobs where service='Manual job'),
   'Manual job v2','wash all v2', current_date + 1, 260) $$, 'admin update_job runs');
 select lives_ok($$ select delete_job((select id from jobs where service='Manual job v2')) $$, 'admin delete_job runs');
-select is((select count(*)::int from jobs where service='Manual job v2'), 0, 'job deleted');
--- delete_lead: the won lead 900032 has a job; FK is on delete set null, so the job survives
+-- 0020: delete_job is soft — the row stays in the base table (history), just hidden from
+-- jobs_public. count(*)=0 is no longer true (that was the hard-delete assertion).
+select is((select count(*)::int from jobs where service='Manual job v2'), 1, 'soft-deleted job row kept in base table');
+select ok((select deleted_at is not null from jobs where service='Manual job v2'), 'soft-deleted job has deleted_at set');
+select is((select count(*)::int from jobs_public where service='Manual job v2'), 0, 'soft-deleted job hidden from jobs_public');
+
+-- 0020: delete_lead is soft too, so the lead row is never actually removed — the FK's
+-- ON DELETE SET NULL on jobs.lead_id never fires. The won job keeps pointing at its
+-- (now-hidden) origin lead; this replaces the old hard-delete "orphans the job" assertion.
 select lives_ok($$ select delete_lead(900032) $$, 'admin delete_lead runs');
-select is((select count(*)::int from jobs where description='Front 12 panes, ladder needed' and lead_id is null), 1,
-          'deleting a won lead orphans (not deletes) its job — lead_id set null');
+select is((select count(*)::int from leads where id=900032), 1, 'soft-deleted lead row kept in base table');
+select ok((select deleted_at is not null from leads where id=900032), 'soft-deleted lead has deleted_at set');
+select is((select count(*)::int from leads_public where id=900032), 0, 'soft-deleted lead hidden from leads_public');
+select is((select lead_id from jobs where description='Front 12 panes, ladder needed'), 900032::bigint,
+          'job keeps its origin lead_id — soft delete does not orphan via FK (lead row was never removed)');
+
+-- Soft-delete + restore trio (0020, brief Step 2) -------------------------------
+select lives_ok($$ select delete_lead(900033) $$, 'admin delete_lead soft-deletes a fresh lead');
+select throws_ok($$ select set_lead_status(900033,'won'::lead_status) $$, 'P0001', 'Lead 900033 not found',
+  'set_lead_status on a deleted lead raises');
+
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000031"}'; -- rep
+select throws_ok($$ select restore_lead(900033) $$, 'P0001', 'Not authorized to restore leads', 'rep cannot restore leads');
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000032"}'; -- cleaner
+select throws_ok($$ select restore_lead(900033) $$, 'P0001', 'Not authorized to restore leads', 'cleaner cannot restore leads');
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000030"}'; -- admin
+select lives_ok($$ select restore_lead(900033) $$, 'admin restore_lead runs');
+select is((select count(*)::int from leads_public where id=900033), 1, 'restored lead reappears in leads_public');
+select ok((select deleted_at is null from leads where id=900033), 'restored lead has deleted_at cleared');
+
+select lives_ok($$ select delete_job(900097) $$, 'admin delete_job soft-deletes a fresh job');
+select throws_ok($$ select set_job_status(900097,'claimed'::job_status) $$, 'P0001', 'Job 900097 not found or not yours',
+  'set_job_status on a deleted job raises');
+select throws_ok($$ select claim_job(900097) $$, 'P0001', 'Job already claimed', 'claim_job on a deleted job raises');
+
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000031"}'; -- rep
+select throws_ok($$ select restore_job(900097) $$, 'P0001', 'Not authorized to restore jobs', 'rep cannot restore jobs');
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000032"}'; -- cleaner
+select throws_ok($$ select restore_job(900097) $$, 'P0001', 'Not authorized to restore jobs', 'cleaner cannot restore jobs');
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000030"}'; -- admin
+select lives_ok($$ select restore_job(900097) $$, 'admin restore_job runs');
+select is((select count(*)::int from jobs_public where id=900097), 1, 'restored job reappears in jobs_public');
+select ok((select deleted_at is null from jobs where id=900097), 'restored job has deleted_at cleared');
 
 select * from finish();
 rollback;

@@ -58,9 +58,21 @@ export async function updateJob(id: number, fd: FormData): Promise<{ error?: str
   return {};
 }
 
+// 0020: soft delete — delete_job now flips jobs.deleted_at instead of removing the row, so
+// the job survives in History and can be brought back with restoreJob below.
 export async function deleteJob(id: number): Promise<{ error?: string }> {
   const sb = await supabaseServer();
   const { error } = await sb.rpc('delete_job', { p_job_id: id });
+  if (error) return { error: error.message };
+  revalidatePath('/jobs'); revalidatePath('/dashboard'); revalidatePath('/customers'); revalidatePath('/invoices');
+  return {};
+}
+
+// Admin-only History view restore (0020): mirrors deleteJob's pattern. restore_job raises
+// for non-admins and for an already-active job, surfaced here as {error}.
+export async function restoreJob(id: number): Promise<{ error?: string }> {
+  const sb = await supabaseServer();
+  const { error } = await sb.rpc('restore_job', { p_job_id: id });
   if (error) return { error: error.message };
   revalidatePath('/jobs'); revalidatePath('/dashboard'); revalidatePath('/customers'); revalidatePath('/invoices');
   return {};
