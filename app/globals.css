@@ -245,7 +245,7 @@ button.mpin:focus-visible { outline: 2px solid var(--accent); outline-offset: 2p
 .kv { display: grid; grid-template-columns: auto 1fr; gap: 7px 14px; font-size: 12px; }
 .kv .k { color: var(--muted); } .kv .v { text-align: right; font-weight: 700; }
 .kv input, .kv select { text-align: right; width: 100%; }
-.qa { display: flex; gap: 7px; margin-top: 12px; }
+.qa { display: flex; align-items: center; gap: 7px; margin-top: 12px; }
 .qa a { flex: 1; text-align: center; padding: 9px; border: 1.5px solid var(--line); border-radius: 4px; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 .qa a:hover { border-color: var(--accent); color: var(--accent); }
 .tabs { display: flex; gap: 6px; border-bottom: 1.5px solid var(--line); margin-top: 18px; }
@@ -312,7 +312,7 @@ button.mpin:focus-visible { outline: 2px solid var(--accent); outline-offset: 2p
   input, select, textarea { font-size: 16px; }
   /* 44px minimum touch targets (Apple HIG) */
   .btn, .iconbtn, .claim, .drawer .close, .viewtoggle button, .acts button, .pop .go, .pop .x,
-  .statuspick button { min-height: 44px; }
+  .statuspick button, .copybtn { min-height: 44px; }
   .nav a { min-height: 44px; align-items: center; }
   /* Map pins stay 16px visually; expand the hit area invisibly. */
   .mpin::after { content: ""; position: absolute; inset: -14px; }
@@ -343,7 +343,8 @@ input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; marg
 
 /* Copy-to-clipboard button (owner request #8): sits in the .qa Call/Text/Email row and
    mirrors those anchors' sizing/color so it reads as one row, but it's a real <button>
-   (no href) so border/background are stripped. min-height guarantees the 44px touch
-   target unconditionally, since .qa is stretch-aligned it also lifts the sibling anchors. */
-.copybtn { flex: 1; text-align: center; padding: 9px; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; background: none; border: 0; cursor: pointer; color: var(--muted); min-height: 44px; }
+   (no href) so border/background are stripped. The 44px touch minimum lives in the
+   pointer:coarse block above with the rest of the wave-2 targets; .qa centers its
+   items so the taller button doesn't stretch the sibling anchors. */
+.copybtn { flex: 1; text-align: center; padding: 9px; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; background: none; border: 0; cursor: pointer; color: var(--muted); }
 .copybtn:hover { color: var(--accent); }
