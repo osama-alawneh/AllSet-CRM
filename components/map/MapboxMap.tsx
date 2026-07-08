@@ -3,15 +3,20 @@ import { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css'; // imported ONLY here, never in a server file
 import { MAP_BOUNDS } from '@/lib/geo';
-import { statusColor } from '@/lib/leads';
+import { pinColor } from '@/lib/mapPins';
 import type { MapImplProps } from './SchematicMap';
 
 export function MapboxMap({
-  pins, canCreate, overlay, onMapClick, onPinClick, token, height, interactive = true,
-}: MapImplProps & { token: string; interactive?: boolean }) {
+  pins, canCreate, overlay, onMapClick, onPinClick, token, height, interactive = true, flyTo = null,
+}: MapImplProps & {
+  token: string;
+  interactive?: boolean;
+  flyTo?: { lat: number; lng: number; seq: number } | null;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const searchMarkerRef = useRef<mapboxgl.Marker | null>(null);
   // Keep the latest callbacks reachable from the once-bound map click handler.
   // Synced in an effect (not during render) — mutating a ref's `.current` while
   // rendering trips the `react-hooks/refs` lint rule.
@@ -38,6 +43,8 @@ export function MapboxMap({
     });
     mapRef.current = map;
     map.on('click', e => {
+      searchMarkerRef.current?.remove();
+      searchMarkerRef.current = null;
       if (!canCreateRef.current) return;
       const p = map.project(e.lngLat);
       const rect = containerRef.current!.getBoundingClientRect();
@@ -46,6 +53,8 @@ export function MapboxMap({
       clickRef.current(e.lngLat.lat, e.lngLat.lng, xPct, yPct);
     });
     return () => {
+      searchMarkerRef.current?.remove();
+      searchMarkerRef.current = null;
       map.remove();
       mapRef.current = null;
     };
@@ -60,21 +69,37 @@ export function MapboxMap({
     for (const pin of pins) {
       // Mapbox owns the OUTER marker element's transform, so put .mpin styling on an
       // INNER child (its own rotate/translate does not fight Mapbox's positioning).
+      // Real <button>: focusable + named for AT (Wave 3 UI-12).
       const el = document.createElement('div');
-      const inner = document.createElement('div');
-      inner.className = 'mpin';
+      const inner = document.createElement('button');
+      inner.type = 'button';
+      inner.className = pin.kind === 'job' ? 'mpin mpin-job' : 'mpin';
       inner.title = pin.label;
-      inner.style.setProperty('--pc', statusColor[pin.status]);
+      inner.setAttribute('aria-label', pin.label);
+      inner.style.setProperty('--pc', pinColor(pin));
       inner.innerHTML = '<i></i>';
       inner.addEventListener('click', ev => {
         ev.stopPropagation();
-        onPinClick(pin.id);
+        onPinClick(pin);
       });
       el.appendChild(inner);
       const marker = new mapboxgl.Marker({ element: el }).setLngLat([pin.lng, pin.lat]).addTo(map);
       markersRef.current.push(marker);
     }
   }, [pins, onPinClick]);
+
+  // Fly to a searched address and drop a temporary highlight marker. `seq` changes
+  // on every selection, so re-picking the same address still re-flies. The marker
+  // clears on the next selection or any map click.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !flyTo) return;
+    map.flyTo({ center: [flyTo.lng, flyTo.lat], zoom: 16 });
+    searchMarkerRef.current?.remove();
+    searchMarkerRef.current = new mapboxgl.Marker({ color: '#f5a623' })
+      .setLngLat([flyTo.lng, flyTo.lat])
+      .addTo(map);
+  }, [flyTo]);
 
   return (
     <div

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getRole, getSession } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
@@ -145,7 +146,7 @@ export default async function DashboardPage() {
 
       <div className="panel box">
         <h3>Neighborhood snapshot</h3>
-        <p className="cap">tap to open full map →</p>
+        <p className="cap"><Link href="/map">tap to open full map →</Link></p>
         <MiniMap pins={pins} token={process.env.NEXT_PUBLIC_MAPBOX_TOKEN || null} />
         <div className="legend">
           <span><i className="lg" style={{ background: 'var(--won)' }} /> WON</span>
