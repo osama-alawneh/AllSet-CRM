@@ -109,6 +109,16 @@ export function canTransition(role: Role | null, uid: string, job: Job, to: JobS
   return false; // rep / roleless: view-only
 }
 
+// scheduled_date is timestamptz (0018): jobs carry a time, not just a day. Renders the date
+// alone when the time is exactly midnight — migrated rows and bare-date entries alike — so
+// they don't all show a misleading "00:00". String-sliced (not Date-parsed), matching the
+// existing day() convention elsewhere: no client-timezone conversion of a server-stamped value.
+export function dayTime(s: string): string {
+  const date = s.slice(0, 10);
+  const time = s.slice(11, 16);
+  return time && time !== '00:00' ? `${date} ${time}` : date;
+}
+
 export type JobInput = {
   customer_id: number; service: string; description: string | null;
   scheduled_date: string | null; price: number | null;
@@ -123,7 +133,7 @@ export function parseJobForm(
   if (!service) return { ok: false, error: 'Service is required' };
   const description = String(fd.get('description') ?? '').trim() || null;
   const dateRaw = String(fd.get('scheduled_date') ?? '').trim();
-  if (dateRaw && !/^\d{4}-\d{2}-\d{2}$/.test(dateRaw)) return { ok: false, error: 'Date must be YYYY-MM-DD' };
+  if (dateRaw && !/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/.test(dateRaw)) return { ok: false, error: 'Date must be YYYY-MM-DD' };
   const priceRaw = String(fd.get('price') ?? '').trim();
   const price = priceRaw === '' ? null : Number(priceRaw);
   if (price !== null && !Number.isFinite(price)) return { ok: false, error: 'Invalid number' };

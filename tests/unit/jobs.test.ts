@@ -7,6 +7,7 @@ import {
   groupJobsByStatus,
   visibleJobs,
   canTransition,
+  dayTime,
   type Job,
   type JobRow,
   type JobCustomer,
@@ -89,6 +90,18 @@ describe('visibleJobs', () => {
   it('admin and rep see everything', () => {
     expect(visibleJobs('admin', 'me', jobs).map(j => j.id)).toEqual([1, 2, 3]);
     expect(visibleJobs('rep', 'me', jobs).map(j => j.id)).toEqual([1, 2, 3]);
+  });
+});
+
+describe('dayTime', () => {
+  it('appends HH:MM when the timestamp carries a non-midnight time', () => {
+    expect(dayTime('2026-07-08T14:30:00+00:00')).toBe('2026-07-08 14:30');
+  });
+  it('renders date-only when the time is exactly midnight (migrated / bare-date rows)', () => {
+    expect(dayTime('2026-07-08T00:00:00+00:00')).toBe('2026-07-08');
+  });
+  it('renders date-only for a bare YYYY-MM-DD value with no time component at all', () => {
+    expect(dayTime('2026-07-08')).toBe('2026-07-08');
   });
 });
 

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { buildEntityOrFilter, hitHref, type SearchHit } from '@/lib/search';
 import type { Role } from '@/lib/auth';
+import { dayTime } from '@/lib/jobs';
 
 const GROUP_LABEL: Record<SearchHit['kind'], string> = {
   customer: 'Customers', lead: 'Leads', job: 'Jobs', invoice: 'Invoices',
@@ -60,7 +61,7 @@ export function GlobalSearch({ role }: { role: Role }) {
           kind: 'lead' as const, id: l.id, title: l.service ?? `Lead #${l.id}`, sub: `${l.status} · ${l.description ?? '—'}`,
         })),
         ...(js.data ?? []).map(j => ({
-          kind: 'job' as const, id: j.id, title: j.service ?? `Job #${j.id}`, sub: `${j.status} · ${j.scheduled_date ?? 'TBD'}`,
+          kind: 'job' as const, id: j.id, title: j.service ?? `Job #${j.id}`, sub: `${j.status} · ${j.scheduled_date ? dayTime(j.scheduled_date) : 'TBD'}`,
         })),
         ...(is.data ?? []).map(i => ({
           kind: 'invoice' as const, id: i.id, title: i.number, sub: `${i.status} · ${i.issue_date}`,

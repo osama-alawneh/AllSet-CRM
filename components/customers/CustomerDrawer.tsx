@@ -7,6 +7,7 @@ import { CopyButton } from '@/components/ui/CopyButton';
 import { saveCustomer, createCustomer } from '@/app/(app)/customers/actions';
 import type { Role } from '@/lib/auth';
 import { rowNav } from '@/lib/rowNav';
+import { dayTime } from '@/lib/jobs';
 
 const JOB_COLORS: Record<string, string> = {
   unclaimed: 'var(--new)', claimed: 'var(--sched)', in_progress: 'var(--prog)', done: 'var(--done)',
@@ -65,7 +66,7 @@ export function CustomerDrawer({
       content: jobs.length ? (
         jobs.map(j => (
           <div className="minirow" key={j.id} {...rowNav(router, `/jobs?j=${j.id}`)}>
-            <span>{j.service ?? 'Job'} · {j.scheduled_date ?? 'TBD'}</span>
+            <span>{j.service ?? 'Job'} · {j.scheduled_date ? dayTime(j.scheduled_date) : 'TBD'}</span>
             <span className="badge" style={{ background: 'var(--chip)', color: JOB_COLORS[j.status] }}>
               {JOB_NAMES[j.status] ?? j.status}
             </span>

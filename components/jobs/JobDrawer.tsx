@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Drawer } from '@/components/ui/Drawer';
 import { CopyButton } from '@/components/ui/CopyButton';
 import {
-  JOB_STATUSES, jobStatusLabel, jobStatusColor, canTransition, type Job, type JobStatus,
+  JOB_STATUSES, jobStatusLabel, jobStatusColor, canTransition, dayTime, type Job, type JobStatus,
 } from '@/lib/jobs';
 import { SERVICE_TYPES } from '@/lib/leads';
 import type { Role } from '@/lib/auth';
@@ -131,7 +131,7 @@ export function JobDrawer({
             <div className="kv">
               <span className="k">Service</span><span className="v">{job.service ?? 'TBD'}</span>
               <span className="k">Description</span><span className="v">{job.description ?? '—'}</span>
-              <span className="k">Date</span><span className="v">{job.scheduled_date ?? 'TBD'}</span>
+              <span className="k">Date</span><span className="v">{job.scheduled_date ? dayTime(job.scheduled_date) : 'TBD'}</span>
               <span className="k">Claimed by</span><span className="v">{job.claimed_by_name ?? '—'}</span>
               <span className="k">Price</span>
               {admin
@@ -233,7 +233,7 @@ export function JobDrawer({
                 </select>
               </span>
               <span className="k">Date</span>
-              <span className="v"><input name="scheduled_date" type="date" defaultValue={job?.scheduled_date ?? ''} /></span>
+              <span className="v"><input name="scheduled_date" type="datetime-local" defaultValue={job?.scheduled_date?.slice(0, 16) ?? ''} /></span>
               <span className="k">Price $</span>
               <span className="v"><input name="price" type="number" min={0} step="0.01" defaultValue={job?.price ?? ''} placeholder="0.00" /></span>
             </div>
