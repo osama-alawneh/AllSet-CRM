@@ -52,6 +52,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .skip-link:focus-visible { left: 8px; top: 8px; }
 
 .app { display: grid; grid-template-columns: 212px 1fr; gap: 20px; padding: 20px; min-height: 100vh; min-height: 100dvh; }
+.hamb { display: none; } /* base: hidden on desktop; the ≤860px block below overrides (must come first — same specificity, later declaration wins) */
 @media (max-width: 860px) {
   .app { grid-template-columns: 1fr; padding: 12px; gap: 12px; }
   .app > .side { display: none; }
@@ -99,7 +100,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .scard small { font-size: 10px; color: var(--muted); display: block; line-height: 1.5; }
 .iconbtn { background: transparent; border: 1.5px solid var(--line); border-radius: 6px; padding: 7px 10px; font-size: 12px; color: var(--muted); }
 .iconbtn:hover { color: var(--ink); border-color: var(--ink); }
-.hamb { display: none; }
 
 .screen { display: flex; flex-direction: column; gap: 18px; animation: fade .35s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
