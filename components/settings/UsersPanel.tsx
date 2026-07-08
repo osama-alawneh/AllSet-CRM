@@ -44,7 +44,7 @@ export function UsersPanel({ users, meId }: { users: PanelUser[]; meId: string }
           </select>
           <button className="btn" type="submit" disabled={pending}>{pending ? '…' : '+ Create'}</button>
         </form>
-        {error && <p role="alert" style={{ color: 'var(--lost)', fontSize: 12 }}>{error}</p>}
+        {error && <p role="alert" className="form-err">{error}</p>}
         {notice && <p style={{ color: 'var(--won)', fontSize: 12 }}>{notice}</p>}
       </div>
       <div className="panel box">

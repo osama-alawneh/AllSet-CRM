@@ -52,8 +52,8 @@ const lead: Lead = {
   lng: null,
 };
 
-function setup(onOpen = vi.fn()) {
-  const utils = render(<LeadCard lead={lead} admin={false} draggable onOpen={onOpen} />);
+function setup(onOpen = vi.fn(), draggable = true) {
+  const utils = render(<LeadCard lead={lead} admin={false} draggable={draggable} onOpen={onOpen} />);
   const root = utils.container.querySelector('.card2') as HTMLElement;
   const handle = utils.container.querySelector('.draghandle') as HTMLElement;
   const title = utils.container.querySelector('.cardlink.addr') as HTMLElement;
@@ -93,5 +93,17 @@ describe('LeadCard drag/keyboard contract (Task 7)', () => {
     expect(title).toBeTruthy();
     fireEvent.click(title);
     expect(onOpen).toHaveBeenCalledWith(42);
+  });
+});
+
+describe('LeadCard drag handle gating (rider 2)', () => {
+  it('renders .draghandle when draggable is true', () => {
+    const { handle } = setup(vi.fn(), true);
+    expect(handle).toBeTruthy();
+  });
+
+  it('omits .draghandle when draggable is false', () => {
+    const { handle } = setup(vi.fn(), false);
+    expect(handle).toBeFalsy();
   });
 });

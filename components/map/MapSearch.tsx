@@ -12,6 +12,10 @@ export function MapSearch({ token, onSelect }: { token: string; onSelect: (s: Ge
   const [active, setActive] = useState(-1);
   const abortRef = useRef<AbortController | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
+  // The query that produced the current items/failed state — onFocus below only
+  // reopens the listbox when this still matches the live input value, so a stale
+  // in-flight/debounced fetch for a previous query can't reopen with old results.
+  const resultsForRef = useRef('');
 
   useEffect(() => {
     const query = q.trim();
@@ -30,11 +34,18 @@ export function MapSearch({ token, onSelect }: { token: string; onSelect: (s: Ge
       abortRef.current = ctl;
       try {
         const res = await fetch(geocodeUrl(query, token), { signal: ctl.signal });
+        if (!res.ok) {
+          resultsForRef.current = query;
+          setItems([]); setFailed(true); setActive(-1); setOpen(true);
+          return;
+        }
         const parsed = parseGeocodeResponse(await res.json());
+        resultsForRef.current = query;
         setItems(parsed); setFailed(false); setActive(-1); setOpen(true);
       } catch (err) {
         if ((err as Error).name === 'AbortError') return;
         console.error('geocode failed', err);
+        resultsForRef.current = query;
         setItems([]); setFailed(true); setActive(-1); setOpen(true);
       }
     }, 300);
@@ -79,10 +90,13 @@ export function MapSearch({ token, onSelect }: { token: string; onSelect: (s: Ge
         aria-autocomplete="list"
         aria-activedescendant={active >= 0 ? `map-search-opt-${active}` : undefined}
         placeholder="Search address…"
+        aria-label="Search address"
         value={q}
         onChange={e => setQ(e.target.value)}
         onKeyDown={onKeyDown}
-        onFocus={() => { if (items.length > 0 || failed) setOpen(true); }}
+        onFocus={() => {
+          if (q.trim() === resultsForRef.current && (items.length > 0 || failed)) setOpen(true);
+        }}
       />
       {open && (
         <ul className="searchbox-list" id="map-search-listbox" role="listbox">
@@ -100,7 +114,9 @@ export function MapSearch({ token, onSelect }: { token: string; onSelect: (s: Ge
             </li>
           ))}
           {items.length === 0 && (
-            <li className="empty" role="option" aria-selected={false} aria-disabled="true">No results</li>
+            <li className="empty" role="option" aria-selected={false} aria-disabled="true">
+              {failed ? 'Search unavailable' : 'No results'}
+            </li>
           )}
         </ul>
       )}

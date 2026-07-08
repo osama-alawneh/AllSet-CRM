@@ -48,16 +48,18 @@ export function LeadCard({
         downPos.current = { x: e.clientX, y: e.clientY };
       }}
     >
-      <button
-        type="button"
-        className="draghandle"
-        ref={setActivatorNodeRef}
-        {...attributes}
-        {...listeners}
-        aria-label="Move card"
-      >
-        ⠿
-      </button>
+      {draggable && (
+        <button
+          type="button"
+          className="draghandle"
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          aria-label="Move card"
+        >
+          ⠿
+        </button>
+      )}
       <button
         type="button"
         className="cardlink addr"

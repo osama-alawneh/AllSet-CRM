@@ -36,7 +36,7 @@ export function LoginForm() {
       <button className="btn-p" type="submit" disabled={pending}>
         {pending ? 'Signing in…' : 'Sign in'}
       </button>
-      {err && <p role="alert" style={{ color: 'var(--lost)', fontSize: 12, margin: 0 }}>{err}</p>}
+      {err && <p role="alert" className="form-err" style={{ margin: 0 }}>{err}</p>}
     </form>
   );
 }

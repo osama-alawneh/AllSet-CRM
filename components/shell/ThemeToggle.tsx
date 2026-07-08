@@ -10,7 +10,7 @@ export function ThemeToggle({ initial }: { initial: 'light' | 'dark' }) {
     setDark(!dark);
   };
   return (
-    <button className="iconbtn" onClick={toggle} aria-label="Toggle dark mode" suppressHydrationWarning>
+    <button className="iconbtn" onClick={toggle} aria-label="Toggle dark mode">
       {dark ? '◑ Light' : '◐ Dark'}
     </button>
   );
