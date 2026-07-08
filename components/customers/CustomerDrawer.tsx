@@ -173,7 +173,7 @@ export function CustomerDrawer({
             </div>
           )}
         </div>
-        {!isNew && <Tabs tabs={tabs} />}
+        {!isNew && <Tabs tabs={tabs} label="Customer records" />}
         <div className="sec">
           <span className="lbl">Notes</span>
           {editing ? (
