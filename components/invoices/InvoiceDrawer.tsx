@@ -3,6 +3,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Drawer } from '@/components/ui/Drawer';
+import { CustomerLookup } from '@/components/customers/CustomerLookup';
 import {
   INVOICE_STATUSES,
   invoiceStatusColor,
@@ -132,9 +133,12 @@ export function InvoiceDrawer({
         <span className="lbl">Bill to</span>
         {editing ? (
           <>
-            <select value={customerId} onChange={e => setCustomerId(Number(e.target.value))} style={{ width: '100%' }}>
-              {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <CustomerLookup
+              customers={customers}
+              name="customer_lookup_display"
+              initialId={customerId}
+              onPick={c => setCustomerId(c.id)}
+            />
             <div className="minirow" style={{ cursor: 'default' }}>
               <span style={{ color: 'var(--muted)' }}>📞 {cust?.phone ?? '—'} · {cust?.address ?? '—'}</span>
             </div>

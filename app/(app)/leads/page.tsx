@@ -43,7 +43,7 @@ export default async function LeadsPage({
 
   const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], quoteById);
   const selected = lParam ? leads.find(l => l.id === Number(lParam)) ?? null : null;
-  const customerOptions = (cs ?? []).map(c => ({ id: c.id, name: c.name }));
+  const customerOptions = (cs ?? []).map(c => ({ id: c.id, name: c.name, phone: c.phone, address: c.address }));
 
   return (
     <>

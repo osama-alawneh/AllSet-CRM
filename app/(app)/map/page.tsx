@@ -117,7 +117,7 @@ export default async function MapPage({
       leadDetail = ld ? { ...ld, quote_value: null } : null; // money structurally absent for non-admins
     }
   }
-  const customerOptions = ((cs ?? []) as CustomerGeo[]).map(c => ({ id: c.id, name: c.name }));
+  const customerOptions = ((cs ?? []) as CustomerGeo[]).map(c => ({ id: c.id, name: c.name, phone: c.phone, address: c.address }));
 
   return (
     <section className="screen screen-fill">

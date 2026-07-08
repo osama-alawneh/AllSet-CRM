@@ -98,7 +98,7 @@ export default async function JobsPage({
       leadDetail = ld ? { ...ld, quote_value: null } : null; // money structurally absent for non-admins
     }
   }
-  const customerOptions = (cs ?? []).map(c => ({ id: c.id, name: c.name }));
+  const customerOptions = (cs ?? []).map(c => ({ id: c.id, name: c.name, phone: c.phone, address: c.address }));
 
   return (
     <>
