@@ -68,7 +68,7 @@ export function GlobalSearch({ role }: { role: Role }) {
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
-      if (!boxRef.current?.contains(e.target as Node)) setOpen(false);
+      if (!boxRef.current?.contains(e.target as Node)) { setOpen(false); setActive(-1); }
     };
     document.addEventListener('click', onDoc);
     return () => document.removeEventListener('click', onDoc);
@@ -91,10 +91,14 @@ export function GlobalSearch({ role }: { role: Role }) {
         onChange={e => setQ(e.target.value)}
         onFocus={() => hits && setOpen(true)}
         onKeyDown={e => {
-          if (e.key === 'ArrowDown') { e.preventDefault(); setActive(a => Math.min(a + 1, orderedHits.length - 1)); }
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (!visible && hits) setOpen(true);
+            setActive(a => Math.min(a + 1, orderedHits.length - 1));
+          }
           else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(a => Math.max(a - 1, -1)); }
-          else if (e.key === 'Enter' && active >= 0 && orderedHits[active]) { e.preventDefault(); pick(orderedHits[active]); }
-          else if (e.key === 'Escape') { setOpen(false); }
+          else if (e.key === 'Enter' && visible && active >= 0 && orderedHits[active]) { e.preventDefault(); pick(orderedHits[active]); }
+          else if (e.key === 'Escape') { setOpen(false); setActive(-1); }
         }}
         role="combobox"
         aria-expanded={visible}
