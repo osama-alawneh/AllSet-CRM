@@ -125,14 +125,14 @@ export function CustomerDrawer({
   ];
 
   return (
-    <Drawer onClose={close}>
+    <Drawer onClose={close} labelId="customer-drawer-title">
       <form action={submit}>
         <div className="dh">
           <div>
             <span className="badge" style={{ background: 'var(--chip)', color: 'var(--muted)' }}>
               {isNew ? 'NEW' : `CUSTOMER #${String(c!.id).padStart(4, '0')}`}
             </span>
-            <h2>{isNew ? 'New customer' : c!.name}</h2>
+            <h2 id="customer-drawer-title">{isNew ? 'New customer' : c!.name}</h2>
           </div>
           <button type="button" className="close" onClick={close} aria-label="Close">✕</button>
         </div>

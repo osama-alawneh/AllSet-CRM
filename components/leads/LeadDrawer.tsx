@@ -65,13 +65,13 @@ export function LeadDrawer({
   };
 
   return (
-    <Drawer onClose={close}>
+    <Drawer onClose={close} labelId="lead-drawer-title">
       <div className="dh">
         <div>
           <span className="badge" style={{ background: 'var(--chip)', color: lead ? statusColor[lead.status] : 'var(--muted)' }}>
             {lead ? statusLabel[lead.status] : 'NEW'}
           </span>
-          <h2>{isNew ? 'New lead' : lead!.service ?? lead!.customer_name}</h2>
+          <h2 id="lead-drawer-title">{isNew ? 'New lead' : lead!.service ?? lead!.customer_name}</h2>
         </div>
         <button type="button" className="close" onClick={close} aria-label="Close">✕</button>
       </div>

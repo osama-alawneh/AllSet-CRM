@@ -119,11 +119,11 @@ export function InvoiceDrawer({
   }, [printPayload]);
 
   return (
-    <Drawer onClose={close}>
+    <Drawer onClose={close} labelId="invoice-drawer-title">
       <div className="dh">
         <div>
           <span className="badge" style={{ background: 'var(--chip)', color: invoiceStatusColor[status] }}>{status}</span>
-          <h2>{number}</h2>
+          <h2 id="invoice-drawer-title">{number}</h2>
         </div>
         <button type="button" className="close" onClick={close} aria-label="Close">✕</button>
       </div>

@@ -89,13 +89,13 @@ export function JobDrawer({
   };
 
   return (
-    <Drawer onClose={close}>
+    <Drawer onClose={close} labelId="job-drawer-title">
       <div className="dh">
         <div>
           <span className="badge" style={{ background: 'var(--chip)', color: job ? jobStatusColor[job.status] : 'var(--muted)' }}>
             {job ? jobStatusLabel[job.status] : 'NEW'}
           </span>
-          <h2>{isNew ? 'New job' : job!.customer_name}</h2>
+          <h2 id="job-drawer-title">{isNew ? 'New job' : job!.customer_name}</h2>
         </div>
         <button type="button" className="close" onClick={close} aria-label="Close">✕</button>
       </div>
