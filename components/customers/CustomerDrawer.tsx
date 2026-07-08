@@ -175,7 +175,7 @@ export function CustomerDrawer({
             <p style={{ fontSize: 12, lineHeight: 1.6, margin: 0, color: 'var(--muted)' }}>{c!.notes ?? '—'}</p>
           )}
         </div>
-        {error && <p style={{ color: 'var(--lost)', fontSize: 12 }}>{error}</p>}
+        {error && <p className="form-err" role="alert">{error}</p>}
         <div className="acts">
           {canEdit && !editing && (
             <button className="btn-p" type="button" onClick={() => { setError(null); setEditing(true); }}>✎ Edit</button>
