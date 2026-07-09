@@ -116,9 +116,10 @@ export function visibleJobs(_role: Role | null, _uid: string, jobs: Job[]): Job[
 // set_job_status, to preserve first-claim-wins).
 export function canTransition(role: Role | null, uid: string, job: Job, to: JobStatus): boolean {
   if (to === job.status) return false;
-  // Drag-to-claim (owner 2026-07-09): dropping an unclaimed job on Claimed is a CLAIM
-  // for cleaners AND admins (admin does field work too) — the board routes it through
-  // the race-safe claimJob action, never set_job_status. Reps stay view-only here.
+  // Claim-by-transition (owner 2026-07-09): moving an unclaimed job to Claimed is a CLAIM
+  // for cleaners AND admins (admin does field work too) — both call sites (the board's
+  // drag-end handler and the drawer's statuspick) route this pair through the race-safe
+  // claimJob action, never set_job_status. Reps stay view-only here.
   if (job.status === 'unclaimed' && to === 'claimed') return role === 'admin' || role === 'cleaner';
   if (role === 'admin') return true;
   if (role === 'cleaner') {

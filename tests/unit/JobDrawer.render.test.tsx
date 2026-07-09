@@ -10,7 +10,7 @@
 // admin/rep-only — the string "Repeat" must never reach a cleaner's DOM, (f) the money
 // visibility matrix's rep half — rep sees Price and can edit (rep = admin on job money).
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, fireEvent } from '@testing-library/react';
 
 afterEach(cleanup);
 
@@ -151,6 +151,25 @@ describe('JobDrawer members table + join requests', () => {
     expect(cleanerView.container.textContent ?? '').not.toContain('Repeat');
   });
 
+  it('(e2) admin sees "Spawned from #0123" for recur_parent_id: 123 (zero-padded job ref)', () => {
+    const { container } = render(
+      <JobDrawer job={job({ recur_parent_id: 123 })} role="admin" uid={OWNER} admin members={[member({})]} />
+    );
+    const text = container.textContent ?? '';
+    expect(text).toContain('Spawned from');
+    expect(text).toContain('#0123');
+  });
+
+  it('(e3) the edit form recur_days input round-trips job.recur_days as its defaultValue', () => {
+    const { container, getByText } = render(
+      <JobDrawer job={job({ recur_days: 14 })} role="admin" uid={OWNER} admin members={[member({})]} />
+    );
+    fireEvent.click(getByText('✎ Edit'));
+    const input = container.querySelector('input[name="recur_days"]') as HTMLInputElement;
+    expect(input).toBeTruthy();
+    expect(input.defaultValue).toBe('14');
+  });
+
   it('(f) rep sees the price and the ✎ Edit button (spec: rep = admin on job money)', () => {
     const members = [member({})];
     const { getByText } = render(
@@ -159,6 +178,73 @@ describe('JobDrawer members table + join requests', () => {
     expect(getByText('Price')).toBeTruthy();
     expect(getByText('$200')).toBeTruthy(); // job.price
     expect(getByText('✎ Edit')).toBeTruthy();
+  });
+});
+
+describe('JobDrawer pot row on unclaimed jobs (spec §B1, final-review fix)', () => {
+  // Spec: the cleaner pot shows beneath Price unconditionally — admin/rep see Price + pot,
+  // cleaners see the pot only. A cleaner deciding whether to claim an unclaimed job must
+  // see the money on offer; the old `claimed_by != null` gate hid it entirely.
+  it('admin sees Price and Cleaner pot on an unclaimed job', () => {
+    const { container } = render(
+      <JobDrawer
+        job={job({ status: 'unclaimed', claimed_by: null, claimed_by_name: null })}
+        role="admin" uid={OWNER} admin members={[]}
+      />
+    );
+    const text = container.textContent ?? '';
+    expect(text).toContain('Price');
+    expect(text).toContain('Cleaner pot');
+    expect(text).toContain('$100');
+  });
+
+  it('cleaner sees Cleaner pot but never Price on an unclaimed job', () => {
+    const { container } = render(
+      <JobDrawer
+        job={job({ status: 'unclaimed', claimed_by: null, claimed_by_name: null })}
+        role="cleaner" uid={NON_MEMBER_CLEANER} admin={false} members={[]}
+      />
+    );
+    const text = container.textContent ?? '';
+    expect(text).toContain('Cleaner pot');
+    expect(text).toContain('$100');
+    expect(text).not.toContain('Price');
+  });
+});
+
+describe('JobDrawer unclaimed → Claimed statuspick routes through claimJob (final-review fix)', () => {
+  // Task 2 enabled canTransition(unclaimed→claimed) for admin+cleaner, so the statuspick now
+  // offers "Claimed" on unclaimed jobs. That pair is a CLAIM: it must go through the race-safe
+  // claimJob RPC (same as the "Claim job" button and the board's drag-end handler), never
+  // setJobStatus — which would create an ownerless claimed job (admin) or error (cleaner).
+  it('admin clicking "Claimed" on an unclaimed job calls claimJob, not setJobStatus', async () => {
+    const actions = await import('@/app/(app)/jobs/actions');
+    vi.mocked(actions.claimJob).mockClear();
+    vi.mocked(actions.setJobStatus).mockClear();
+    const { getByText } = render(
+      <JobDrawer
+        job={job({ status: 'unclaimed', claimed_by: null, claimed_by_name: null })}
+        role="admin" uid={OWNER} admin members={[]}
+      />
+    );
+    getByText('Claimed').click();
+    await vi.waitFor(() => expect(actions.claimJob).toHaveBeenCalledWith(1));
+    expect(actions.setJobStatus).not.toHaveBeenCalled();
+  });
+
+  it('cleaner clicking "Claimed" on an unclaimed job calls claimJob, not setJobStatus', async () => {
+    const actions = await import('@/app/(app)/jobs/actions');
+    vi.mocked(actions.claimJob).mockClear();
+    vi.mocked(actions.setJobStatus).mockClear();
+    const { getByText } = render(
+      <JobDrawer
+        job={job({ status: 'unclaimed', claimed_by: null, claimed_by_name: null })}
+        role="cleaner" uid={NON_MEMBER_CLEANER} admin={false} members={[]}
+      />
+    );
+    getByText('Claimed').click();
+    await vi.waitFor(() => expect(actions.claimJob).toHaveBeenCalledWith(1));
+    expect(actions.setJobStatus).not.toHaveBeenCalled();
   });
 });
 
