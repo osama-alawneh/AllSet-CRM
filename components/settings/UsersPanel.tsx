@@ -4,7 +4,7 @@ import { createUser, setUserRole } from '@/app/(app)/settings/actions';
 
 export type PanelUser = {
   id: string; full_name: string; role: 'admin' | 'rep' | 'cleaner';
-  email: string; created_at: string;
+  email: string; created_at: string; phone: string | null; dob: string | null;
 };
 const ROLES = ['admin', 'rep', 'cleaner'] as const;
 
@@ -42,6 +42,14 @@ export function UsersPanel({ users, meId }: { users: PanelUser[]; meId: string }
           <select name="role" defaultValue="rep" aria-label="Role">
             {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
+          <div>
+            <label className="lbl" htmlFor="new-user-phone">Phone</label><br />
+            <input id="new-user-phone" name="phone" type="tel" placeholder="555-0100" autoComplete="off" />
+          </div>
+          <div>
+            <label className="lbl" htmlFor="new-user-dob">DOB</label><br />
+            <input id="new-user-dob" name="dob" type="date" autoComplete="off" />
+          </div>
           <button className="btn" type="submit" disabled={pending}>{pending ? '…' : '+ Create'}</button>
         </form>
         {error && <p role="alert" className="form-err">{error}</p>}
@@ -51,12 +59,14 @@ export function UsersPanel({ users, meId }: { users: PanelUser[]; meId: string }
         <h3>Users ({users.length})</h3>
         <div className="tblwrap">
           <table className="tbl">
-            <thead><tr><th>Name</th><th>Email</th><th>Since</th><th>Role</th></tr></thead>
+            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>DOB</th><th>Since</th><th>Role</th></tr></thead>
             <tbody>
               {users.map(u => (
                 <tr key={u.id}>
                   <td><b>{u.full_name}</b>{u.id === meId ? <small style={{ color: 'var(--muted)' }}> (you)</small> : null}</td>
                   <td>{u.email}</td>
+                  <td>{u.phone ?? '—'}</td>
+                  <td>{u.dob ?? '—'}</td>
                   <td>{u.created_at}</td>
                   <td>
                     <select
