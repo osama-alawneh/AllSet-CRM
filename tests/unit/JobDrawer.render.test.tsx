@@ -7,7 +7,8 @@
 // share figure left in the drawer, (d) the join-request button lives in the actions row and
 // flips to a disabled "Requested" state once the viewer has a pending request of their own,
 // (e) recurrence metadata (↻ Repeats / Spawned from / the edit-form recur_days input) is
-// admin/rep-only — the string "Repeat" must never reach a cleaner's DOM.
+// admin/rep-only — the string "Repeat" must never reach a cleaner's DOM, (f) the money
+// visibility matrix's rep half — rep sees Price and can edit (rep = admin on job money).
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 
@@ -71,13 +72,16 @@ describe('JobDrawer members table + join requests', () => {
     expect(getByText('Approve')).toBeTruthy();
     expect(getByText('Reject')).toBeTruthy();
 
-    // non-owner approved viewer without decide rights: no Approve/Reject anywhere
+    // non-owner APPROVED viewer without decide rights: no Approve/Reject anywhere, and no
+    // join-request slot either (pins showJoinSlot's `myMember?.status !== 'approved'` guard).
     cleanup();
     const nonDecider = render(
       <JobDrawer job={job({})} role="cleaner" uid={OTHER_CLEANER} admin={false} members={members} />
     );
     expect(nonDecider.queryByText('Approve')).toBeNull();
     expect(nonDecider.queryByText('Reject')).toBeNull();
+    expect(nonDecider.queryByText('Request to join')).toBeNull();
+    expect(nonDecider.queryByText('Requested')).toBeNull();
   });
 
   it('(b) an empty member set on a claimed job still renders a table with a "no joiners requested" row', () => {
@@ -145,5 +149,15 @@ describe('JobDrawer members table + join requests', () => {
       <JobDrawer job={job({ recur_days: 14 })} role="cleaner" uid={OWNER} admin={false} members={members} />
     );
     expect(cleanerView.container.textContent ?? '').not.toContain('Repeat');
+  });
+
+  it('(f) rep sees the price and the ✎ Edit button (spec: rep = admin on job money)', () => {
+    const members = [member({})];
+    const { getByText } = render(
+      <JobDrawer job={job({})} role="rep" uid={OTHER_CLEANER} admin={false} members={members} />
+    );
+    expect(getByText('Price')).toBeTruthy();
+    expect(getByText('$200')).toBeTruthy(); // job.price
+    expect(getByText('✎ Edit')).toBeTruthy();
   });
 });
