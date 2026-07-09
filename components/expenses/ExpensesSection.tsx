@@ -43,13 +43,15 @@ export function ExpensesSection({ rows }: { rows: ExpenseRow[] }) {
     startTransition(async () => {
       const res = await addExpense(fd);
       if (res?.error) setError(res.error);
-      // Reset on success only (UsersPanel's create-user pattern) — an error keeps the
-      // user's values in place so they can correct and resubmit.
+      // React 19 auto-resets the uncontrolled form after any <form action> completes (success
+      // OR error) — values clear either way; the explicit reset()+refresh here just re-syncs
+      // the list on success. On error we surface the message via the role=alert below.
       else { formRef.current?.reset(); router.refresh(); }
     });
   };
 
   const onDelete = (id: number) => {
+    if (!window.confirm('Delete this expense?')) return;
     setError(null);
     startTransition(async () => {
       const res = await deleteExpense(id);

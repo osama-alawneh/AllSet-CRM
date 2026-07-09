@@ -79,9 +79,20 @@ describe('ExpensesSection', () => {
     await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('Amount must be positive'));
   });
 
-  it('calls deleteExpense when a manual row Delete button is clicked', async () => {
+  it('calls deleteExpense when a manual row Delete is clicked and the confirm is accepted', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<ExpensesSection rows={rows} />);
     fireEvent.click(screen.getByText('Supplies run').closest('tr')!.querySelector('button')!);
     await waitFor(() => expect(deleteExpense).toHaveBeenCalledWith(2));
+    confirm.mockRestore();
+  });
+
+  it('does not call deleteExpense when the confirm is declined', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    deleteExpense.mockClear();
+    render(<ExpensesSection rows={rows} />);
+    fireEvent.click(screen.getByText('Supplies run').closest('tr')!.querySelector('button')!);
+    expect(deleteExpense).not.toHaveBeenCalled();
+    confirm.mockRestore();
   });
 });
