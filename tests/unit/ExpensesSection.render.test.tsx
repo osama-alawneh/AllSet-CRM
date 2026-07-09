@@ -49,14 +49,34 @@ describe('ExpensesSection', () => {
     expect(manualRow.querySelector('button')).toBeTruthy();
   });
 
-  it('submits the add form via the addExpense server action', async () => {
+  it('submits the add form via the addExpense server action and resets it on success', async () => {
+    render(<ExpensesSection rows={rows} />);
+
+    const label = screen.getByLabelText('Label') as HTMLInputElement;
+    const amount = screen.getByLabelText('Amount') as HTMLInputElement;
+    fireEvent.change(label, { target: { value: 'Gas' } });
+    fireEvent.change(amount, { target: { value: '12.50' } });
+    fireEvent.click(screen.getByText('Add expense'));
+
+    await waitFor(() => expect(addExpense).toHaveBeenCalledTimes(1));
+    // Reviewer finding: uncontrolled inputs must clear after a successful add so the next
+    // entry doesn't inherit stale values (UsersPanel formRef.reset() pattern).
+    await waitFor(() => expect(label.value).toBe(''));
+    expect(amount.value).toBe('');
+  });
+
+  it('shows the inline form error when addExpense fails', async () => {
+    // Note: React 19 auto-resets uncontrolled inputs after ANY <form action> completes
+    // (success or error), so "values kept on error" is not assertable under the repo's
+    // form-action pattern (UsersPanel behaves the same). We pin the visible error here.
+    addExpense.mockResolvedValueOnce({ error: 'Amount must be positive' });
     render(<ExpensesSection rows={rows} />);
 
     fireEvent.change(screen.getByLabelText('Label'), { target: { value: 'Gas' } });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '12.50' } });
     fireEvent.click(screen.getByText('Add expense'));
 
-    await waitFor(() => expect(addExpense).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('Amount must be positive'));
   });
 
   it('calls deleteExpense when a manual row Delete button is clicked', async () => {

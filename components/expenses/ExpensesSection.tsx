@@ -1,5 +1,5 @@
 'use client';
-import { Fragment, useState, useTransition } from 'react';
+import { Fragment, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { fmtMoney } from '@/lib/invoices';
 import { monthKey } from '@/lib/earnings';
@@ -22,6 +22,7 @@ export function ExpensesSection({ rows }: { rows: ExpenseRow[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const grandTotal = rows.reduce((s, r) => s + Number(r.amount), 0);
 
@@ -42,7 +43,9 @@ export function ExpensesSection({ rows }: { rows: ExpenseRow[] }) {
     startTransition(async () => {
       const res = await addExpense(fd);
       if (res?.error) setError(res.error);
-      else router.refresh();
+      // Reset on success only (UsersPanel's create-user pattern) — an error keeps the
+      // user's values in place so they can correct and resubmit.
+      else { formRef.current?.reset(); router.refresh(); }
     });
   };
 
@@ -76,6 +79,7 @@ export function ExpensesSection({ rows }: { rows: ExpenseRow[] }) {
       </div>
 
       <form
+        ref={formRef}
         action={submitAdd}
         className="box"
         style={{ padding: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}
