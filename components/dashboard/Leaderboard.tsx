@@ -1,14 +1,31 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import { fmtMoney } from '@/lib/invoices';
 
 // Shape matches lib/earnings.leaderboard()'s return element — the app never re-derives the
 // split math here, only renders precomputed rows already sorted earnings desc.
 export type LeaderRow = { cleaner_id: string; name: string; jobsDone: number; earnings: number };
 
-export function Leaderboard({ month, allTime, uid }: { month: LeaderRow[]; allTime: LeaderRow[]; uid: string }) {
+export function Leaderboard({
+  month,
+  allTime,
+  uid,
+  limit,
+  moreHref,
+}: {
+  month: LeaderRow[];
+  allTime: LeaderRow[];
+  uid: string;
+  // Task 7: dashboard's compact leaderboard — limit slices both datasets for display only (the
+  // toggle keeps working on the full underlying data); moreHref renders a link to the full
+  // /cleaners tab. Both are optional so the default (no props) render stays byte-identical.
+  limit?: number;
+  moreHref?: string;
+}) {
   const [range, setRange] = useState<'month' | 'all'>('month');
-  const rows = range === 'month' ? month : allTime;
+  const full = range === 'month' ? month : allTime;
+  const rows = limit != null ? full.slice(0, limit) : full;
   return (
     <div className="panel box">
       <h3>Leaderboard</h3>
@@ -49,6 +66,9 @@ export function Leaderboard({ month, allTime, uid }: { month: LeaderRow[]; allTi
           </tbody>
         </table>
       </div>
+      {moreHref && (
+        <p className="cap"><Link href={moreHref}>→ Cleaners</Link></p>
+      )}
     </div>
   );
 }

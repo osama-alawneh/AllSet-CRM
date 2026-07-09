@@ -180,7 +180,7 @@ export default async function DashboardPage() {
         <MoneyRow month={moneyMonth} allTimeNet={allTimeNet} />
       )}
 
-      <Leaderboard month={monthBoard} allTime={allBoard} uid={uid} />
+      <Leaderboard month={monthBoard} allTime={allBoard} uid={uid} limit={5} moreHref="/cleaners" />
 
       <div className="grid2">
         <div className="panel box">
