@@ -4,6 +4,8 @@ import {
   toCSV,
   leadsCsvTable,
   jobsCsvTable,
+  leadsHistoryCsvTable,
+  jobsHistoryCsvTable,
   invoicesCsvTable,
   customersCsvTable,
 } from '@/lib/csv';
@@ -93,6 +95,21 @@ describe('jobsCsvTable', () => {
     const rows = [job({ scheduled_date: null })];
     const asAdmin = jobsCsvTable(rows, true);
     expect(asAdmin.rows[0][6]).toBe(null);
+  });
+});
+
+describe('history csv tables', () => {
+  it('leadsHistoryCsvTable appends a Deleted column rendered via dayTime', () => {
+    const rows = [{ ...lead({}), deleted_at: '2026-07-08T09:15:00+00:00' }];
+    const t = leadsHistoryCsvTable(rows, true);
+    expect(t.headers).toEqual(['ID', 'Customer', 'Address', 'Status', 'Service', 'Description', 'Stories', 'Panes', 'Value', 'Deleted']);
+    expect(t.rows[0]).toEqual([1, 'Sarah Kim', '1 Elm St', 'New', 'Standard', 'Front bay window', 2, 20, 500, '2026-07-08 9:15 AM']);
+  });
+  it('jobsHistoryCsvTable appends a Deleted column after Price', () => {
+    const rows = [{ ...job({}), deleted_at: '2026-07-08T14:30:00+00:00' }];
+    const t = jobsHistoryCsvTable(rows, true);
+    expect(t.headers).toEqual(['ID', 'Customer', 'Service', 'Description', 'Status', 'Claimed by', 'Scheduled', 'Price', 'Deleted']);
+    expect(t.rows[0][8]).toBe('2026-07-08 2:30 PM');
   });
 });
 

@@ -24,8 +24,8 @@ export function JobsListSection({
     <section className="screen">
       <div className="scrhead">
         <ViewToggle view="list" base="/jobs" />
-        {admin && <HistoryToggle base="/jobs" active={false} />}
         <div style={{ display: 'flex', gap: 8 }}>
+          {admin && <HistoryToggle base="/jobs" active={false} />}
           <button
             className="btn sec"
             type="button"

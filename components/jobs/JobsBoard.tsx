@@ -92,12 +92,12 @@ export function JobsBoard({
     <section className="screen">
       <div className="scrhead">
         <ViewToggle view="board" base="/jobs" />
-        {admin && <HistoryToggle base="/jobs" active={false} />}
         <input placeholder="🔍 filter jobs…" style={{ width: 200 }} value={q} onChange={e => setQ(e.target.value)} aria-label="Filter jobs" />
         <span className="cap" style={{ fontSize: 11, color: 'var(--muted)' }}>
           drag between statuses · claim to lock
         </span>
         <div style={{ display: 'flex', gap: 8 }}>
+          {admin && <HistoryToggle base="/jobs" active={false} />}
           <button
             className="btn sec"
             type="button"

@@ -54,6 +54,18 @@ export function jobsCsvTable(jobs: Job[], admin: boolean): CsvTable {
   return { headers, rows };
 }
 
+// History exports (0020 soft delete): the History screens are admin-only, so callers pass
+// admin=true; the base table's columns plus when the row was deleted.
+export function leadsHistoryCsvTable(leads: (Lead & { deleted_at: string })[], admin: boolean): CsvTable {
+  const t = leadsCsvTable(leads, admin);
+  return { headers: [...t.headers, 'Deleted'], rows: t.rows.map((r, i) => [...r, dayTime(leads[i].deleted_at)]) };
+}
+
+export function jobsHistoryCsvTable(jobs: (Job & { deleted_at: string })[], admin: boolean): CsvTable {
+  const t = jobsCsvTable(jobs, admin);
+  return { headers: [...t.headers, 'Deleted'], rows: t.rows.map((r, i) => [...r, dayTime(jobs[i].deleted_at)]) };
+}
+
 export function invoicesCsvTable(invoices: Invoice[]): CsvTable {
   const headers = ['Number', 'Customer', 'Date', 'Status', 'Total'];
   const rows: CsvCell[][] = invoices.map(inv => [

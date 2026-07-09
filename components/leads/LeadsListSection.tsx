@@ -20,8 +20,8 @@ export function LeadsListSection({
     <section className="screen">
       <div className="scrhead">
         <ViewToggle view="list" base="/leads" />
-        {admin && <HistoryToggle base="/leads" active={false} />}
         <div style={{ display: 'flex', gap: 8 }}>
+          {admin && <HistoryToggle base="/leads" active={false} />}
           <button
             className="btn sec"
             type="button"

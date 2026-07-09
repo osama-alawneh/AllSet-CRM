@@ -348,9 +348,8 @@ input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* Copy-to-clipboard button (owner request #8): sits in the .qa Call/Text/Email row and
-   mirrors those anchors' sizing/color so it reads as one row, but it's a real <button>
-   (no href) so border/background are stripped. The 44px touch minimum lives in the
-   pointer:coarse block above with the rest of the wave-2 targets; .qa centers its
-   items so the taller button doesn't stretch the sibling anchors. */
-.copybtn { flex: 1; text-align: center; padding: 9px; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; background: none; border: 0; cursor: pointer; color: var(--muted); }
-.copybtn:hover { color: var(--accent); }
+   mirrors those anchors' full look (border incl.) so the row reads as one set. The 44px
+   touch minimum lives in the pointer:coarse block above with the rest of the wave-2
+   targets; .qa centers its items so the taller button doesn't stretch the siblings. */
+.copybtn { flex: 1; text-align: center; padding: 9px; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; background: none; border: 1.5px solid var(--line); border-radius: 4px; cursor: pointer; color: var(--muted); }
+.copybtn:hover { border-color: var(--accent); color: var(--accent); }

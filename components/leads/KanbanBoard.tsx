@@ -71,12 +71,12 @@ export function KanbanBoard({
     <section className="screen">
       <div className="scrhead">
         <ViewToggle view="board" base="/leads" />
-        {admin && <HistoryToggle base="/leads" active={false} />}
         <input placeholder="🔍 filter leads…" style={{ width: 200 }} value={q} onChange={e => setQ(e.target.value)} aria-label="Filter leads" />
         <span className="cap" style={{ fontSize: 11, color: 'var(--muted)' }}>
           drag cards between columns to change status
         </span>
         <div style={{ display: 'flex', gap: 8 }}>
+          {admin && <HistoryToggle base="/leads" active={false} />}
           <button
             className="btn sec"
             type="button"
