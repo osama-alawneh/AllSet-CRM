@@ -29,13 +29,15 @@ import { JobColumn } from './JobColumn';
 type Patch = { id: number; status: JobStatus; claimed_by?: string | null; claimed_by_name?: string | null };
 
 export function JobsBoard({
-  jobs, role, uid, meName, admin,
+  jobs, role, uid, meName, admin, money, pendingByJob,
 }: {
   jobs: Job[];
   role: Role;
   uid: string;
   meName: string;
   admin: boolean;
+  money: boolean;
+  pendingByJob?: Record<number, number>;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -56,6 +58,9 @@ export function JobsBoard({
     useSensor(KeyboardSensor)
   );
   const grouped = groupJobsByStatus(filterJobs(optimistic, q));
+  // New-job affordance: admin + rep create jobs (spec: rep = admin on job money); the
+  // page's `isNew` gate is the real control, this just hides the button for cleaners.
+  const canCreate = role === 'admin' || role === 'rep';
 
   useJobsRealtime();
 
@@ -66,7 +71,20 @@ export function JobsBoard({
     if (!to || !JOB_STATUSES.includes(to)) return;
     const job = optimistic.find(j => j.id === id);
     if (!job || !canTransition(role, uid, job, to)) return;
+    if (to === 'done' && !(job.cleaner_amount != null && job.cleaner_amount > 0)
+      && !window.confirm('No cleaner pot set — no payout will be created. Continue?')) return;
     setError(null);
+    // unclaimed → claimed drops route through claimJob (race-safe first-claim-wins RPC),
+    // same as the card's Claim button — NOT setJobStatus, which would silently overwrite
+    // an already-claimed job instead of surfacing the "already claimed" race error.
+    if (job.status === 'unclaimed' && to === 'claimed') {
+      startTransition(async () => {
+        applyOptimistic({ id, status: 'claimed', claimed_by: uid, claimed_by_name: meName });
+        const res = await claimJob(id);
+        if (res?.error) setError(res.error);
+      });
+      return;
+    }
     startTransition(async () => {
       const patch: Patch = to === 'unclaimed'
         ? { id, status: to, claimed_by: null, claimed_by_name: null }
@@ -102,13 +120,13 @@ export function JobsBoard({
             className="btn sec"
             type="button"
             onClick={() => {
-              const t = jobsCsvTable(jobs, admin);
+              const t = jobsCsvTable(jobs, money);
               downloadCSV('clearview-jobs.csv', toCSV(t.headers, t.rows));
             }}
           >
             ⬇ Export CSV
           </button>
-          {admin && (
+          {canCreate && (
             <button className="btn" type="button" onClick={() => router.push('/jobs?new=1', { scroll: false })}>
               + New job
             </button>
@@ -126,11 +144,13 @@ export function JobsBoard({
               status={st}
               jobs={grouped[st]}
               admin={admin}
+              money={money}
               role={role}
               uid={uid}
               pending={pending}
               onOpen={open}
               onClaim={onClaim}
+              pendingByJob={pendingByJob}
             />
           ))}
         </div>

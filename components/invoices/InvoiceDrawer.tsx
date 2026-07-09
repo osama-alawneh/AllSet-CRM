@@ -36,7 +36,7 @@ export function InvoiceDrawer({
   const [error, setError] = useState<string | null>(null);
 
   const [editing, setEditing] = useState(isNew);
-  const [customerId, setCustomerId] = useState<number>(invoice?.customer_id ?? customers[0]?.id ?? 0);
+  const [customerId, setCustomerId] = useState<number>(invoice?.customer_id ?? 0);
   const [status, setStatus] = useState<InvoiceStatus>(invoice?.status ?? 'draft');
   const [items, setItems] = useState<InvoiceItem[]>(
     invoice?.items.length ? invoice.items : [{ description: '', qty: 1, unit_price: 0 }]
@@ -81,6 +81,7 @@ export function InvoiceDrawer({
 
   const save = () => {
     setError(null);
+    if (!customerId) { setError('Pick a customer'); return; }
     startTransition(async () => {
       const res = await saveInvoice(isNew ? null : invoice!.id, buildFd());
       // New invoices redirect inside the action (this frame does not return); only the

@@ -15,8 +15,8 @@ insert into invoices(id,customer_id,number) overriding system value values (9000
 -- lead fixture for the rep money-write-denial tests below (superuser insert bypasses grants+RLS).
 insert into leads(id,customer_id,status,service,quote_value) overriding system value
   values (900001,900001,'new','Money guard',500);
--- SEC-3 fixtures: one unclaimed job (visible to everyone) and one job claimed by
--- Cleaner B (must stay invisible to Cleaner A through jobs_public).
+-- SEC-3 fixtures: one unclaimed job and one job claimed by Cleaner B. Owner decision
+-- 2026-07-09 widened jobs_public — Cleaner A now sees BOTH (foreign job view-only).
 insert into jobs(id,customer_id,status,claimed_by) overriding system value values
   (900002,900001,'unclaimed',null),
   (900003,900001,'claimed','90000000-0000-0000-0000-000000000004');
@@ -53,16 +53,16 @@ select throws_ok($$ insert into leads(customer_id,status,service,created_by) val
 select is((select count(*)::int from jobs_public where id in (900002,900003)), 2,
   'rep sees ALL jobs via jobs_public (unclaimed + claimed-by-another), not just own/unclaimed');
 
--- SEC-3: cleaner sees only unclaimed + own rows through jobs_public — never another
--- cleaner's claimed job, even though claimed_by itself is a visible column on rows they
--- are allowed to see.
+-- Owner decision 2026-07-09: cleaners now see ALL non-deleted jobs through jobs_public,
+-- including a job claimed by another cleaner (view-only; claim/drag/join gating lives in
+-- the RPCs + UI, not the view). The old own/unclaimed filter has been dropped.
 set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000003"}';
-select is((select count(*)::int from jobs_public where claimed_by is not null and claimed_by <> auth.uid()), 0,
-  'cleaner sees zero rows in jobs_public claimed by another user');
-select is((select count(*)::int from jobs_public where id=900003), 0,
-  'cleaner cannot see the specific job claimed by another cleaner via jobs_public');
+select is((select count(*)::int from jobs_public where id=900003 and claimed_by <> auth.uid()), 1,
+  'cleaner now sees the fixture job claimed by another user via jobs_public (widened visibility)');
+select is((select count(*)::int from jobs_public where id=900003), 1,
+  'cleaner sees the foreign-claimed job via jobs_public (owner decision 2026-07-09)');
 select is((select count(*)::int from jobs_public where id=900002), 1,
-  'cleaner still sees the unclaimed job via jobs_public (filter is not over-broad)');
+  'cleaner still sees the unclaimed job via jobs_public');
 
 set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000001"}';
 select isnt_empty($$ select 1 from invoices $$, 'admin sees invoice rows');

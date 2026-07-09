@@ -14,6 +14,7 @@ import { render, fireEvent, cleanup } from '@testing-library/react';
 afterEach(cleanup);
 import { InvoiceDrawer, type InvoiceCustomerFull } from '@/components/invoices/InvoiceDrawer';
 import type { Invoice } from '@/lib/invoices';
+import { saveInvoice } from '@/app/(app)/invoices/actions';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
@@ -70,5 +71,25 @@ describe('InvoiceDrawer bill-to for a deactivated (absent-from-picker) customer'
     const text = container.textContent ?? '';
     expect(text).toContain('Active Co');
     expect(text).toContain('555-0505');
+  });
+});
+
+describe('InvoiceDrawer create mode — Bill-to starts empty', () => {
+  it('the customer lookup input has no preselected name on create', () => {
+    const { getByPlaceholderText } = render(
+      <InvoiceDrawer invoice={null} isNew={true} customers={activeCustomers} />
+    );
+    const combobox = getByPlaceholderText('Search name, phone, address…') as HTMLInputElement;
+    expect(combobox.value).toBe('');
+  });
+
+  it('saving without picking a customer surfaces an error and does not save', () => {
+    vi.mocked(saveInvoice).mockClear();
+    const { getByText } = render(
+      <InvoiceDrawer invoice={null} isNew={true} customers={activeCustomers} />
+    );
+    fireEvent.click(getByText('Save'));
+    expect(getByText('Pick a customer')).toBeTruthy();
+    expect(saveInvoice).not.toHaveBeenCalled();
   });
 });

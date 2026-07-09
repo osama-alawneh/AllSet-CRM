@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getRole, getSession, normalizeRole } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { parseNewUserForm } from '@/lib/users';
+import { logQueryError } from '@/lib/log';
 
 // Admin creates a login + profile in one go. Service-role client: auth.admin.createUser
 // is admin-API-only, and the profiles insert must bypass RLS (no insert policy exists —
@@ -12,7 +13,7 @@ export async function createUser(fd: FormData): Promise<{ error?: string }> {
   if ((await getRole()) !== 'admin') return { error: 'Not authorized' };
   const parsed = parseNewUserForm(fd);
   if (!parsed.ok) return { error: parsed.error };
-  const { email, password, full_name, role } = parsed.value;
+  const { email, password, full_name, role, phone, dob } = parsed.value;
   const admin = supabaseAdmin();
   const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   if (error) return { error: error.message };
@@ -27,6 +28,16 @@ export async function createUser(fd: FormData): Promise<{ error?: string }> {
       };
     }
     return { error: `Profile creation failed: ${pErr.message}. The login was rolled back — you can retry.` };
+  }
+  // Same service-role client as the profiles insert above (this action already bypasses
+  // RLS for account creation; profiles_private_admin_write would also allow it, but one
+  // client for the whole flow keeps the rollback story simple). Non-fatal: phone/DOB are
+  // metadata, not the account — log and move on rather than failing user creation.
+  if (phone || dob) {
+    const { error: ppErr } = await admin
+      .from('profiles_private')
+      .insert({ profile_id: data.user.id, phone: phone || null, dob: dob || null });
+    logQueryError('settings.createUser.profiles_private', ppErr);
   }
   revalidatePath('/settings');
   return {};

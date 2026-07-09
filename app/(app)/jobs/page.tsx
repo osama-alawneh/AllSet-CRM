@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getRole, getSession } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
 import { logQueryError } from '@/lib/log';
-import { buildJobs, visibleJobs, type JobRow, type JobCustomer } from '@/lib/jobs';
+import { buildJobs, visibleJobs, buildMembers, type JobRow, type JobCustomer, type JobMember } from '@/lib/jobs';
 import { JobsBoard } from '@/components/jobs/JobsBoard';
 import { JobsListSection } from '@/components/jobs/JobsListSection';
 import { JobsHistorySection } from '@/components/jobs/JobsHistorySection';
@@ -22,24 +22,26 @@ export default async function JobsPage({
   if (!role) redirect('/login');
   const uid = user.id;
   const admin = role === 'admin';
-  const isNew = newParam === '1' && admin; // only admins create jobs
+  const canReadMoney = admin || role === 'rep';
+  const isNew = newParam === '1' && canReadMoney; // admin + rep create jobs (spec: rep = admin on job money)
   const history = admin && deleted === '1'; // admin-only History view (0020); RPCs also block non-admins
   const sb = await supabaseServer();
 
-  // Role-split fetch: admins read base jobs (incl. price); everyone else reads the
-  // jobs_public view (no price column — money stays server-side).
-  const jobsQuery = admin
+  // Role-split fetch: admin/rep read base jobs (incl. price, cleaner_amount, done_at — rep
+  // gains base-table read via the jobs_rep RLS policy, 0023: "rep = admin on job money");
+  // cleaners read the jobs_public view (no price column — money stays server-side).
+  const jobsQuery = canReadMoney
     ? sb
         .from('jobs')
-        .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price')
+        .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price,cleaner_amount,done_at,recur_days,recur_parent_id')
         .is('deleted_at', null)
         .order('id')
     : sb
         .from('jobs_public')
-        .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at')
+        .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,cleaner_amount')
         .order('id');
 
-  const [jobsRes, csRes, psRes, delRes] = await Promise.all([
+  const [jobsRes, csRes, psRes, delRes, jmRes] = await Promise.all([
     jobsQuery,
     sb.from('customers').select('id,name,address,phone,email,active'),
     sb.from('profiles').select('id,full_name'),
@@ -52,16 +54,20 @@ export default async function JobsPage({
           .not('deleted_at', 'is', null)
           .order('deleted_at', { ascending: false })
       : Promise.resolve({ data: null, error: null }),
+    // Members: world-readable to any logged-in role (job_members_read, 0023) — feeds the
+    // JobDrawer members panel and the board's per-job pending-join badge.
+    sb.from('job_members').select('id,job_id,cleaner_id,status,is_owner'),
   ]);
   logQueryError('jobs.page.jobs', jobsRes.error);
   logQueryError('jobs.page.customers', csRes.error);
   logQueryError('jobs.page.profiles', psRes.error);
   logQueryError('jobs.page.deleted', delRes.error);
+  logQueryError('jobs.page.job_members', jmRes.error);
 
   let jobRows: JobRow[] = [];
   let priceById: Map<number, number> | null = null;
-  if (admin) {
-    const rows = (jobsRes.data ?? []) as Array<JobRow & { price: number | null }>;
+  if (canReadMoney) {
+    const rows = (jobsRes.data ?? []) as Array<JobRow & { price: number | null; cleaner_amount: number | null; done_at: string | null; recur_days: number | null; recur_parent_id: number | null }>;
     jobRows = rows.map(r => ({
       id: r.id,
       customer_id: r.customer_id,
@@ -73,6 +79,10 @@ export default async function JobsPage({
       description: r.description,
       created_at: r.created_at,
       updated_at: r.updated_at,
+      cleaner_amount: r.cleaner_amount,
+      done_at: r.done_at,
+      recur_days: r.recur_days,
+      recur_parent_id: r.recur_parent_id,
     }));
     priceById = new Map(rows.map(r => [r.id, Number(r.price ?? 0)]));
   } else {
@@ -82,6 +92,16 @@ export default async function JobsPage({
   const cs = csRes.data;
   const ps = psRes.data;
   const names = new Map((ps ?? []).map(p => [p.id as string, p.full_name as string]));
+  const allMembers: JobMember[] = buildMembers(
+    (jmRes.data ?? []) as Array<Omit<JobMember, 'cleaner_name'>>,
+    names
+  );
+  // Per-job pending-join count for the board badge (Task 4 Step 4); plain object (not a
+  // Map) so it crosses the Server -> Client Component boundary cleanly.
+  const pendingByJob: Record<number, number> = {};
+  for (const m of allMembers) {
+    if (m.status === 'pending') pendingByJob[m.job_id] = (pendingByJob[m.job_id] ?? 0) + 1;
+  }
 
   if (history) {
     const delRows = (delRes.data ?? []) as Array<JobRow & { price: number | null; deleted_at: string }>;
@@ -95,8 +115,10 @@ export default async function JobsPage({
   const all = buildJobs(jobRows, (cs ?? []) as JobCustomer[], priceById, names);
   const visible = visibleJobs(role, uid, all);
   const meName = names.get(uid) ?? '';
-  // Resolve the drawer THROUGH visibleJobs: a cleaner deep-linking to a foreign job
-  // (?j=<id> not in their visible set) must render no drawer.
+  // Resolve the drawer THROUGH visibleJobs (the fetched set): deep-linking to a job that was
+  // never fetched (e.g. a soft-deleted job, absent from jobs_public) renders no drawer. Since
+  // the owner decision 2026-07-09 a cleaner CAN open a foreign, non-deleted job here — it
+  // opens view-only (money gated in JobDrawer; Request-to-join reachable while not done).
   const selected = jParam ? visible.find(j => j.id === Number(jParam)) ?? null : null;
 
   // Origin-lead quick view for the open job: admins read base `leads` (incl. quote_value);
@@ -130,15 +152,16 @@ export default async function JobsPage({
   return (
     <>
       {list ? (
-        <JobsListSection jobs={visible} admin={admin} />
+        <JobsListSection jobs={visible} admin={admin} money={canReadMoney} />
       ) : (
-        <JobsBoard jobs={visible} role={role} uid={uid} meName={meName} admin={admin} />
+        <JobsBoard jobs={visible} role={role} uid={uid} meName={meName} admin={admin} money={canReadMoney} pendingByJob={pendingByJob} />
       )}
       {(selected || isNew) && (
         <JobDrawer
           key={selected?.id ?? 'new'}
           job={selected} role={role} uid={uid} admin={admin}
           isNew={isNew && !selected} customers={customerOptions} leadDetail={leadDetail}
+          members={selected ? allMembers.filter(m => m.job_id === selected.id) : []}
           backTo={list ? '/jobs?view=list' : '/jobs'}
         />
       )}

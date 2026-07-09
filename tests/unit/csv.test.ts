@@ -8,6 +8,7 @@ import {
   jobsHistoryCsvTable,
   invoicesCsvTable,
   customersCsvTable,
+  expensesCsvTable,
 } from '@/lib/csv';
 import type { Lead } from '@/lib/leads';
 import type { Job } from '@/lib/jobs';
@@ -72,7 +73,8 @@ describe('leadsCsvTable', () => {
 const job = (over: Partial<Job>): Job => ({
   id: 3, customer_id: 10, lead_id: null, status: 'claimed', claimed_by: 'u1',
   claimed_by_name: 'Cal Cleaner', scheduled_date: '2026-07-01', service: 'Standard',
-  description: '3 storeys', price: 180, created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z',
+  description: '3 storeys', price: 180, cleaner_amount: null, done_at: null, recur_days: null, recur_parent_id: null,
+  created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z',
   customer_name: 'Sarah Kim', address: '1 Elm St', phone: null, email: null, ...over,
 });
 
@@ -141,5 +143,18 @@ describe('customersCsvTable', () => {
     const asRep = customersCsvTable(rows, false);
     expect(asRep.headers).not.toContain('Invoices');
     expect(asRep.rows[0]).toHaveLength(7);
+  });
+});
+
+describe('expensesCsvTable', () => {
+  it('has the Date/Label/Amount/Source/Job headers and renders a null job_id as an empty Job cell', () => {
+    const rows = [
+      { spent_on: '2026-07-01', label: 'Supplies', amount: 42, source: 'manual', job_id: null },
+      { spent_on: '2026-07-02', label: 'Payout', amount: 50, source: 'job_payout', job_id: 7 },
+    ];
+    const t = expensesCsvTable(rows);
+    expect(t.headers).toEqual(['Date', 'Label', 'Amount', 'Source', 'Job']);
+    expect(t.rows[0]).toEqual(['2026-07-01', 'Supplies', 42, 'manual', null]);
+    expect(t.rows[1]).toEqual(['2026-07-02', 'Payout', 50, 'job_payout', 7]);
   });
 });

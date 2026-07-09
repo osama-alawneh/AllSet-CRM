@@ -1,5 +1,5 @@
 begin;
-select plan(52);
+select plan(54);
 
 -- fixtures --------------------------------------------------------------------
 insert into auth.users (id, instance_id, aud, role, email) values
@@ -52,8 +52,11 @@ select is((select rep_id from leads_public where service='Rep lead'), '90000000-
 select lives_ok($$ select update_lead((select id from leads_public where service='Rep lead'),
   'Rep lead v2','desc2',3,12,'note2',777) $$, 'rep update_lead runs');
 select throws_ok($$ select delete_lead(900031) $$, 'P0001', 'Not authorized to delete leads', 'rep cannot delete leads');
-select throws_ok($$ select create_job(900031,'Job','d',null,50) $$, 'P0001', 'Not authorized to create jobs', 'rep cannot create jobs');
-select throws_ok($$ select update_job(1,'x','d',null,50) $$, 'P0001', 'Not authorized to update jobs', 'rep cannot update jobs');
+select lives_ok($$ select create_job(900031,'Rep job','d',null,200,80) $$, 'rep create_job runs (spec: rep = admin on job money)');
+select is((select price from jobs where service='Rep job'), 200::numeric, 'rep job price applied');
+select is((select cleaner_amount from jobs where service='Rep job'), 80::numeric, 'rep job cleaner_amount applied');
+select lives_ok($$ select update_job((select id from jobs where service='Rep job'),
+  'Rep job v2','d2',null,220,90) $$, 'rep update_job runs');
 select throws_ok($$ select delete_job(1) $$, 'P0001', 'Not authorized to delete jobs', 'rep cannot delete jobs');
 
 -- (as cleaner) -----------------------------------------------------------------

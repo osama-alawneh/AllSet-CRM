@@ -21,12 +21,20 @@ export default async function SettingsPage() {
   logQueryError('settings.listUsers', listError);
   const emailById = new Map((list?.users ?? []).map(u => [u.id, u.email ?? '—']));
 
+  const { data: privateRows, error: privateError } = await sb
+    .from('profiles_private')
+    .select('profile_id,phone,dob');
+  logQueryError('settings.profilesPrivate', privateError);
+  const privateById = new Map((privateRows ?? []).map(p => [p.profile_id, p]));
+
   const users: PanelUser[] = (profiles ?? []).map(p => ({
     id: p.id,
     full_name: p.full_name,
     role: p.role,
     email: emailById.get(p.id) ?? '—',
     created_at: String(p.created_at).slice(0, 10),
+    phone: privateById.get(p.id)?.phone ?? null,
+    dob: privateById.get(p.id)?.dob ?? null,
   }));
 
   return <UsersPanel users={users} meId={me.id} />;

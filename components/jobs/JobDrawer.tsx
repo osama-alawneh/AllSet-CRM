@@ -6,13 +6,14 @@ import { CopyButton } from '@/components/ui/CopyButton';
 import { CustomerLookup } from '@/components/customers/CustomerLookup';
 import type { CustomerOption } from '@/lib/customerLookup';
 import {
-  JOB_STATUSES, jobStatusLabel, jobStatusColor, canTransition, dayTime, type Job, type JobStatus,
+  JOB_STATUSES, jobStatusLabel, jobStatusColor, canTransition, dayTime, shareOf,
+  type Job, type JobStatus, type JobMember,
 } from '@/lib/jobs';
 import { SERVICE_TYPES } from '@/lib/leads';
 import type { Role } from '@/lib/auth';
 import { blankMoneyToZero } from '@/lib/forms';
 import { rowNav } from '@/lib/rowNav';
-import { claimJob, setJobStatus, createJob, updateJob, deleteJob } from '@/app/(app)/jobs/actions';
+import { claimJob, setJobStatus, createJob, updateJob, deleteJob, requestJoin, decideJoin } from '@/app/(app)/jobs/actions';
 import { createInvoiceFromJob } from '@/app/(app)/invoices/actions';
 
 const fmt = (n: number) => '$' + Number(n || 0).toLocaleString();
@@ -24,7 +25,7 @@ export type LeadDetail = {
 };
 
 export function JobDrawer({
-  job, role, uid, admin, isNew = false, customers = [], leadDetail = null, backTo = '/jobs',
+  job, role, uid, admin, isNew = false, customers = [], leadDetail = null, backTo = '/jobs', members = [],
 }: {
   job: Job | null;
   role: Role;
@@ -34,6 +35,7 @@ export function JobDrawer({
   customers?: CustomerOption[];
   leadDetail?: LeadDetail | null;
   backTo?: string;
+  members?: JobMember[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -43,9 +45,32 @@ export function JobDrawer({
 
   if (!isNew && !job) return null;
   const canClaim = job?.status === 'unclaimed' && (role === 'admin' || role === 'cleaner');
+  // admin + rep both see/set job money (owner-locked visibility matrix, 2026-07-08 spec);
+  // cleaners see only cleaner_amount, never price — the `canSeeMoney` gate keeps the
+  // "Price" kv pair (label included) out of the DOM entirely for cleaners. Same admin/rep
+  // split gates the edit form itself (create/update RPCs widened to admin-or-rep, 0025).
+  const canSeeMoney = role === 'admin' || role === 'rep';
+  const canEdit = canSeeMoney;
+
+  // Members panel derivations (all roles) — mirrors can_decide_join (0024) for the
+  // Approve/Reject gate; the RPC re-checks server-side regardless of this client hint.
+  const approvedCount = members.filter(m => m.status === 'approved').length;
+  const myMember = members.find(m => m.cleaner_id === uid);
+  const myPending = myMember?.status === 'pending';
+  const canDecide = role === 'admin' || members.some(m => m.is_owner && m.cleaner_id === uid && m.status === 'approved');
+  const perHeadShare = shareOf(job?.cleaner_amount ?? null, approvedCount);
+  const myShare = myMember?.status === 'approved' ? perHeadShare : null;
+  // Join-request slot in the actions row: eligible non-member cleaners get the interactive
+  // button; a cleaner with their own pending request sees a disabled "Requested" state in the
+  // same slot instead (replaces the old "Requested · waiting" text under the members list).
+  const showJoinSlot = role === 'cleaner' && !!job && job.claimed_by != null && job.status !== 'done'
+    && myMember?.status !== 'approved';
+  const showRequestJoin = showJoinSlot && !myPending;
 
   const change = (status: JobStatus) => {
     if (!job || status === job.status) return;
+    if (status === 'done' && !(job.cleaner_amount != null && job.cleaner_amount > 0)
+      && !window.confirm('No cleaner pot set — no payout will be created. Continue?')) return;
     setError(null);
     startTransition(async () => {
       const res = await setJobStatus(job.id, status);
@@ -62,6 +87,23 @@ export function JobDrawer({
       else router.refresh();
     });
   };
+  const join = () => {
+    if (!job) return;
+    setError(null);
+    startTransition(async () => {
+      const res = await requestJoin(job.id);
+      if (res?.error) setError(res.error);
+      else router.refresh();
+    });
+  };
+  const decide = (memberId: number, approve: boolean) => {
+    setError(null);
+    startTransition(async () => {
+      const res = await decideJoin(memberId, approve);
+      if (res?.error) setError(res.error);
+      else router.refresh();
+    });
+  };
   const createInvoice = () => {
     if (!job) return;
     setError(null);
@@ -72,10 +114,11 @@ export function JobDrawer({
   };
   const submit = (fd: FormData) => {
     setError(null);
-    // Admin blanking the (prefilled) price is a deliberate "clear to $0". The whole job
-    // edit form is admin-only (Edit button is {admin &&}-gated), so a present-but-blank
-    // price means clear, not "keep old value". Safe on create too.
+    // Admin/rep blanking the (prefilled) price is a deliberate "clear to $0". The whole job
+    // edit form is admin-or-rep-only (Edit button is {canEdit &&}-gated), so a
+    // present-but-blank price means clear, not "keep old value". Safe on create too.
     blankMoneyToZero(fd, 'price');
+    blankMoneyToZero(fd, 'cleaner_amount');
     startTransition(async () => {
       const res = isNew ? await createJob(fd) : await updateJob(job!.id, fd);
       if (res?.error) setError(res.error);
@@ -135,10 +178,36 @@ export function JobDrawer({
               <span className="k">Description</span><span className="v">{job.description ?? '—'}</span>
               <span className="k">Date</span><span className="v">{job.scheduled_date ? dayTime(job.scheduled_date) : 'TBD'}</span>
               <span className="k">Claimed by</span><span className="v">{job.claimed_by_name ?? '—'}</span>
-              <span className="k">Price</span>
-              {admin
-                ? <span className="v" style={{ color: 'var(--won)' }}>{job.price ? fmt(job.price) : '—'}</span>
-                : <span className="v money-hidden">•••••</span>}
+              {canSeeMoney && (
+                <>
+                  <span className="k">Price</span>
+                  <span className="v" style={{ color: 'var(--won)' }}>{job.price ? fmt(job.price) : '—'}</span>
+                </>
+              )}
+              {job.claimed_by != null && (
+                <>
+                  <span className="k">Cleaner pot</span>
+                  <span className="v">{job.cleaner_amount ? fmt(job.cleaner_amount) : '—'}</span>
+                </>
+              )}
+              {role === 'cleaner' && job.claimed_by != null && (
+                <>
+                  <span className="k">Your share</span>
+                  <span className="v">{myShare != null ? fmt(myShare) : '—'}</span>
+                </>
+              )}
+              {canSeeMoney && !!job.recur_days && (
+                <>
+                  <span className="k">↻ Repeats</span>
+                  <span className="v">{`every ${job.recur_days} days`}</span>
+                </>
+              )}
+              {canSeeMoney && job.recur_parent_id != null && (
+                <>
+                  <span className="k">Spawned from</span>
+                  <span className="v">{`#${String(job.recur_parent_id).padStart(4, '0')}`}</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -189,7 +258,7 @@ export function JobDrawer({
             {canClaim && (
               <button className="btn-p" type="button" disabled={pending} onClick={claim}>Claim job</button>
             )}
-            {admin && (
+            {canEdit && (
               <button className="btn-p" type="button" disabled={pending} onClick={() => { setError(null); setEditing(true); }}>
                 ✎ Edit
               </button>
@@ -200,8 +269,57 @@ export function JobDrawer({
             {admin && (
               <button className="btn-s btn-danger" type="button" disabled={pending} onClick={remove}>🗑 Delete</button>
             )}
+            {showJoinSlot && (
+              showRequestJoin ? (
+                <button
+                  className="btn-s" type="button" disabled={pending} onClick={join}
+                  style={{ borderColor: 'var(--prog)', color: 'var(--prog)' }}
+                >
+                  Request to join
+                </button>
+              ) : (
+                <button
+                  className="btn-s" type="button" disabled
+                  style={{ borderColor: 'var(--muted)', color: 'var(--muted)' }}
+                >
+                  Requested
+                </button>
+              )
+            )}
             <button className="btn-s" type="button" onClick={close}>Close</button>
           </div>
+
+          {job.claimed_by != null && (
+            <div className="sec">
+              <span className="lbl">Members</span>
+              <div className="tblwrap">
+                <table className="tbl" aria-label="Job members">
+                  <thead>
+                    <tr><th>Member</th><th>Status</th><th>Action</th></tr>
+                  </thead>
+                  <tbody>
+                    {members.length === 0 && (
+                      <tr><td colSpan={3}>no joiners requested</td></tr>
+                    )}
+                    {members.map(m => (
+                      <tr key={m.id}>
+                        <td>{m.cleaner_name}{m.is_owner ? ' ★' : ''}</td>
+                        <td>{m.is_owner ? 'owner' : m.status}</td>
+                        <td>
+                          {m.status === 'pending' && canDecide ? (
+                            <span style={{ display: 'flex', gap: 6 }}>
+                              <button className="btn-s" type="button" disabled={pending} onClick={() => decide(m.id, true)}>Approve</button>
+                              <button className="btn-s" type="button" disabled={pending} onClick={() => decide(m.id, false)}>Reject</button>
+                            </span>
+                          ) : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -235,6 +353,12 @@ export function JobDrawer({
               <span className="v"><input name="scheduled_date" type="datetime-local" defaultValue={job?.scheduled_date?.slice(0, 16) ?? ''} /></span>
               <span className="k">Price $</span>
               <span className="v"><input name="price" type="number" min={0} step="0.01" defaultValue={job?.price ?? ''} placeholder="0.00" /></span>
+              <span className="k">Cleaner pot $</span>
+              <span className="v"><input name="cleaner_amount" type="number" step="0.01" className="num" defaultValue={job?.cleaner_amount ?? ''} /></span>
+              <span className="k">Repeat every</span>
+              <span className="v">
+                <input name="recur_days" type="number" min={0} step="1" className="num" defaultValue={job?.recur_days ?? ''} placeholder="0" /> days
+              </span>
             </div>
           </div>
           <div className="sec">

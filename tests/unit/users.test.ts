@@ -11,7 +11,19 @@ const good = { email: 'New@Co.dev', password: 'password123', full_name: 'New Per
 describe('parseNewUserForm', () => {
   it('accepts a valid form and lowercases the email', () => {
     const r = parseNewUserForm(fd(good));
-    expect(r).toEqual({ ok: true, value: { email: 'new@co.dev', password: 'password123', full_name: 'New Person', role: 'rep' } });
+    expect(r).toEqual({ ok: true, value: { email: 'new@co.dev', password: 'password123', full_name: 'New Person', role: 'rep', phone: '', dob: '' } });
+  });
+  it('carries phone and dob through when provided', () => {
+    const r = parseNewUserForm(fd({ ...good, phone: ' 555-0100 ', dob: '1990-01-01' }));
+    expect(r).toEqual({ ok: true, value: { email: 'new@co.dev', password: 'password123', full_name: 'New Person', role: 'rep', phone: '555-0100', dob: '1990-01-01' } });
+  });
+  it('defaults phone and dob to empty strings when omitted', () => {
+    const r = parseNewUserForm(fd(good));
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.value.phone).toBe('');
+      expect(r.value.dob).toBe('');
+    }
   });
   it('rejects a malformed email', () => {
     expect(parseNewUserForm(fd({ ...good, email: 'nope' }))).toEqual({ ok: false, error: 'Valid email is required' });
