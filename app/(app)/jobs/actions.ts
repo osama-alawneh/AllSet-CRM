@@ -16,6 +16,27 @@ export async function claimJob(id: number): Promise<{ error?: string }> {
   return {};
 }
 
+// Multi-cleaner join requests (0023/0024): a cleaner asks to join an already-claimed job's
+// pot, an admin/owner approves or rejects. Both route through SECURITY DEFINER RPCs and
+// mirror claimJob's shape exactly — same client, same error-string return.
+export async function requestJoin(jobId: number): Promise<{ error?: string }> {
+  const sb = await supabaseServer();
+  const { error } = await sb.rpc('request_join', { p_job_id: jobId });
+  if (error) return { error: error.message };
+  revalidatePath('/jobs');
+  revalidatePath('/map');
+  return {};
+}
+
+export async function decideJoin(memberId: number, approve: boolean): Promise<{ error?: string }> {
+  const sb = await supabaseServer();
+  const { error } = await sb.rpc('decide_join', { p_member_id: memberId, p_approve: approve });
+  if (error) return { error: error.message };
+  revalidatePath('/jobs');
+  revalidatePath('/map');
+  return {};
+}
+
 // Cleaners lack UPDATE/SELECT on base jobs, so route through the set_job_status definer
 // RPC (0010), which enforces admin-any / cleaner-own and raises on 0 rows affected.
 export async function setJobStatus(id: number, status: JobStatus): Promise<{ error?: string }> {
@@ -37,7 +58,7 @@ export async function createJob(fd: FormData): Promise<{ error?: string }> {
   const sb = await supabaseServer();
   const { data, error } = await sb.rpc('create_job', {
     p_customer_id: v.customer_id, p_service: v.service, p_description: v.description,
-    p_scheduled_date: v.scheduled_date, p_price: v.price,
+    p_scheduled_date: v.scheduled_date, p_price: v.price, p_cleaner_amount: v.cleaner_amount,
   });
   if (error) return { error: error.message };
   revalidatePath('/jobs'); revalidatePath('/dashboard'); revalidatePath('/customers');
@@ -51,7 +72,7 @@ export async function updateJob(id: number, fd: FormData): Promise<{ error?: str
   const sb = await supabaseServer();
   const { error } = await sb.rpc('update_job', {
     p_job_id: id, p_service: v.service, p_description: v.description,
-    p_scheduled_date: v.scheduled_date, p_price: v.price,
+    p_scheduled_date: v.scheduled_date, p_price: v.price, p_cleaner_amount: v.cleaner_amount,
   });
   if (error) return { error: error.message };
   revalidatePath('/jobs'); revalidatePath('/dashboard'); revalidatePath('/customers');

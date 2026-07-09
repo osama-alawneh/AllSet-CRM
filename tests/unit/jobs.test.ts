@@ -8,14 +8,19 @@ import {
   visibleJobs,
   canTransition,
   dayTime,
+  buildMembers,
+  shareOf,
+  parseJobForm,
   type Job,
   type JobRow,
   type JobCustomer,
+  type JobMember,
 } from '@/lib/jobs';
 
 const job = (over: Partial<Job>): Job => ({
   id: 1, customer_id: 1, lead_id: 5, status: 'unclaimed', claimed_by: null,
   claimed_by_name: null, scheduled_date: null, service: 'In + out', description: null, price: null,
+  cleaner_amount: null, done_at: null,
   created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z',
   customer_name: 'X', address: null, phone: null, email: null, ...over,
 });
@@ -145,5 +150,59 @@ describe('canTransition', () => {
     expect(canTransition('rep', 'me', mineClaimed, 'in_progress')).toBe(false);
     expect(canTransition('rep', 'me', unclaimed, 'claimed')).toBe(false);
     expect(canTransition(null, 'me', mineClaimed, 'done')).toBe(false);
+  });
+});
+
+describe('shareOf', () => {
+  it('divides the pot evenly among approved members', () => {
+    expect(shareOf(100, 2)).toBe(50);
+  });
+  it('returns null when the pot is null', () => {
+    expect(shareOf(null, 2)).toBeNull();
+  });
+  it('returns null when the approved count is 0', () => {
+    expect(shareOf(100, 0)).toBeNull();
+  });
+});
+
+describe('buildMembers', () => {
+  it('resolves cleaner names with a — fallback for unknown ids', () => {
+    const names = new Map<string, string>([['u-1', 'Dylan Cruz']]);
+    const rows: Array<Omit<JobMember, 'cleaner_name'>> = [
+      { id: 1, job_id: 10, cleaner_id: 'u-1', status: 'approved', is_owner: true },
+      { id: 2, job_id: 10, cleaner_id: 'u-2', status: 'pending', is_owner: false },
+    ];
+    const out = buildMembers(rows, names);
+    expect(out[0].cleaner_name).toBe('Dylan Cruz');
+    expect(out[1].cleaner_name).toBe('—');
+  });
+});
+
+describe('parseJobForm — cleaner_amount', () => {
+  const baseFd = () => {
+    const fd = new FormData();
+    fd.set('customer_id', '1');
+    fd.set('service', 'Standard');
+    return fd;
+  };
+  it('parses cleaner_amount with the same optional-number handling as price', () => {
+    const fd = baseFd();
+    fd.set('cleaner_amount', '75.5');
+    const out = parseJobForm(fd);
+    expect(out.ok).toBe(true);
+    if (out.ok) expect(out.value.cleaner_amount).toBe(75.5);
+  });
+  it('treats a blank cleaner_amount as null', () => {
+    const fd = baseFd();
+    fd.set('cleaner_amount', '');
+    const out = parseJobForm(fd);
+    expect(out.ok).toBe(true);
+    if (out.ok) expect(out.value.cleaner_amount).toBeNull();
+  });
+  it('omits cleaner_amount from the form -> null (same as unset price)', () => {
+    const fd = baseFd();
+    const out = parseJobForm(fd);
+    expect(out.ok).toBe(true);
+    if (out.ok) expect(out.value.cleaner_amount).toBeNull();
   });
 });

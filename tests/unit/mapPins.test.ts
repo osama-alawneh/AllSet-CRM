@@ -15,6 +15,7 @@ const job = (over: Partial<Job>): Job => ({
   id: 1, customer_id: 10, lead_id: null, status: 'unclaimed',
   claimed_by: null, claimed_by_name: null, scheduled_date: null,
   service: null, description: null, price: null,
+  cleaner_amount: null, done_at: null,
   created_at: '2026-01-01', updated_at: '2026-01-01',
   customer_name: 'Ann', address: null, phone: null, email: null, ...over,
 });

@@ -74,6 +74,14 @@ export function invoicesCsvTable(invoices: Invoice[]): CsvTable {
   return { headers, rows };
 }
 
+export function expensesCsvTable(
+  rows: { spent_on: string; label: string; amount: number; source: string; job_id: number | null }[]
+): CsvTable {
+  const headers = ['Date', 'Label', 'Amount', 'Source', 'Job'];
+  const out: CsvCell[][] = rows.map(e => [e.spent_on, e.label, e.amount, e.source, e.job_id]);
+  return { headers, rows: out };
+}
+
 export function customersCsvTable(rows: CustomerRow[], admin: boolean): CsvTable {
   const headers = ['ID', 'Name', 'Phone', 'Email', 'Address', 'Type', 'Jobs', ...(admin ? ['Invoices'] : [])];
   const out: CsvCell[][] = rows.map(c => [

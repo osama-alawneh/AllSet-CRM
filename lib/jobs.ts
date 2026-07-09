@@ -22,6 +22,8 @@ export type Job = {
   service: string | null;
   description: string | null;
   price: number | null;             // null = not visible (non-admin) or unset — admin-only
+  cleaner_amount: number | null;    // the job "pot" — visible to cleaners, unlike price
+  done_at: string | null;           // set when the job lands in 'done' — base-table only
   created_at: string;
   updated_at: string;
   customer_name: string;
@@ -31,7 +33,9 @@ export type Job = {
 };
 
 // DB shapes the page fetches: jobs_public view (non-admin) / base jobs projection (admin),
-// plus a slim customers projection.
+// plus a slim customers projection. cleaner_amount/done_at are optional here because not
+// every query selects them (e.g. jobs_public has cleaner_amount but not done_at) — buildJobs
+// below null-defaults whichever is missing from a given row.
 export type JobRow = {
   id: number;
   customer_id: number;
@@ -43,6 +47,8 @@ export type JobRow = {
   description: string | null;
   created_at: string;
   updated_at: string;
+  cleaner_amount?: number | null;
+  done_at?: string | null;
 };
 export type JobCustomer = {
   id: number;
@@ -72,6 +78,8 @@ export function buildJobs(
       service: r.service,
       description: r.description,
       price: priceById ? (priceById.get(r.id) ?? null) : null,
+      cleaner_amount: r.cleaner_amount ?? null,
+      done_at: r.done_at ?? null,
       created_at: r.created_at,
       updated_at: r.updated_at,
       customer_name: c?.name ?? 'Unknown',
@@ -126,7 +134,7 @@ export function dayTime(s: string): string {
 
 export type JobInput = {
   customer_id: number; service: string; description: string | null;
-  scheduled_date: string | null; price: number | null;
+  scheduled_date: string | null; price: number | null; cleaner_amount: number | null;
 };
 
 export function parseJobForm(
@@ -143,5 +151,27 @@ export function parseJobForm(
   const price = priceRaw === '' ? null : Number(priceRaw);
   if (price !== null && !Number.isFinite(price)) return { ok: false, error: 'Invalid number' };
   if (price !== null && price < 0) return { ok: false, error: 'Numbers cannot be negative' };
-  return { ok: true, value: { customer_id, service, description, scheduled_date: dateRaw || null, price } };
+  const cleanerAmountRaw = String(fd.get('cleaner_amount') ?? '').trim();
+  const cleaner_amount = cleanerAmountRaw === '' ? null : Number(cleanerAmountRaw);
+  if (cleaner_amount !== null && !Number.isFinite(cleaner_amount)) return { ok: false, error: 'Invalid number' };
+  if (cleaner_amount !== null && cleaner_amount < 0) return { ok: false, error: 'Numbers cannot be negative' };
+  return { ok: true, value: { customer_id, service, description, scheduled_date: dateRaw || null, price, cleaner_amount } };
+}
+
+export type JobMember = {
+  id: number; job_id: number; cleaner_id: string; cleaner_name: string;
+  status: 'pending' | 'approved' | 'rejected'; is_owner: boolean;
+};
+
+export function buildMembers(
+  rows: Array<Omit<JobMember, 'cleaner_name'>>,
+  names: Map<string, string>,
+): JobMember[] {
+  return rows.map(r => ({ ...r, cleaner_name: names.get(r.cleaner_id) ?? '—' }));
+}
+
+// The DB view cleaner_earnings owns the REAL split; this mirrors it for drawer display only.
+export function shareOf(pot: number | null, approvedCount: number): number | null {
+  if (pot == null || pot <= 0 || approvedCount <= 0) return null;
+  return pot / approvedCount;
 }
