@@ -71,7 +71,20 @@ export function JobsBoard({
     if (!to || !JOB_STATUSES.includes(to)) return;
     const job = optimistic.find(j => j.id === id);
     if (!job || !canTransition(role, uid, job, to)) return;
+    if (to === 'done' && !(job.cleaner_amount != null && job.cleaner_amount > 0)
+      && !window.confirm('No cleaner pot set — no payout will be created. Continue?')) return;
     setError(null);
+    // unclaimed → claimed drops route through claimJob (race-safe first-claim-wins RPC),
+    // same as the card's Claim button — NOT setJobStatus, which would silently overwrite
+    // an already-claimed job instead of surfacing the "already claimed" race error.
+    if (job.status === 'unclaimed' && to === 'claimed') {
+      startTransition(async () => {
+        applyOptimistic({ id, status: 'claimed', claimed_by: uid, claimed_by_name: meName });
+        const res = await claimJob(id);
+        if (res?.error) setError(res.error);
+      });
+      return;
+    }
     startTransition(async () => {
       const patch: Patch = to === 'unclaimed'
         ? { id, status: to, claimed_by: null, claimed_by_name: null }

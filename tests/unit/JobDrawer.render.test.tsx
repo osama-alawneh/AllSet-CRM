@@ -161,3 +161,56 @@ describe('JobDrawer members table + join requests', () => {
     expect(getByText('✎ Edit')).toBeTruthy();
   });
 });
+
+describe('JobDrawer done-without-pot confirm (Task 4)', () => {
+  it('proceeds to setJobStatus when the pot is unset and the confirm is accepted', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const actions = await import('@/app/(app)/jobs/actions');
+    const { getByText } = render(
+      <JobDrawer job={job({ cleaner_amount: null })} role="admin" uid={OWNER} admin members={[member({})]} />
+    );
+    getByText('Done').click();
+    expect(confirm).toHaveBeenCalledWith('No cleaner pot set — no payout will be created. Continue?');
+    await vi.waitFor(() => expect(actions.setJobStatus).toHaveBeenCalledWith(1, 'done'));
+    confirm.mockRestore();
+  });
+
+  it('aborts without calling setJobStatus when the pot is unset and the confirm is declined', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const actions = await import('@/app/(app)/jobs/actions');
+    vi.mocked(actions.setJobStatus).mockClear();
+    const { getByText } = render(
+      <JobDrawer job={job({ cleaner_amount: 0 })} role="admin" uid={OWNER} admin members={[member({})]} />
+    );
+    getByText('Done').click();
+    expect(confirm).toHaveBeenCalledWith('No cleaner pot set — no payout will be created. Continue?');
+    expect(actions.setJobStatus).not.toHaveBeenCalled();
+    confirm.mockRestore();
+  });
+
+  it('does not prompt when moving to done with a pot already set', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const actions = await import('@/app/(app)/jobs/actions');
+    vi.mocked(actions.setJobStatus).mockClear();
+    const { getByText } = render(
+      <JobDrawer job={job({ cleaner_amount: 100 })} role="admin" uid={OWNER} admin members={[member({})]} />
+    );
+    getByText('Done').click();
+    expect(confirm).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(actions.setJobStatus).toHaveBeenCalledWith(1, 'done'));
+    confirm.mockRestore();
+  });
+
+  it('does not prompt for a non-done transition even without a pot', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const actions = await import('@/app/(app)/jobs/actions');
+    vi.mocked(actions.setJobStatus).mockClear();
+    const { getByText } = render(
+      <JobDrawer job={job({ cleaner_amount: null, status: 'claimed' })} role="admin" uid={OWNER} admin members={[member({})]} />
+    );
+    getByText('In progress').click();
+    expect(confirm).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(actions.setJobStatus).toHaveBeenCalledWith(1, 'in_progress'));
+    confirm.mockRestore();
+  });
+});

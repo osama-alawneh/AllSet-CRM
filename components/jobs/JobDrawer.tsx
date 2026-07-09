@@ -69,6 +69,8 @@ export function JobDrawer({
 
   const change = (status: JobStatus) => {
     if (!job || status === job.status) return;
+    if (status === 'done' && !(job.cleaner_amount != null && job.cleaner_amount > 0)
+      && !window.confirm('No cleaner pot set — no payout will be created. Continue?')) return;
     setError(null);
     startTransition(async () => {
       const res = await setJobStatus(job.id, status);

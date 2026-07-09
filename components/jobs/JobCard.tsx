@@ -84,11 +84,11 @@ export function JobCard({
             drag-handle/activator wiring above — a click here just bubbles to the root's
             onOpen like the meta text below does. */}
         {!!pendingCount && (
-          <span className="lbl" style={{ background: 'var(--follow)', flexShrink: 0 }}>{pendingCount} ⏳</span>
+          <span className="pendchip" style={{ flexShrink: 0 }}>⏳ {pendingCount}</span>
         )}
       </div>
       <span className="meta">
-        {job.address ?? '—'}
+        #{String(job.id).padStart(4, '0')} · {job.address ?? '—'}
         <br />
         {job.service ?? 'TBD'} · {job.scheduled_date ? dayTime(job.scheduled_date) : 'TBD'}
         {money && job.price ? ` · ${fmt(job.price)}` : ''}
