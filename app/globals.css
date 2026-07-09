@@ -80,7 +80,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 /* Unclaimed-jobs count on the Jobs nav item (admin + cleaner only) — sits flush right inside
    the existing 9px/11px .nav a row via margin-left: auto; 18px height leaves the 44px
    touch-target row untouched. */
-.navbadge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; margin-left: auto; padding: 0 5px; border-radius: 999px; background: var(--lost); color: #fff; font-size: 10px; font-weight: 700; line-height: 1; flex-shrink: 0; }
+.navbadge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; margin-left: auto; padding: 0 5px; border-radius: 999px; background: var(--lost); color: var(--on-status); font-size: 10px; font-weight: 700; line-height: 1; flex-shrink: 0; }
 .side .foot { margin-top: 16px; padding-top: 14px; border-top: 1.5px dashed var(--line); }
 .who { display: flex; gap: 9px; align-items: center; }
 .who .av { width: 32px; height: 32px; border-radius: 4px; background: linear-gradient(135deg, var(--accent), var(--accent-d)); display: grid; place-items: center; color: var(--on-accent); font-weight: 700; font-size: 13px; }
