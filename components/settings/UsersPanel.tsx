@@ -12,6 +12,10 @@ const ROLES = ['admin', 'rep', 'cleaner'] as const;
 export function UsersPanel({ users, meId }: { users: PanelUser[]; meId: string }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  // Role-change errors get their own surface next to the users table: `error` renders only
+  // inside the create Drawer, so a failed setUserRole with the drawer closed would
+  // otherwise be a silent snap-back of the <select>.
+  const [roleError, setRoleError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -24,10 +28,10 @@ export function UsersPanel({ users, meId }: { users: PanelUser[]; meId: string }
     });
   };
   const changeRole = (id: string, role: string) => {
-    setError(null);
+    setRoleError(null);
     startTransition(async () => {
       const res = await setUserRole(id, role);
-      if (res?.error) setError(res.error);
+      if (res?.error) setRoleError(res.error);
     });
   };
 
@@ -80,6 +84,7 @@ export function UsersPanel({ users, meId }: { users: PanelUser[]; meId: string }
 
       <div className="panel box">
         <h3>Users ({users.length})</h3>
+        {roleError && <p role="alert" className="form-err">{roleError}</p>}
         <div className="tblwrap">
           <table className="tbl">
             <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>DOB</th><th>Since</th><th>Role</th></tr></thead>

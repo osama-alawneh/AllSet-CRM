@@ -82,4 +82,18 @@ describe('UsersPanel', () => {
     await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('Email already in use'));
     expect(screen.getByRole('dialog')).toBeTruthy();
   });
+
+  // Final-review fix: the only role=alert used to live inside the create Drawer, so a failed
+  // role change with the drawer closed was a silent snap-back. Role-change errors now have
+  // their own alert surface next to the users table, visible without the drawer.
+  it('shows a visible role=alert error when setUserRole fails, without the drawer being open', async () => {
+    setUserRole.mockResolvedValueOnce({ error: 'Cannot demote the last admin' });
+    render(<UsersPanel users={users} meId="u1" />);
+
+    fireEvent.change(screen.getByLabelText('Role for Bob Rep'), { target: { value: 'cleaner' } });
+
+    await waitFor(() => expect(setUserRole).toHaveBeenCalledWith('u2', 'cleaner'));
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('Cannot demote the last admin'));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
 });
