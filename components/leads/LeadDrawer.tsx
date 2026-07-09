@@ -200,6 +200,9 @@ export function LeadDrawer({
               <span className="k">Rep</span>
               <span className="v">
                 <select name="rep_id" defaultValue={lead?.rep_id ?? uid}>
+                  {lead?.rep_id && !reps.some(r => r.id === lead.rep_id) && (
+                    <option value={lead.rep_id}>{lead.rep_name ?? lead.rep_id} (legacy)</option>
+                  )}
                   {reps.map(r => <option key={r.id} value={r.id}>{r.full_name}</option>)}
                 </select>
               </span>

@@ -35,7 +35,7 @@ export default async function DashboardPage() {
     jobsQuery,
     sb.from('customers').select('id,name,address,phone,email,lat,lng'),
     sb.from('profiles').select('id,full_name'),
-    sb.from('leads_public').select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at').order('id'),
+    sb.from('leads_public').select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at,rep_id').order('id'),
     admin ? sb.from('invoices').select('id,status,issue_date') : Promise.resolve({ data: null }),
     admin ? sb.from('invoice_items').select('invoice_id,qty,unit_price') : Promise.resolve({ data: null }),
   ]);
