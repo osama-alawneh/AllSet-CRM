@@ -37,7 +37,7 @@ const job = (over: Partial<Job>): Job => ({
   id: 1, customer_id: 10, lead_id: null, status: 'claimed',
   claimed_by: OWNER, claimed_by_name: 'Owner Cleaner',
   scheduled_date: null, service: 'Window Cleaning', description: null,
-  price: 200, cleaner_amount: 100, done_at: null,
+  price: 200, cleaner_amount: 100, done_at: null, recur_days: null, recur_parent_id: null,
   created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z',
   customer_name: 'Acme Co', address: '1 Elm St', phone: '555-0100', email: null,
   ...over,

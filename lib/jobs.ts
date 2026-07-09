@@ -24,6 +24,8 @@ export type Job = {
   price: number | null;             // null = not visible (non-admin) or unset — admin-only
   cleaner_amount: number | null;    // the job "pot" — visible to cleaners, unlike price
   done_at: string | null;           // set when the job lands in 'done' — base-table only
+  recur_days: number | null;        // repeat interval in days — base-table only (0027), admin/rep-only
+  recur_parent_id: number | null;   // the job this one was auto-spawned from — base-table only (0027)
   created_at: string;
   updated_at: string;
   customer_name: string;
@@ -49,6 +51,8 @@ export type JobRow = {
   updated_at: string;
   cleaner_amount?: number | null;
   done_at?: string | null;
+  recur_days?: number | null;
+  recur_parent_id?: number | null;
 };
 export type JobCustomer = {
   id: number;
@@ -80,6 +84,8 @@ export function buildJobs(
       price: priceById ? (priceById.get(r.id) ?? null) : null,
       cleaner_amount: r.cleaner_amount ?? null,
       done_at: r.done_at ?? null,
+      recur_days: r.recur_days ?? null,
+      recur_parent_id: r.recur_parent_id ?? null,
       created_at: r.created_at,
       updated_at: r.updated_at,
       customer_name: c?.name ?? 'Unknown',
@@ -105,12 +111,15 @@ export function visibleJobs(_role: Role | null, _uid: string, jobs: Job[]): Job[
   return jobs;
 }
 
-// Single source of truth for drag affordances — mirrors the set_job_status RPC rules.
-// unclaimed -> claimed is deliberately excluded (that is the Claim button's job, which
-// routes through claim_job to preserve first-claim-wins).
+// Single source of truth for drag affordances — mirrors the set_job_status RPC rules,
+// plus the unclaimed -> claimed drag-claim rule below (routed through claim_job, not
+// set_job_status, to preserve first-claim-wins).
 export function canTransition(role: Role | null, uid: string, job: Job, to: JobStatus): boolean {
   if (to === job.status) return false;
-  if (job.status === 'unclaimed' && to === 'claimed') return false;
+  // Drag-to-claim (owner 2026-07-09): dropping an unclaimed job on Claimed is a CLAIM
+  // for cleaners AND admins (admin does field work too) — the board routes it through
+  // the race-safe claimJob action, never set_job_status. Reps stay view-only here.
+  if (job.status === 'unclaimed' && to === 'claimed') return role === 'admin' || role === 'cleaner';
   if (role === 'admin') return true;
   if (role === 'cleaner') {
     if (job.claimed_by !== uid) return false; // only own jobs
@@ -138,6 +147,7 @@ export function dayTime(s: string): string {
 export type JobInput = {
   customer_id: number; service: string; description: string | null;
   scheduled_date: string | null; price: number | null; cleaner_amount: number | null;
+  recur_days: number;
 };
 
 export function parseJobForm(
@@ -158,7 +168,12 @@ export function parseJobForm(
   const cleaner_amount = cleanerAmountRaw === '' ? null : Number(cleanerAmountRaw);
   if (cleaner_amount !== null && !Number.isFinite(cleaner_amount)) return { ok: false, error: 'Invalid number' };
   if (cleaner_amount !== null && cleaner_amount < 0) return { ok: false, error: 'Numbers cannot be negative' };
-  return { ok: true, value: { customer_id, service, description, scheduled_date: dateRaw || null, price, cleaner_amount } };
+  // blank -> 0 mirrors blankMoneyToZero's clear convention (lib/forms.ts): 0 is "clear" at
+  // the create_job/update_job RPCs (0027), not "leave unchanged" — same form-boundary idiom.
+  const recurDaysRaw = String(fd.get('recur_days') ?? '').trim();
+  const recur_days = recurDaysRaw === '' ? 0 : Number(recurDaysRaw);
+  if (!Number.isInteger(recur_days) || recur_days < 0) return { ok: false, error: 'Repeat days must be a whole number' };
+  return { ok: true, value: { customer_id, service, description, scheduled_date: dateRaw || null, price, cleaner_amount, recur_days } };
 }
 
 export type JobMember = {

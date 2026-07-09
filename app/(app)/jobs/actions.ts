@@ -46,6 +46,7 @@ export async function setJobStatus(id: number, status: JobStatus): Promise<{ err
   if (error) return { error: error.message };
   revalidatePath('/jobs');
   revalidatePath('/dashboard');
+  revalidatePath('/expenses'); // payout rows (source: job_payout) track job status (0026)
   return {};
 }
 
@@ -59,6 +60,7 @@ export async function createJob(fd: FormData): Promise<{ error?: string }> {
   const { data, error } = await sb.rpc('create_job', {
     p_customer_id: v.customer_id, p_service: v.service, p_description: v.description,
     p_scheduled_date: v.scheduled_date, p_price: v.price, p_cleaner_amount: v.cleaner_amount,
+    p_recur_days: v.recur_days,
   });
   if (error) return { error: error.message };
   revalidatePath('/jobs'); revalidatePath('/dashboard'); revalidatePath('/customers');
@@ -73,6 +75,7 @@ export async function updateJob(id: number, fd: FormData): Promise<{ error?: str
   const { error } = await sb.rpc('update_job', {
     p_job_id: id, p_service: v.service, p_description: v.description,
     p_scheduled_date: v.scheduled_date, p_price: v.price, p_cleaner_amount: v.cleaner_amount,
+    p_recur_days: v.recur_days,
   });
   if (error) return { error: error.message };
   revalidatePath('/jobs'); revalidatePath('/dashboard'); revalidatePath('/customers');

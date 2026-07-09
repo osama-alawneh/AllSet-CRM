@@ -73,7 +73,7 @@ describe('leadsCsvTable', () => {
 const job = (over: Partial<Job>): Job => ({
   id: 3, customer_id: 10, lead_id: null, status: 'claimed', claimed_by: 'u1',
   claimed_by_name: 'Cal Cleaner', scheduled_date: '2026-07-01', service: 'Standard',
-  description: '3 storeys', price: 180, cleaner_amount: null, done_at: null,
+  description: '3 storeys', price: 180, cleaner_amount: null, done_at: null, recur_days: null, recur_parent_id: null,
   created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z',
   customer_name: 'Sarah Kim', address: '1 Elm St', phone: null, email: null, ...over,
 });

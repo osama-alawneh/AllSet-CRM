@@ -28,7 +28,7 @@ export default async function MapPage({
   const jobsQuery = canReadMoney
     ? sb
         .from('jobs')
-        .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price,cleaner_amount,done_at')
+        .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price,cleaner_amount,done_at,recur_days,recur_parent_id')
         .is('deleted_at', null)
         .order('id')
     : sb
@@ -66,7 +66,7 @@ export default async function MapPage({
   let jobRows: JobRow[] = [];
   let priceById: Map<number, number> | null = null;
   if (canReadMoney) {
-    const rows = (jobsRes.data ?? []) as Array<JobRow & { price: number | null; cleaner_amount: number | null; done_at: string | null }>;
+    const rows = (jobsRes.data ?? []) as Array<JobRow & { price: number | null; cleaner_amount: number | null; done_at: string | null; recur_days: number | null; recur_parent_id: number | null }>;
     jobRows = rows.map(r => ({
       id: r.id,
       customer_id: r.customer_id,
@@ -80,6 +80,8 @@ export default async function MapPage({
       updated_at: r.updated_at,
       cleaner_amount: r.cleaner_amount,
       done_at: r.done_at,
+      recur_days: r.recur_days,
+      recur_parent_id: r.recur_parent_id,
     }));
     priceById = new Map(rows.map(r => [r.id, Number(r.price ?? 0)]));
   } else {
