@@ -96,9 +96,12 @@ export function groupJobsByStatus(jobs: Job[]): Record<JobStatus, Job[]> {
   return out;
 }
 
-// Cleaner sees only claimable + own jobs; admin/rep see everything.
-export function visibleJobs(role: Role | null, uid: string, jobs: Job[]): Job[] {
-  if (role === 'cleaner') return jobs.filter(j => j.status === 'unclaimed' || j.claimed_by === uid);
+// Owner decision 2026-07-09: every role sees all non-deleted jobs (soft-deleted rows are
+// already filtered upstream by jobs_public / the admin query). Cleaners view foreign
+// claimed jobs read-only — the interaction gating (claim/drag/join) lives in canTransition,
+// JobColumn, and JobDrawer, not here. Kept as the seam so callers stay stable if the
+// visibility rule ever narrows again.
+export function visibleJobs(_role: Role | null, _uid: string, jobs: Job[]): Job[] {
   return jobs;
 }
 

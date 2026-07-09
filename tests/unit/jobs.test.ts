@@ -89,8 +89,10 @@ describe('visibleJobs', () => {
     job({ id: 2, status: 'claimed', claimed_by: 'me' }),
     job({ id: 3, status: 'in_progress', claimed_by: 'other' }),
   ];
-  it('cleaner sees unclaimed + own only', () => {
-    expect(visibleJobs('cleaner', 'me', jobs).map(j => j.id)).toEqual([1, 2]);
+  // Owner decision 2026-07-09: every role sees all non-deleted jobs, including a cleaner
+  // seeing a job claimed by another cleaner (foreign jobs are view-only, gated elsewhere).
+  it('cleaner sees every job, including one claimed by another cleaner', () => {
+    expect(visibleJobs('cleaner', 'me', jobs).map(j => j.id)).toEqual([1, 2, 3]);
   });
   it('admin and rep see everything', () => {
     expect(visibleJobs('admin', 'me', jobs).map(j => j.id)).toEqual([1, 2, 3]);

@@ -1,5 +1,5 @@
 begin;
-select plan(78);
+select plan(102);
 
 -- fixtures (as postgres/superuser — bypasses RLS + grants, same idiom as other suites) ------
 insert into auth.users (id, instance_id, aud, role, email) values
@@ -298,6 +298,97 @@ set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000072"}';
 select is((select cleaner_amount from jobs_public where id=current_setting('test.split_job_id')::bigint)::numeric,
   100::numeric, 'cleaner reads cleaner_amount via jobs_public');
 select hasnt_column('jobs_public','price','jobs_public does not expose price (0024 recreation)');
+
+-- ==== 0026 fixes ==========================================================================
+
+-- 18. (Fix 1, owner decision 2026-07-09) cleaners now see ALL non-deleted jobs via
+--     jobs_public — a colleague-claimed job and a done job are visible; a soft-deleted job
+--     is not. Cleaner Flow C (074) is not a member of any of these. 900070 is claimed by
+--     072 (a colleague), 900075 is a done job claimed by 072, 900074 is soft-deleted above.
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000074"}';
+select is((select count(*)::int from jobs_public where id=900070), 1,
+  'cleaner sees a colleague-claimed job via jobs_public (widened visibility)');
+select is((select count(*)::int from jobs_public where id=900075), 1,
+  'cleaner sees a done job via jobs_public (widened visibility)');
+select is((select count(*)::int from jobs_public where id=900074), 0,
+  'cleaner cannot see a soft-deleted job via jobs_public');
+
+-- 19. (Fix 2) admin unclaim wipes job_members so a later claim yields exactly one approved
+--     owner row — no stale approved colleagues left to inflate the split.
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000070"}';
+select lives_ok($$ select create_job(900070,'Unclaim Reset','reset job', current_date, 120, 60) $$,
+  'admin create_job for the unclaim-reset fixture');
+select set_config('test.reset_job_id', (select id::text from jobs where service='Unclaim Reset'), true);
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000072"}';
+select lives_ok($$ select claim_job(current_setting('test.reset_job_id')::bigint) $$,
+  'cleaner A claims the unclaim-reset job');
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000073"}';
+select lives_ok($$ select request_join(current_setting('test.reset_job_id')::bigint) $$,
+  'cleaner B requests to join the unclaim-reset job');
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000072"}';
+select lives_ok(
+  format($$ select decide_join(%s, true) $$,
+    (select id from job_members where job_id=current_setting('test.reset_job_id')::bigint
+       and cleaner_id='90000000-0000-0000-0000-000000000073')),
+  'owner approves cleaner B on the unclaim-reset job');
+select is((select count(*)::int from job_members where job_id=current_setting('test.reset_job_id')::bigint and status='approved'),
+  2, 'two approved members before the admin unclaim');
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000070"}';
+select lives_ok($$ select set_job_status(current_setting('test.reset_job_id')::bigint,'unclaimed'::job_status) $$,
+  'admin unclaims the reset job');
+select is((select count(*)::int from job_members where job_id=current_setting('test.reset_job_id')::bigint),
+  0, 'admin unclaim deletes every job_members row for the job');
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000073"}';
+select lives_ok($$ select claim_job(current_setting('test.reset_job_id')::bigint) $$,
+  'cleaner B re-claims the reset job');
+select is((select count(*)::int from job_members where job_id=current_setting('test.reset_job_id')::bigint and status='approved' and is_owner),
+  1, 'exactly one approved owner row after the re-claim');
+select is((select count(*)::int from job_members where job_id=current_setting('test.reset_job_id')::bigint),
+  1, 'exactly one job_members row total after the re-claim (no stale colleagues)');
+
+-- 20. (Fix 3) soft-deleting a done job drops its auto payout from company_revenue expenses
+--     (revenue is already excluded by the rev CTE, so net stays consistent); restore re-counts.
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000070"}';
+select lives_ok($$ select create_job(900070,'Payout Consistency','payout job', current_date, 130, 70) $$,
+  'admin create_job for the payout-consistency fixture');
+select set_config('test.pc_job_id', (select id::text from jobs where service='Payout Consistency'), true);
+select lives_ok($$ select set_job_status(current_setting('test.pc_job_id')::bigint,'done'::job_status) $$,
+  'admin marks the payout-consistency job done');
+select set_config('test.pc_exp0',
+  (select expenses::text from company_revenue where month=to_char(now(),'YYYY-MM')), true);
+select lives_ok($$ select delete_job(current_setting('test.pc_job_id')::bigint) $$,
+  'admin soft-deletes the done payout job');
+select is(
+  (select expenses from company_revenue where month=to_char(now(),'YYYY-MM'))::numeric,
+  (current_setting('test.pc_exp0')::numeric - 70),
+  'soft-delete drops company_revenue expenses by the pot (auto payout excluded)');
+select lives_ok($$ select restore_job(current_setting('test.pc_job_id')::bigint) $$,
+  'admin restores the payout job');
+select is(
+  (select expenses from company_revenue where month=to_char(now(),'YYYY-MM'))::numeric,
+  current_setting('test.pc_exp0')::numeric,
+  'restore re-counts the auto payout in company_revenue expenses');
+
+-- 21. (Fix 4) decide_join raises when the underlying job has been soft-deleted.
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000070"}';
+select lives_ok($$ select create_job(900070,'Deleted Decide','deleted-decide job', current_date, 100, 40) $$,
+  'admin create_job for the deleted-decide fixture');
+select set_config('test.dd_job_id', (select id::text from jobs where service='Deleted Decide'), true);
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000072"}';
+select lives_ok($$ select claim_job(current_setting('test.dd_job_id')::bigint) $$,
+  'cleaner A claims the deleted-decide job');
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000073"}';
+select lives_ok($$ select request_join(current_setting('test.dd_job_id')::bigint) $$,
+  'cleaner B requests to join the deleted-decide job');
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000070"}';
+select lives_ok($$ select delete_job(current_setting('test.dd_job_id')::bigint) $$,
+  'admin soft-deletes the deleted-decide job');
+select set_config('test.dd_member_id',
+  (select id::text from job_members where job_id=current_setting('test.dd_job_id')::bigint
+     and cleaner_id='90000000-0000-0000-0000-000000000073'), true);
+select throws_ok(
+  format($$ select decide_join(%s, true) $$, current_setting('test.dd_member_id')),
+  'P0001', 'Job is deleted', 'decide_join on a soft-deleted job raises');
 
 select * from finish();
 rollback;

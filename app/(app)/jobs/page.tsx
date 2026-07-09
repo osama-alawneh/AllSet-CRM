@@ -113,8 +113,10 @@ export default async function JobsPage({
   const all = buildJobs(jobRows, (cs ?? []) as JobCustomer[], priceById, names);
   const visible = visibleJobs(role, uid, all);
   const meName = names.get(uid) ?? '';
-  // Resolve the drawer THROUGH visibleJobs: a cleaner deep-linking to a foreign job
-  // (?j=<id> not in their visible set) must render no drawer.
+  // Resolve the drawer THROUGH visibleJobs (the fetched set): deep-linking to a job that was
+  // never fetched (e.g. a soft-deleted job, absent from jobs_public) renders no drawer. Since
+  // the owner decision 2026-07-09 a cleaner CAN open a foreign, non-deleted job here — it
+  // opens view-only (money gated in JobDrawer; Request-to-join reachable while not done).
   const selected = jParam ? visible.find(j => j.id === Number(jParam)) ?? null : null;
 
   // Origin-lead quick view for the open job: admins read base `leads` (incl. quote_value);
