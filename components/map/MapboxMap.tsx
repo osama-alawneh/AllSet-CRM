@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css'; // imported ONLY here, never in a server file
 import { MAP_BOUNDS } from '@/lib/geo';
@@ -14,7 +14,9 @@ export function MapboxMap({
   flyTo?: { lat: number; lng: number; seq: number } | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  // The live Map is React state (not a ref) so the marker/flyTo effects re-run once
+  // the deferred construction below actually produces a map.
+  const [map, setMap] = useState<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const searchMarkerRef = useRef<mapboxgl.Marker | null>(null);
   // Keep the latest callbacks reachable from the once-bound map click handler.
@@ -28,44 +30,55 @@ export function MapboxMap({
   }, [onMapClick, canCreate]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    mapboxgl.accessToken = token;
-    const map = new mapboxgl.Map({
-      container: containerRef.current,
-      style: 'mapbox://styles/mapbox/satellite-streets-v12',
-      bounds: [
-        [MAP_BOUNDS.minLng, MAP_BOUNDS.minLat],
-        [MAP_BOUNDS.maxLng, MAP_BOUNDS.maxLat],
-      ],
-      fitBoundsOptions: { padding: 30 },
-      cooperativeGestures: true,
-      interactive,
-    });
-    mapRef.current = map;
-    map.on('click', e => {
-      searchMarkerRef.current?.remove();
-      searchMarkerRef.current = null;
-      if (!canCreateRef.current) return;
-      const p = map.project(e.lngLat);
-      const rect = containerRef.current!.getBoundingClientRect();
-      const xPct = (p.x / rect.width) * 100;
-      const yPct = (p.y / rect.height) * 100;
-      clickRef.current(e.lngLat.lat, e.lngLat.lng, xPct, yPct);
+    const container = containerRef.current;
+    if (!container) return;
+    let created: mapboxgl.Map | null = null;
+    // Construction is deferred one animation frame with cancellation. React StrictMode's
+    // dev double-mount (mount -> cleanup -> mount, all before a frame fires) would
+    // otherwise construct-and-remove a throwaway Map, and mapbox-gl crashes when a
+    // removed map's in-flight telemetry request fails afterwards ("this.errorCb is not
+    // a function" — remove() nulls errorCb, the late failure callback still calls it).
+    // The throwaway mount now cancels the frame before anything is built.
+    const frame = requestAnimationFrame(() => {
+      mapboxgl.accessToken = token;
+      const m = new mapboxgl.Map({
+        container,
+        style: 'mapbox://styles/mapbox/satellite-streets-v12',
+        bounds: [
+          [MAP_BOUNDS.minLng, MAP_BOUNDS.minLat],
+          [MAP_BOUNDS.maxLng, MAP_BOUNDS.maxLat],
+        ],
+        fitBoundsOptions: { padding: 30 },
+        cooperativeGestures: true,
+        interactive,
+      });
+      created = m;
+      m.on('click', e => {
+        searchMarkerRef.current?.remove();
+        searchMarkerRef.current = null;
+        if (!canCreateRef.current) return;
+        const p = m.project(e.lngLat);
+        const rect = container.getBoundingClientRect();
+        const xPct = (p.x / rect.width) * 100;
+        const yPct = (p.y / rect.height) * 100;
+        clickRef.current(e.lngLat.lat, e.lngLat.lng, xPct, yPct);
+      });
+      setMap(m);
     });
     return () => {
+      cancelAnimationFrame(frame);
       searchMarkerRef.current?.remove();
       searchMarkerRef.current = null;
-      map.remove();
-      mapRef.current = null;
+      created?.remove();
+      setMap(null);
     };
   }, [token, interactive]);
 
-  // Sync markers whenever pins change.
+  // Sync markers whenever pins change (or once the deferred map lands).
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
     markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
+    if (!map) return;
     for (const pin of pins) {
       // Mapbox owns the OUTER marker element's transform, so put .mpin styling on an
       // INNER child (its own rotate/translate does not fight Mapbox's positioning).
@@ -86,20 +99,19 @@ export function MapboxMap({
       const marker = new mapboxgl.Marker({ element: el }).setLngLat([pin.lng, pin.lat]).addTo(map);
       markersRef.current.push(marker);
     }
-  }, [pins, onPinClick]);
+  }, [map, pins, onPinClick]);
 
   // Fly to a searched address and drop a temporary highlight marker. `seq` changes
   // on every selection, so re-picking the same address still re-flies. The marker
   // clears on the next selection or any map click.
   useEffect(() => {
-    const map = mapRef.current;
     if (!map || !flyTo) return;
     map.flyTo({ center: [flyTo.lng, flyTo.lat], zoom: 16 });
     searchMarkerRef.current?.remove();
     searchMarkerRef.current = new mapboxgl.Marker({ color: '#f5a623' })
       .setLngLat([flyTo.lng, flyTo.lat])
       .addTo(map);
-  }, [flyTo]);
+  }, [map, flyTo]);
 
   return (
     <div
