@@ -1,5 +1,5 @@
 begin;
-select plan(49);
+select plan(52);
 
 -- fixtures --------------------------------------------------------------------
 insert into auth.users (id, instance_id, aud, role, email) values
@@ -44,6 +44,11 @@ set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000031"}';
 select lives_ok($$ select create_lead(900031,'Rep lead','desc',2,10,'note',999) $$, 'rep create_lead runs');
 select is((select service from leads_public where customer_id=900031 and service='Rep lead'), 'Rep lead',
           'rep-created lead visible via leads_public');
+-- Task 22: create_lead without p_rep_id defaults rep_id to the caller (auth.uid()). The
+-- base `leads` table is admin-only for SELECT (0002), so this is read back through
+-- leads_public — which doubles as "rep can read rep_id via leads_public".
+select is((select rep_id from leads_public where service='Rep lead'), '90000000-0000-0000-0000-000000000031'::uuid,
+          'create_lead defaults rep_id to auth.uid() when p_rep_id is omitted (rep can read it back via leads_public)');
 select lives_ok($$ select update_lead((select id from leads_public where service='Rep lead'),
   'Rep lead v2','desc2',3,12,'note2',777) $$, 'rep update_lead runs');
 select throws_ok($$ select delete_lead(900031) $$, 'P0001', 'Not authorized to delete leads', 'rep cannot delete leads');
@@ -63,6 +68,11 @@ select throws_ok($$ select create_lead(900031,'x','d',1,1,'n',null) $$, 'P0001',
 set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000030"}';
 select lives_ok($$ select create_lead(900031,'Admin lead','d',1,4,'n',500) $$, 'admin create_lead runs');
 select is((select quote_value from leads where service='Admin lead'), 500::numeric, 'admin quote applied');
+-- Task 22: admin attributes the lead to a different rep via explicit p_rep_id.
+select lives_ok($$ select create_lead(900031,'Admin-attributed lead','d',1,4,'n',null,
+  '90000000-0000-0000-0000-000000000031') $$, 'admin create_lead with explicit p_rep_id runs');
+select is((select rep_id from leads where service='Admin-attributed lead'),
+  '90000000-0000-0000-0000-000000000031'::uuid, 'admin create_lead persists explicit p_rep_id (can be a rep, not just self)');
 select is((select quote_value from leads where service='Rep lead v2'), 0::numeric,
           'rep quote arguments were ignored on create AND update (money admin-only)');
 select lives_ok($$ select update_lead((select id from leads where service='Admin lead'),

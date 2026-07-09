@@ -50,6 +50,8 @@ const lead: Lead = {
   email: null,
   lat: null,
   lng: null,
+  rep_id: null,
+  rep_name: null,
 };
 
 function setup(onOpen = vi.fn(), draggable = true) {

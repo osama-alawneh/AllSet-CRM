@@ -50,7 +50,8 @@ describe('toCSV', () => {
 const lead = (over: Partial<Lead>): Lead => ({
   id: 1, customer_id: 10, status: 'new', service: 'Standard', description: 'Front bay window', stories: 2, panes: 20,
   note: null, quote_value: 500, created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z',
-  customer_name: 'Sarah Kim', address: '1 Elm St', phone: '555', email: 'a@b.co', lat: 1, lng: 2, ...over,
+  customer_name: 'Sarah Kim', address: '1 Elm St', phone: '555', email: 'a@b.co', lat: 1, lng: 2,
+  rep_id: null, rep_name: null, ...over,
 });
 
 describe('leadsCsvTable', () => {

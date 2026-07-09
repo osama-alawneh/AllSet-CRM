@@ -30,6 +30,7 @@ export async function createLead(fd: FormData): Promise<{ error?: string }> {
   const { data, error } = await sb.rpc('create_lead', {
     p_customer_id: v.customer_id, p_service: v.service, p_description: v.description,
     p_stories: v.stories, p_panes: v.panes, p_note: v.note, p_quote: v.quote,
+    p_rep_id: v.rep_id,
   });
   if (error) return { error: error.message };
   revalidatePath('/leads'); revalidatePath('/map'); revalidatePath('/customers'); revalidatePath('/dashboard');
@@ -44,6 +45,7 @@ export async function updateLead(id: number, fd: FormData): Promise<{ error?: st
   const { error } = await sb.rpc('update_lead', {
     p_lead_id: id, p_service: v.service, p_description: v.description,
     p_stories: v.stories, p_panes: v.panes, p_note: v.note, p_quote: v.quote,
+    p_rep_id: v.rep_id,
   });
   if (error) return { error: error.message };
   revalidatePath('/leads'); revalidatePath('/map'); revalidatePath('/customers'); revalidatePath('/dashboard');

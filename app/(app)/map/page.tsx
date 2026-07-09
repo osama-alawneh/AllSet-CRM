@@ -37,7 +37,7 @@ export default async function MapPage({
   const [lpRes, csRes, baseRes, jobsRes, psRes] = await Promise.all([
     sb
       .from('leads_public')
-      .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at')
+      .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at,rep_id')
       .order('id'),
     sb.from('customers').select('id,name,address,phone,email,lat,lng,active'),
     admin ? sb.from('leads').select('id,quote_value').is('deleted_at', null) : Promise.resolve({ data: null, error: null }),
@@ -80,7 +80,10 @@ export default async function MapPage({
   }
 
   const names = new Map((psRes.data ?? []).map(p => [p.id as string, p.full_name as string]));
-  const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], quoteById);
+  // Task 22: map's LeadDrawer render is read-only (no isNew/customers passed below), so it
+  // only needs rep_name resolution for display — the existing profiles fetch (already used
+  // for jobs' claimed_by_name) doubles as the rep names map, no new query needed.
+  const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], quoteById, names);
   const allJobs = buildJobs(jobRows, (cs ?? []) as JobCustomer[], priceById, names);
   const jobs = visibleJobs(role, uid, allJobs);
 
