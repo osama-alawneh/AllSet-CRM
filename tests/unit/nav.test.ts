@@ -2,14 +2,15 @@ import { describe, it, expect } from 'vitest';
 import { navForRole, titleFor, NAV_ITEMS } from '@/lib/nav';
 
 describe('navForRole', () => {
-  it('admin sees all 7 items', () => {
+  it('admin sees all 8 items', () => {
     expect(navForRole('admin').map(i => i.href)).toEqual([
-      '/dashboard', '/map', '/leads', '/jobs', '/invoices', '/customers', '/settings',
+      '/dashboard', '/map', '/leads', '/jobs', '/invoices', '/customers', '/expenses', '/settings',
     ]);
   });
-  it('rep sees no invoices/settings', () => {
+  it('rep sees expenses but no invoices/settings', () => {
     const hrefs = navForRole('rep').map(i => i.href);
     expect(hrefs).toContain('/leads');
+    expect(hrefs).toContain('/expenses');
     expect(hrefs).not.toContain('/invoices');
     expect(hrefs).not.toContain('/settings');
   });
