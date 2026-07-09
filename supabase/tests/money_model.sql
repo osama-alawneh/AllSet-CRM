@@ -1,5 +1,5 @@
 begin;
-select plan(102);
+select plan(140);
 
 -- fixtures (as postgres/superuser — bypasses RLS + grants, same idiom as other suites) ------
 insert into auth.users (id, instance_id, aud, role, email) values
@@ -47,6 +47,18 @@ insert into jobs(id,customer_id,status) overriding system value values
   (900074,900070,'unclaimed'),
   (900075,900070,'unclaimed'),
   (900076,900070,'unclaimed');
+
+-- Task 1 (0027) fixtures — 900080-900089 job/customer range, uuid suffixes 080/082 (see the
+-- recurring-jobs assertion group near the end of this file for why these must be inserted
+-- before `set local role authenticated;` below: auth.users is only writable as the superuser
+-- fixture role, not as `authenticated`).
+insert into auth.users (id, instance_id, aud, role, email) values
+  ('90000000-0000-0000-0000-000000000080','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t-admin-r@test.dev'),
+  ('90000000-0000-0000-0000-000000000082','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t-cleaner-r-a@test.dev');
+insert into profiles(id,full_name,role) values
+  ('90000000-0000-0000-0000-000000000080','Admin Recur','admin'),
+  ('90000000-0000-0000-0000-000000000082','Cleaner Recur A','cleaner');
+insert into customers(id,name) overriding system value values (900080,'Recur Co');
 
 set local role authenticated;
 
@@ -389,6 +401,121 @@ select set_config('test.dd_member_id',
 select throws_ok(
   format($$ select decide_join(%s, true) $$, current_setting('test.dd_member_id')),
   'P0001', 'Job is deleted', 'decide_join on a soft-deleted job raises');
+
+-- ==== Task 1 (0027): recurring jobs — spawn-on-done, once-only, every-N-days field ==========
+-- Fixtures (auth.users/profiles/customers) were inserted near the top of this file, alongside
+-- the other superuser-only fixtures — auth.users is not writable under `authenticated`.
+
+-- 22. (item 1) create_job p_recur_days write semantics: stores a positive value; 0 and omitted
+--     both store NULL.
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000080"}';
+select lives_ok($$ select create_job(900080,'Recur Weekly','recur job', current_date, 200, 80, p_recur_days => 14) $$,
+  'admin create_job with p_recur_days => 14 runs');
+select is((select recur_days from jobs where service='Recur Weekly'), 14, 'create_job stores p_recur_days => 14');
+
+select lives_ok($$ select create_job(900080,'Recur Zero','recur job', current_date, 100, 40, p_recur_days => 0) $$,
+  'admin create_job with p_recur_days => 0 runs');
+select is((select recur_days from jobs where service='Recur Zero'), null, 'create_job with p_recur_days => 0 stores NULL');
+
+select lives_ok($$ select create_job(900080,'Recur Omitted','recur job', current_date, 100, 40) $$,
+  'admin create_job with p_recur_days omitted runs');
+select is((select recur_days from jobs where service='Recur Omitted'), null, 'create_job with p_recur_days omitted stores NULL');
+
+-- 23. (item 3) create_job with a negative p_recur_days raises.
+select throws_ok($$ select create_job(900080,'Recur Negative','recur job', current_date, 100, 40, p_recur_days => -3) $$,
+  'P0001', 'Repeat days must be positive', 'create_job with p_recur_days => -3 raises');
+
+-- 24. (item 2) update_job p_recur_days write semantics: sets a value; null keeps the existing
+--     value; 0 clears it to NULL.
+select set_config('test.recur_update_job_id', (select id::text from jobs where service='Recur Zero'), true);
+select lives_ok(format($$ select update_job(%s,'Recur Zero','recur job', current_date, 100, 40, p_recur_days => 7) $$,
+  current_setting('test.recur_update_job_id')), 'update_job with p_recur_days => 7 runs');
+select is((select recur_days from jobs where id=current_setting('test.recur_update_job_id')::bigint), 7,
+  'update_job sets p_recur_days => 7');
+select lives_ok(format($$ select update_job(%s,'Recur Zero','recur job', current_date, 100, 40, p_recur_days => null) $$,
+  current_setting('test.recur_update_job_id')), 'update_job with p_recur_days => null runs');
+select is((select recur_days from jobs where id=current_setting('test.recur_update_job_id')::bigint), 7,
+  'update_job with p_recur_days => null keeps the existing value');
+select lives_ok(format($$ select update_job(%s,'Recur Zero','recur job', current_date, 100, 40, p_recur_days => 0) $$,
+  current_setting('test.recur_update_job_id')), 'update_job with p_recur_days => 0 runs');
+select is((select recur_days from jobs where id=current_setting('test.recur_update_job_id')::bigint), null,
+  'update_job with p_recur_days => 0 clears to NULL');
+
+-- 25. (item 4) a recurring job (recur_days 14, known scheduled_date, price 200, pot 80,
+--     description set) moved to done spawns exactly one successor that inherits the job's
+--     money/identity fields and gets scheduled_date = parent.scheduled_date + 14 days.
+select set_config('test.recur_parent_id', (select id::text from jobs where service='Recur Weekly'), true);
+select lives_ok($$ select set_job_status(current_setting('test.recur_parent_id')::bigint,'done'::job_status) $$,
+  'admin marks the recurring parent job done');
+select is((select count(*)::int from jobs where recur_parent_id=current_setting('test.recur_parent_id')::bigint),
+  1, 'exactly one successor job exists after the parent is marked done');
+select is((select status from jobs where recur_parent_id=current_setting('test.recur_parent_id')::bigint),
+  'unclaimed', 'successor job status is unclaimed');
+select ok((select claimed_by is null from jobs where recur_parent_id=current_setting('test.recur_parent_id')::bigint),
+  'successor job claimed_by is null');
+select is((select customer_id from jobs where recur_parent_id=current_setting('test.recur_parent_id')::bigint),
+  900080::bigint, 'successor job inherits customer_id');
+select is((select service from jobs where recur_parent_id=current_setting('test.recur_parent_id')::bigint),
+  'Recur Weekly', 'successor job inherits service');
+select is((select description from jobs where recur_parent_id=current_setting('test.recur_parent_id')::bigint),
+  'recur job', 'successor job inherits description');
+select is((select price from jobs where recur_parent_id=current_setting('test.recur_parent_id')::bigint)::numeric,
+  200::numeric, 'successor job inherits price');
+select is((select cleaner_amount from jobs where recur_parent_id=current_setting('test.recur_parent_id')::bigint)::numeric,
+  80::numeric, 'successor job inherits cleaner_amount');
+select is((select recur_days from jobs where recur_parent_id=current_setting('test.recur_parent_id')::bigint),
+  14, 'successor job inherits recur_days');
+select is((select scheduled_date from jobs where recur_parent_id=current_setting('test.recur_parent_id')::bigint),
+  (select scheduled_date + interval '14 days' from jobs where id=current_setting('test.recur_parent_id')::bigint),
+  'successor scheduled_date = parent.scheduled_date + interval ''14 days''');
+
+-- 26. (item 5) bouncing the parent done -> in_progress -> done still leaves exactly one successor
+--     (the on-conflict do-nothing guard prevents a second spawn).
+select lives_ok($$ select set_job_status(current_setting('test.recur_parent_id')::bigint,'in_progress'::job_status) $$,
+  'admin bounces the recurring parent off done');
+select lives_ok($$ select set_job_status(current_setting('test.recur_parent_id')::bigint,'done'::job_status) $$,
+  'admin marks the recurring parent done again');
+select is((select count(*)::int from jobs where recur_parent_id=current_setting('test.recur_parent_id')::bigint),
+  1, 'bouncing done -> in_progress -> done still leaves exactly one successor');
+
+-- 27. (item 6) a non-recurring job moved to done spawns zero successors.
+select lives_ok($$ select create_job(900080,'Recur None','no-recur job', current_date, 100, 40) $$,
+  'admin create_job without recur_days for the non-recurring fixture');
+select set_config('test.recur_none_id', (select id::text from jobs where service='Recur None'), true);
+select lives_ok($$ select set_job_status(current_setting('test.recur_none_id')::bigint,'done'::job_status) $$,
+  'admin marks the non-recurring job done');
+select is((select count(*)::int from jobs where recur_parent_id=current_setting('test.recur_none_id')::bigint),
+  0, 'non-recurring job to done spawns zero successors');
+
+-- 28. (item 7) the successor itself inherits recur_days, so marking it done spawns its own
+--     successor (the chain continues).
+select set_config('test.recur_child_id',
+  (select id::text from jobs where recur_parent_id=current_setting('test.recur_parent_id')::bigint), true);
+select lives_ok($$ select set_job_status(current_setting('test.recur_child_id')::bigint,'done'::job_status) $$,
+  'admin marks the successor job done');
+select is((select count(*)::int from jobs where recur_parent_id=current_setting('test.recur_child_id')::bigint),
+  1, 'the successor job itself spawns its own successor (chain)');
+
+-- 29. (item 8) a recurring parent with a NULL scheduled_date, moved to done, spawns a successor
+--     with a non-null (now()-based) scheduled_date.
+select lives_ok($$ select create_job(900080,'Recur NullDate','null-date recur job', null, 100, 40, p_recur_days => 5) $$,
+  'admin create_job with null scheduled_date + recur_days for the null-date fixture');
+select set_config('test.recur_nulldate_id', (select id::text from jobs where service='Recur NullDate'), true);
+select ok((select scheduled_date is null from jobs where id=current_setting('test.recur_nulldate_id')::bigint),
+  'null-date recur job fixture has a null scheduled_date');
+select lives_ok($$ select set_job_status(current_setting('test.recur_nulldate_id')::bigint,'done'::job_status) $$,
+  'admin marks the null-date recurring job done');
+select ok((select scheduled_date is not null from jobs where recur_parent_id=current_setting('test.recur_nulldate_id')::bigint),
+  'successor of a null-scheduled_date parent gets a non-null (now()-based) scheduled_date');
+
+-- 30. (item 9) a cleaner session reads the still-unclaimed successor via jobs_public as a normal
+--     row; jobs_public does not expose recur_days (mirror the existing no-price column pin).
+select set_config('test.recur_grandchild_id',
+  (select id::text from jobs where recur_parent_id=current_setting('test.recur_child_id')::bigint), true);
+set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000082"}';
+select is((select status from jobs_public where id=current_setting('test.recur_grandchild_id')::bigint),
+  'unclaimed', 'cleaner reads the successor as a normal unclaimed row via jobs_public');
+select hasnt_column('jobs_public','recur_days','jobs_public does not expose recur_days (0027)');
 
 select * from finish();
 rollback;
