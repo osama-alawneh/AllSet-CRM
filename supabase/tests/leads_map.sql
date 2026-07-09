@@ -1,5 +1,5 @@
 begin;
-select plan(19);
+select plan(20);
 
 -- fixtures
 insert into auth.users (id, instance_id, aud, role, email) values
@@ -53,6 +53,13 @@ select is((select count(*)::int from jobs_public where lead_id=900023), 1, 'rep 
 -- 10 + 11. rep may create a lead+customer from a pin via the RPC
 select lives_ok($$ select create_lead_from_pin('Pin Rep','1 Pin St',42.33,-83.04,'new'::lead_status) $$, 'rep pin RPC runs');
 select isnt_empty($$ select 1 from customers where name='Pin Rep' and address='1 Pin St' $$, 'pin RPC created the customer');
+-- 0022 regression: pin-created lead is attributed to the caller (rep), not left null.
+select is(
+  (select rep_id from leads_public l join customers c on c.id = l.customer_id
+    where c.name='Pin Rep' and c.address='1 Pin St'),
+  '90000000-0000-0000-0000-000000000021'::uuid,
+  'pin RPC attributes rep_id to the caller'
+);
 
 -- 12. unknown lead id raises (the RPC's own not-found guard, not a silent no-op)
 select throws_ok($$ select set_lead_status(999999999, 'won'::lead_status) $$, 'P0001', 'Lead 999999999 not found', 'set_lead_status on unknown lead raises');

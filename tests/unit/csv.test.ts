@@ -50,7 +50,8 @@ describe('toCSV', () => {
 const lead = (over: Partial<Lead>): Lead => ({
   id: 1, customer_id: 10, status: 'new', service: 'Standard', description: 'Front bay window', stories: 2, panes: 20,
   note: null, quote_value: 500, created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z',
-  customer_name: 'Sarah Kim', address: '1 Elm St', phone: '555', email: 'a@b.co', lat: 1, lng: 2, ...over,
+  customer_name: 'Sarah Kim', address: '1 Elm St', phone: '555', email: 'a@b.co', lat: 1, lng: 2,
+  rep_id: null, rep_name: null, ...over,
 });
 
 describe('leadsCsvTable', () => {
@@ -101,6 +102,7 @@ describe('invoicesCsvTable', () => {
       id: 1, customer_id: 10, job_id: null, number: 'INV-1001', issue_date: '2026-06-20',
       status: 'paid', tax: 0, deposit: 0,
       items: [{ description: 'A', qty: 2, unit_price: 100 }], customer_name: 'Sarah Kim',
+      customer_address: null, customer_phone: null, customer_email: null,
     };
     const t = invoicesCsvTable([inv]);
     expect(t.headers).toEqual(['Number', 'Customer', 'Date', 'Status', 'Total']);
@@ -110,7 +112,7 @@ describe('invoicesCsvTable', () => {
 
 const cust = (over: Partial<CustomerRow>): CustomerRow => ({
   id: 5, name: 'Acme Co', phone: '555', email: 'a@b.co', address: '2 Oak Ave',
-  type: 'commercial', notes: null, jobs: 3, invoices: 4, ...over,
+  type: 'commercial', notes: null, active: true, jobs: 3, invoices: 4, ...over,
 });
 
 describe('customersCsvTable', () => {

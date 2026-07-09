@@ -121,7 +121,7 @@ describe('buildInvoices', () => {
     { id: 2, customer_id: 99, job_id: 7, number: 'INV-1002', issue_date: '2026-06-25', status: 'sent', tax: null, deposit: null },
   ];
   const items = new Map<number, InvoiceItem[]>([[1, [{ description: 'A', qty: 1, unit_price: 180 }]]]);
-  const customers: InvoiceCustomer[] = [{ id: 10, name: 'Sarah Kim' }];
+  const customers: InvoiceCustomer[] = [{ id: 10, name: 'Sarah Kim', address: '142 Maple Ave', phone: '555-0142', email: 's@kim.dev' }];
   it('joins customer name, items, and coerces null tax/deposit to 0', () => {
     const out = buildInvoices(rows, items, customers);
     expect(out[0].customer_name).toBe('Sarah Kim');
@@ -131,5 +131,16 @@ describe('buildInvoices', () => {
     expect(out[1].items).toEqual([]);             // no items row
     expect(out[1].tax).toBe(0);
     expect(out[1].deposit).toBe(0);
+  });
+  it('resolves bill-to contact fields (Task 20: survives customer deactivation)', () => {
+    const out = buildInvoices(rows, items, customers);
+    // Resolved from the unfiltered join — present even if this customer is later inactive.
+    expect(out[0].customer_address).toBe('142 Maple Ave');
+    expect(out[0].customer_phone).toBe('555-0142');
+    expect(out[0].customer_email).toBe('s@kim.dev');
+    // Customer absent from the join entirely → nulls, never undefined.
+    expect(out[1].customer_address).toBeNull();
+    expect(out[1].customer_phone).toBeNull();
+    expect(out[1].customer_email).toBeNull();
   });
 });

@@ -22,7 +22,7 @@ export default async function InvoicesPage({
       .select('id,customer_id,job_id,number,issue_date,status,tax,deposit')
       .order('id', { ascending: false }),
     sb.from('invoice_items').select('invoice_id,description,qty,unit_price'),
-    sb.from('customers').select('id,name,address,phone,email').order('name'),
+    sb.from('customers').select('id,name,address,phone,email,active').order('name'),
   ]);
   logQueryError('invoices.page.invoices', invRes.error);
   logQueryError('invoices.page.invoice_items', itemsRes.error);
@@ -44,9 +44,14 @@ export default async function InvoicesPage({
     itemsByInvoice,
     (custRows ?? []) as InvoiceCustomer[]
   );
-  const customers: InvoiceCustomerFull[] = (custRows ?? []).map(c => ({
-    id: c.id, name: c.name, address: c.address, phone: c.phone, email: c.email,
-  }));
+  // Task 20: the picker only offers active customers; `custRows` itself stays unfiltered
+  // above (fed into buildInvoices) so existing invoices for a since-deactivated customer
+  // still resolve their customer_name.
+  const customers: InvoiceCustomerFull[] = (custRows ?? [])
+    .filter(c => c.active)
+    .map(c => ({
+      id: c.id, name: c.name, address: c.address, phone: c.phone, email: c.email,
+    }));
 
   const isNew = newParam === '1';
   const selected = iParam ? invoices.find(v => v.id === Number(iParam)) ?? null : null;

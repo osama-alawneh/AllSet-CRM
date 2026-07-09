@@ -5,6 +5,7 @@ import {
   statusColor,
   groupByStatus,
   buildLeads,
+  parseLeadForm,
   SERVICE_TYPES,
   type Lead,
   type LeadPublicRow,
@@ -14,7 +15,8 @@ import {
 const lead = (over: Partial<Lead>): Lead => ({
   id: 1, customer_id: 1, status: 'new', service: 'TBD', description: null, stories: 2, panes: 12,
   note: null, quote_value: null, created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z',
-  customer_name: 'X', address: null, phone: null, email: null, lat: null, lng: null, ...over,
+  customer_name: 'X', address: null, phone: null, email: null, lat: null, lng: null,
+  rep_id: null, rep_name: null, ...over,
 });
 
 describe('status maps', () => {
@@ -48,8 +50,8 @@ describe('groupByStatus', () => {
 
 describe('buildLeads', () => {
   const rows: LeadPublicRow[] = [
-    { id: 10, customer_id: 1, status: 'won', service: 'In + out', description: null, stories: 2, panes: 18, note: 'Booked.', created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z' },
-    { id: 11, customer_id: 2, status: 'new', service: null, description: null, stories: null, panes: null, note: null, created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z' },
+    { id: 10, customer_id: 1, status: 'won', service: 'In + out', description: null, stories: 2, panes: 18, note: 'Booked.', created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z', rep_id: 'rep-1' },
+    { id: 11, customer_id: 2, status: 'new', service: null, description: null, stories: null, panes: null, note: null, created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z', rep_id: null },
   ];
   const customers: CustomerGeo[] = [
     { id: 1, name: 'Sarah Kim', address: '142 Maple Ave', phone: '555-0142', email: 's@k.io', lat: 42.331, lng: -83.045 },
@@ -69,5 +71,47 @@ describe('buildLeads', () => {
     expect(admin[1].quote_value).toBeNull();
     const nonAdmin = buildLeads(rows, customers, null);
     expect(nonAdmin[0].quote_value).toBeNull();
+  });
+  it('passes rep_id through and resolves rep_name from the names map', () => {
+    const names = new Map([['rep-1', 'Rep Crud']]);
+    const out = buildLeads(rows, customers, null, names);
+    expect(out[0].rep_id).toBe('rep-1');
+    expect(out[0].rep_name).toBe('Rep Crud');
+    expect(out[1].rep_id).toBeNull();
+    expect(out[1].rep_name).toBeNull(); // no rep_id -> no lookup
+  });
+  it('rep_name is null when rep_id has no match in the names map', () => {
+    const out = buildLeads(rows, customers, null); // default empty names map
+    expect(out[0].rep_id).toBe('rep-1');
+    expect(out[0].rep_name).toBeNull();
+  });
+});
+
+describe('parseLeadForm rep_id', () => {
+  const base = () => {
+    const fd = new FormData();
+    fd.set('customer_id', '1');
+    fd.set('service', 'Window Cleaning');
+    return fd;
+  };
+  it('passes rep_id through when present', () => {
+    const fd = base();
+    fd.set('rep_id', '90000000-0000-0000-0000-000000000031');
+    const res = parseLeadForm(fd);
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.value.rep_id).toBe('90000000-0000-0000-0000-000000000031');
+  });
+  it('omits (nulls) rep_id when blank', () => {
+    const fd = base();
+    fd.set('rep_id', '');
+    const res = parseLeadForm(fd);
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.value.rep_id).toBeNull();
+  });
+  it('omits (nulls) rep_id when absent entirely', () => {
+    const fd = base();
+    const res = parseLeadForm(fd);
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.value.rep_id).toBeNull();
   });
 });

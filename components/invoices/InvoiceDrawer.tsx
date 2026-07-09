@@ -3,6 +3,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Drawer } from '@/components/ui/Drawer';
+import { CustomerLookup } from '@/components/customers/CustomerLookup';
 import {
   INVOICE_STATUSES,
   invoiceStatusColor,
@@ -43,7 +44,23 @@ export function InvoiceDrawer({
   const [printPayload, setPrintPayload] = useState<PrintData | null>(null);
 
   const close = () => router.push('/invoices', { scroll: false });
-  const cust = customers.find(c => c.id === customerId) ?? null;
+  // Bill-to for display/print: the picked customer from the ACTIVE-ONLY picker array if
+  // present; otherwise — while customerId is still the invoice's own customer — the invoice's
+  // resolved fields (buildInvoices joins the unfiltered customers query). A deactivated
+  // customer is absent from `customers` but their existing invoice must still render its
+  // bill-to (Task 20 review fix). Repicking in edit mode makes `picked` win.
+  const picked = customers.find(c => c.id === customerId) ?? null;
+  const cust: InvoiceCustomerFull | null =
+    picked ??
+    (invoice && customerId === invoice.customer_id
+      ? {
+          id: invoice.customer_id,
+          name: invoice.customer_name,
+          address: invoice.customer_address,
+          phone: invoice.customer_phone,
+          email: invoice.customer_email,
+        }
+      : null);
   const total = invoiceTotal(items, invoice?.tax ?? 0, invoice?.deposit ?? 0);
   const number = invoice?.number ?? 'INV-—';
   const issueDate = invoice?.issue_date ?? 'pending';
@@ -132,9 +149,12 @@ export function InvoiceDrawer({
         <span className="lbl">Bill to</span>
         {editing ? (
           <>
-            <select value={customerId} onChange={e => setCustomerId(Number(e.target.value))} style={{ width: '100%' }}>
-              {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <CustomerLookup
+              customers={customers}
+              name="customer_lookup_display"
+              initialId={customerId}
+              onPick={c => setCustomerId(c.id)}
+            />
             <div className="minirow" style={{ cursor: 'default' }}>
               <span style={{ color: 'var(--muted)' }}>📞 {cust?.phone ?? '—'} · {cust?.address ?? '—'}</span>
             </div>

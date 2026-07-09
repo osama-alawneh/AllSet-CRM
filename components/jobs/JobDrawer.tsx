@@ -3,6 +3,8 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Drawer } from '@/components/ui/Drawer';
 import { CopyButton } from '@/components/ui/CopyButton';
+import { CustomerLookup } from '@/components/customers/CustomerLookup';
+import type { CustomerOption } from '@/lib/customerLookup';
 import {
   JOB_STATUSES, jobStatusLabel, jobStatusColor, canTransition, dayTime, type Job, type JobStatus,
 } from '@/lib/jobs';
@@ -29,7 +31,7 @@ export function JobDrawer({
   uid: string;
   admin: boolean;
   isNew?: boolean;
-  customers?: { id: number; name: string }[];
+  customers?: CustomerOption[];
   leadDetail?: LeadDetail | null;
   backTo?: string;
 }) {
@@ -211,10 +213,7 @@ export function JobDrawer({
               <span className="k">Customer</span>
               <span className="v">
                 {isNew ? (
-                  <select name="customer_id" required defaultValue="">
-                    <option value="" disabled>Select customer…</option>
-                    {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <CustomerLookup customers={customers} name="customer_id" required />
                 ) : (
                   <>
                     <input type="hidden" name="customer_id" value={job!.customer_id} />

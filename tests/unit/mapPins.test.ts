@@ -8,7 +8,7 @@ const lead = (over: Partial<Lead>): Lead => ({
   stories: null, panes: null, note: null, quote_value: null,
   created_at: '2026-01-01', updated_at: '2026-01-01',
   customer_name: 'Ann', address: null, phone: null, email: null,
-  lat: 41.66, lng: -91.53, ...over,
+  lat: 41.66, lng: -91.53, rep_id: null, rep_name: null, ...over,
 });
 
 const job = (over: Partial<Job>): Job => ({

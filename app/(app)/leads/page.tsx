@@ -1,49 +1,86 @@
 import { redirect } from 'next/navigation';
-import { getRole } from '@/lib/auth';
+import { getRole, getSession } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
 import { logQueryError } from '@/lib/log';
 import { buildLeads, type LeadPublicRow, type CustomerGeo } from '@/lib/leads';
 import { KanbanBoard } from '@/components/leads/KanbanBoard';
 import { LeadsListSection } from '@/components/leads/LeadsListSection';
+import { LeadsHistorySection } from '@/components/leads/LeadsHistorySection';
+import { type DeletedLead } from '@/components/leads/LeadsHistoryTable';
 import { LeadDrawer } from '@/components/leads/LeadDrawer';
 
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ l?: string; new?: string; view?: string }>;
+  searchParams: Promise<{ l?: string; new?: string; view?: string; deleted?: string }>;
 }) {
   const role = await getRole();
   if (role !== 'admin' && role !== 'rep') redirect('/dashboard');
-  const { l: lParam, new: newParam, view } = await searchParams;
+  const { l: lParam, new: newParam, view, deleted } = await searchParams;
   const isNew = newParam === '1';
   const list = view === 'list';
   const backTo = list ? '/leads?view=list' : '/leads';
   const admin = role === 'admin';
+  const history = admin && deleted === '1'; // admin-only History view (0020); RPCs also block non-admins
+  const user = await getSession();
+  const uid = user?.id ?? '';
   const sb = await supabaseServer();
 
-  const [lpRes, csRes, baseRes] = await Promise.all([
+  const [lpRes, csRes, baseRes, delRes, psRes] = await Promise.all([
     sb
       .from('leads_public')
-      .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at')
+      .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at,rep_id')
       .order('id'),
-    sb.from('customers').select('id,name,address,phone,email,lat,lng'),
-    admin ? sb.from('leads').select('id,quote_value') : Promise.resolve({ data: null, error: null }),
+    sb.from('customers').select('id,name,address,phone,email,lat,lng,active'),
+    admin ? sb.from('leads').select('id,quote_value').is('deleted_at', null) : Promise.resolve({ data: null, error: null }),
+    // History fetch: deliberately the ONE base-leads read that does NOT exclude deleted_at —
+    // it wants exactly the opposite set.
+    history
+      ? sb
+          .from('leads')
+          .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at,quote_value,deleted_at,rep_id')
+          .not('deleted_at', 'is', null)
+          .order('deleted_at', { ascending: false })
+      : Promise.resolve({ data: null, error: null }),
+    // Task 22: rep attribution — admin/rep profiles feed the LeadDrawer's Rep select; the
+    // full id->name map (any role) resolves rep_name for the read view / history table.
+    sb.from('profiles').select('id,full_name,role'),
   ]);
   logQueryError('leads.page.leads_public', lpRes.error);
   logQueryError('leads.page.customers', csRes.error);
   logQueryError('leads.page.leads', baseRes.error);
+  logQueryError('leads.page.deleted', delRes.error);
+  logQueryError('leads.page.profiles', psRes.error);
 
   const lp = lpRes.data;
   const cs = csRes.data;
+  const profiles = (psRes.data ?? []) as Array<{ id: string; full_name: string; role: string }>;
+  const repNames = new Map(profiles.map(p => [p.id, p.full_name]));
+  const reps = profiles
+    .filter(p => p.role === 'admin' || p.role === 'rep')
+    .map(p => ({ id: p.id, full_name: p.full_name }));
 
   let quoteById: Map<number, number> | null = null;
   if (admin) {
     quoteById = new Map((baseRes.data ?? []).map(b => [b.id, Number(b.quote_value ?? 0)]));
   }
 
-  const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], quoteById);
+  const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], quoteById, repNames);
   const selected = lParam ? leads.find(l => l.id === Number(lParam)) ?? null : null;
-  const customerOptions = (cs ?? []).map(c => ({ id: c.id, name: c.name }));
+  // Task 20: the lookup picker only offers active customers; `cs` itself stays unfiltered
+  // above so existing leads against a since-deactivated customer still resolve name/address.
+  const customerOptions = (cs ?? [])
+    .filter(c => c.active)
+    .map(c => ({ id: c.id, name: c.name, phone: c.phone, address: c.address }));
+
+  if (history) {
+    const delRows = (delRes.data ?? []) as Array<LeadPublicRow & { quote_value: number | null; deleted_at: string }>;
+    const deletedAtById = new Map(delRows.map(r => [r.id, r.deleted_at]));
+    const deletedQuoteById = new Map(delRows.map(r => [r.id, Number(r.quote_value ?? 0)]));
+    const deletedLeads: DeletedLead[] = buildLeads(delRows, (cs ?? []) as CustomerGeo[], deletedQuoteById, repNames)
+      .map(l => ({ ...l, deleted_at: deletedAtById.get(l.id) as string }));
+    return <LeadsHistorySection leads={deletedLeads} />;
+  }
 
   return (
     <>
@@ -57,6 +94,7 @@ export default async function LeadsPage({
           key={selected?.id ?? 'new'}
           lead={selected} admin={admin} canEdit={true} backTo={backTo}
           isNew={isNew && !selected} customers={customerOptions}
+          reps={reps} uid={uid}
         />
       )}
     </>

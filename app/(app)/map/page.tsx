@@ -27,6 +27,7 @@ export default async function MapPage({
     ? sb
         .from('jobs')
         .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price')
+        .is('deleted_at', null)
         .order('id')
     : sb
         .from('jobs_public')
@@ -36,12 +37,12 @@ export default async function MapPage({
   const [lpRes, csRes, baseRes, jobsRes, psRes] = await Promise.all([
     sb
       .from('leads_public')
-      .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at')
+      .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at,rep_id')
       .order('id'),
-    sb.from('customers').select('id,name,address,phone,email,lat,lng'),
-    admin ? sb.from('leads').select('id,quote_value') : Promise.resolve({ data: null, error: null }),
+    sb.from('customers').select('id,name,address,phone,email,lat,lng,active'),
+    admin ? sb.from('leads').select('id,quote_value').is('deleted_at', null) : Promise.resolve({ data: null, error: null }),
     jobsQuery,
-    sb.from('profiles').select('id,full_name'),
+    sb.from('profiles').select('id,full_name,role'),
   ]);
   logQueryError('map.page.leads_public', lpRes.error);
   logQueryError('map.page.customers', csRes.error);
@@ -78,8 +79,16 @@ export default async function MapPage({
     jobRows = (jobsRes.data ?? []) as JobRow[];
   }
 
-  const names = new Map((psRes.data ?? []).map(p => [p.id as string, p.full_name as string]));
-  const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], quoteById);
+  // Task 22: the existing profiles fetch (already used for jobs' claimed_by_name) doubles
+  // as the rep names map for buildLeads AND — widened with `role` — feeds the LeadDrawer's
+  // Rep select. The map's LeadDrawer IS editable (canEdit={canCreate} gates the Edit
+  // button), so it needs the same reps/uid the leads page passes; no new query needed.
+  const profiles = (psRes.data ?? []) as Array<{ id: string; full_name: string; role: string }>;
+  const names = new Map(profiles.map(p => [p.id, p.full_name]));
+  const reps = profiles
+    .filter(p => p.role === 'admin' || p.role === 'rep')
+    .map(p => ({ id: p.id, full_name: p.full_name }));
+  const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], quoteById, names);
   const allJobs = buildJobs(jobRows, (cs ?? []) as JobCustomer[], priceById, names);
   const jobs = visibleJobs(role, uid, allJobs);
 
@@ -117,13 +126,17 @@ export default async function MapPage({
       leadDetail = ld ? { ...ld, quote_value: null } : null; // money structurally absent for non-admins
     }
   }
-  const customerOptions = ((cs ?? []) as CustomerGeo[]).map(c => ({ id: c.id, name: c.name }));
+  // Task 20: the lookup picker only offers active customers; `cs` itself stays unfiltered
+  // above so existing leads/jobs against a since-deactivated customer still resolve name/address.
+  const customerOptions = ((cs ?? []) as Array<CustomerGeo & { active: boolean }>)
+    .filter(c => c.active)
+    .map(c => ({ id: c.id, name: c.name, phone: c.phone, address: c.address }));
 
   return (
     <section className="screen screen-fill">
       <MapView pins={pins} token={token} canCreate={canCreate} openLeadId={lParam ?? null} />
       {selectedLead && (
-        <LeadDrawer key={selectedLead.id} lead={selectedLead} admin={admin} canEdit={canCreate} backTo="/map" />
+        <LeadDrawer key={selectedLead.id} lead={selectedLead} admin={admin} canEdit={canCreate} backTo="/map" reps={reps} uid={uid} />
       )}
       {selectedJob && role && (
         <JobDrawer

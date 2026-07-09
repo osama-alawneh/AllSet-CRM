@@ -6,6 +6,7 @@ export type CustomerRow = {
   address: string | null;
   type: 'residential' | 'commercial';
   notes: string | null;
+  active: boolean;
   jobs: number;
   invoices: number | null; // null = caller may not see invoices (non-admin)
 };

@@ -4,6 +4,7 @@ import { type Job } from '@/lib/jobs';
 import { toCSV, downloadCSV, jobsCsvTable } from '@/lib/csv';
 import { useJobsRealtime } from '@/lib/hooks/useJobsRealtime';
 import { ViewToggle } from '@/components/ui/ViewToggle';
+import { HistoryToggle } from '@/components/ui/HistoryToggle';
 import { JobsListTable } from './JobsListTable';
 
 export function JobsListSection({
@@ -23,6 +24,7 @@ export function JobsListSection({
     <section className="screen">
       <div className="scrhead">
         <ViewToggle view="list" base="/jobs" />
+        {admin && <HistoryToggle base="/jobs" active={false} />}
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             className="btn sec"

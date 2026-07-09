@@ -43,7 +43,7 @@ export function GlobalSearch({ role }: { role: Role }) {
       const numFilter = buildEntityOrFilter(q, ['number'])!;
       // Role-gated fan-out; money-free views only. Failed/skipped sources yield [].
       const [cs, ls, js, is] = await Promise.all([
-        sb.from('customers').select('id,name,phone,address').or(custFilter).limit(5),
+        sb.from('customers').select('id,name,phone,address').eq('active', true).or(custFilter).limit(5),
         canLeads
           ? sb.from('leads_public').select('id,service,status,description').or(leadFilter).limit(5)
           : Promise.resolve({ data: [] }),

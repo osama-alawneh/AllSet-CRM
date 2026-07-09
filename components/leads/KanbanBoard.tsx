@@ -20,6 +20,7 @@ import { setLeadStatus } from '@/app/(app)/leads/actions';
 import { toCSV, downloadCSV, leadsCsvTable } from '@/lib/csv';
 import { filterLeads } from '@/lib/search';
 import { ViewToggle } from '@/components/ui/ViewToggle';
+import { HistoryToggle } from '@/components/ui/HistoryToggle';
 import { KanbanColumn } from './KanbanColumn';
 
 export function KanbanBoard({
@@ -70,6 +71,7 @@ export function KanbanBoard({
     <section className="screen">
       <div className="scrhead">
         <ViewToggle view="board" base="/leads" />
+        {admin && <HistoryToggle base="/leads" active={false} />}
         <input placeholder="🔍 filter leads…" style={{ width: 200 }} value={q} onChange={e => setQ(e.target.value)} aria-label="Filter leads" />
         <span className="cap" style={{ fontSize: 11, color: 'var(--muted)' }}>
           drag cards between columns to change status

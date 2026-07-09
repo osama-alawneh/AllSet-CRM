@@ -24,6 +24,12 @@ export type Invoice = {
   deposit: number;
   items: InvoiceItem[];
   customer_name: string;
+  // Bill-to contact resolved from the UNFILTERED customers join (Task 20 review fix):
+  // the drawer must render these even when the customer is deactivated and therefore
+  // absent from the active-only picker array.
+  customer_address: string | null;
+  customer_phone: string | null;
+  customer_email: string | null;
 };
 
 // DB shapes the page fetches.
@@ -37,7 +43,14 @@ export type InvoiceRow = {
   tax: number | null;
   deposit: number | null;
 };
-export type InvoiceCustomer = { id: number; name: string };
+export type InvoiceCustomer = {
+  id: number;
+  name: string;
+  // Optional so lightweight callers/fixtures can omit them; buildInvoices coalesces to null.
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+};
 
 export type InvoiceInput = {
   customer_id: number;
@@ -94,16 +107,22 @@ export function buildInvoices(
   customers: InvoiceCustomer[]
 ): Invoice[] {
   const byId = new Map(customers.map(c => [c.id, c]));
-  return invoices.map(inv => ({
-    id: inv.id,
-    customer_id: inv.customer_id,
-    job_id: inv.job_id,
-    number: inv.number,
-    issue_date: inv.issue_date,
-    status: inv.status,
-    tax: Number(inv.tax ?? 0),
-    deposit: Number(inv.deposit ?? 0),
-    items: itemsByInvoice.get(inv.id) ?? [],
-    customer_name: byId.get(inv.customer_id)?.name ?? 'Unknown',
-  }));
+  return invoices.map(inv => {
+    const c = byId.get(inv.customer_id);
+    return {
+      id: inv.id,
+      customer_id: inv.customer_id,
+      job_id: inv.job_id,
+      number: inv.number,
+      issue_date: inv.issue_date,
+      status: inv.status,
+      tax: Number(inv.tax ?? 0),
+      deposit: Number(inv.deposit ?? 0),
+      items: itemsByInvoice.get(inv.id) ?? [],
+      customer_name: c?.name ?? 'Unknown',
+      customer_address: c?.address ?? null,
+      customer_phone: c?.phone ?? null,
+      customer_email: c?.email ?? null,
+    };
+  });
 }

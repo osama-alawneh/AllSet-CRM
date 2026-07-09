@@ -5,14 +5,16 @@ import { logQueryError } from '@/lib/log';
 import { buildJobs, visibleJobs, type JobRow, type JobCustomer } from '@/lib/jobs';
 import { JobsBoard } from '@/components/jobs/JobsBoard';
 import { JobsListSection } from '@/components/jobs/JobsListSection';
+import { JobsHistorySection } from '@/components/jobs/JobsHistorySection';
+import { type DeletedJob } from '@/components/jobs/JobsHistoryTable';
 import { JobDrawer } from '@/components/jobs/JobDrawer';
 
 export default async function JobsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ j?: string; new?: string; view?: string }>;
+  searchParams: Promise<{ j?: string; new?: string; view?: string; deleted?: string }>;
 }) {
-  const { j: jParam, new: newParam, view } = await searchParams;
+  const { j: jParam, new: newParam, view, deleted } = await searchParams;
   const list = view === 'list';
   const user = await getSession();
   if (!user) redirect('/login');
@@ -21,6 +23,7 @@ export default async function JobsPage({
   const uid = user.id;
   const admin = role === 'admin';
   const isNew = newParam === '1' && admin; // only admins create jobs
+  const history = admin && deleted === '1'; // admin-only History view (0020); RPCs also block non-admins
   const sb = await supabaseServer();
 
   // Role-split fetch: admins read base jobs (incl. price); everyone else reads the
@@ -29,20 +32,31 @@ export default async function JobsPage({
     ? sb
         .from('jobs')
         .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price')
+        .is('deleted_at', null)
         .order('id')
     : sb
         .from('jobs_public')
         .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at')
         .order('id');
 
-  const [jobsRes, csRes, psRes] = await Promise.all([
+  const [jobsRes, csRes, psRes, delRes] = await Promise.all([
     jobsQuery,
-    sb.from('customers').select('id,name,address,phone,email'),
+    sb.from('customers').select('id,name,address,phone,email,active'),
     sb.from('profiles').select('id,full_name'),
+    // History fetch: deliberately the ONE base-jobs read that does NOT exclude deleted_at —
+    // it wants exactly the opposite set.
+    history
+      ? sb
+          .from('jobs')
+          .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price,deleted_at')
+          .not('deleted_at', 'is', null)
+          .order('deleted_at', { ascending: false })
+      : Promise.resolve({ data: null, error: null }),
   ]);
   logQueryError('jobs.page.jobs', jobsRes.error);
   logQueryError('jobs.page.customers', csRes.error);
   logQueryError('jobs.page.profiles', psRes.error);
+  logQueryError('jobs.page.deleted', delRes.error);
 
   let jobRows: JobRow[] = [];
   let priceById: Map<number, number> | null = null;
@@ -68,6 +82,15 @@ export default async function JobsPage({
   const cs = csRes.data;
   const ps = psRes.data;
   const names = new Map((ps ?? []).map(p => [p.id as string, p.full_name as string]));
+
+  if (history) {
+    const delRows = (delRes.data ?? []) as Array<JobRow & { price: number | null; deleted_at: string }>;
+    const deletedAtById = new Map(delRows.map(r => [r.id, r.deleted_at]));
+    const deletedPriceById = new Map(delRows.map(r => [r.id, Number(r.price ?? 0)]));
+    const deletedJobs: DeletedJob[] = buildJobs(delRows, (cs ?? []) as JobCustomer[], deletedPriceById, names)
+      .map(j => ({ ...j, deleted_at: deletedAtById.get(j.id) as string }));
+    return <JobsHistorySection jobs={deletedJobs} />;
+  }
 
   const all = buildJobs(jobRows, (cs ?? []) as JobCustomer[], priceById, names);
   const visible = visibleJobs(role, uid, all);
@@ -98,7 +121,11 @@ export default async function JobsPage({
       leadDetail = ld ? { ...ld, quote_value: null } : null; // money structurally absent for non-admins
     }
   }
-  const customerOptions = (cs ?? []).map(c => ({ id: c.id, name: c.name }));
+  // Task 20: the lookup picker only offers active customers; `cs` itself stays unfiltered
+  // above so existing jobs against a since-deactivated customer still resolve name/address.
+  const customerOptions = (cs ?? [])
+    .filter(c => c.active)
+    .map(c => ({ id: c.id, name: c.name, phone: c.phone, address: c.address }));
 
   return (
     <>

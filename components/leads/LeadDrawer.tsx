@@ -3,6 +3,8 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Drawer } from '@/components/ui/Drawer';
 import { CopyButton } from '@/components/ui/CopyButton';
+import { CustomerLookup } from '@/components/customers/CustomerLookup';
+import type { CustomerOption } from '@/lib/customerLookup';
 import {
   LEAD_STATUSES, statusLabel, statusColor, SERVICE_TYPES, type Lead, type LeadStatus,
 } from '@/lib/leads';
@@ -13,15 +15,19 @@ import { setLeadStatus, createLead, updateLead, deleteLead } from '@/app/(app)/l
 const fmt = (n: number) => '$' + Number(n || 0).toLocaleString();
 const day = (s: string) => s.slice(0, 10);
 
+export type RepOption = { id: string; full_name: string };
+
 export function LeadDrawer({
-  lead, admin, canEdit, backTo, isNew = false, customers = [],
+  lead, admin, canEdit, backTo, isNew = false, customers = [], reps = [], uid = '',
 }: {
   lead: Lead | null;
   admin: boolean;
   canEdit: boolean;
   backTo: string;
   isNew?: boolean;
-  customers?: { id: number; name: string }[];
+  customers?: CustomerOption[];
+  reps?: RepOption[];
+  uid?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -106,6 +112,7 @@ export function LeadDrawer({
               <span className="k">Description</span><span className="v">{lead.description ?? '—'}</span>
               <span className="k">Stories</span><span className="v">{lead.stories ?? '—'}</span>
               <span className="k">Panes</span><span className="v">{lead.panes ?? '—'}</span>
+              <span className="k">Rep</span><span className="v">{lead.rep_name ?? '—'}</span>
               <span className="k">Quote</span>
               {admin
                 ? <span className="v" style={{ color: 'var(--won)' }}>{lead.quote_value ? fmt(lead.quote_value) : '—'}</span>
@@ -168,10 +175,7 @@ export function LeadDrawer({
               <span className="k">Customer</span>
               <span className="v">
                 {isNew ? (
-                  <select name="customer_id" required defaultValue="">
-                    <option value="" disabled>Select customer…</option>
-                    {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <CustomerLookup customers={customers} name="customer_id" required />
                 ) : (
                   <>
                     <input type="hidden" name="customer_id" value={lead!.customer_id} />
@@ -193,6 +197,15 @@ export function LeadDrawer({
               <span className="v"><input name="stories" type="number" min={0} defaultValue={lead?.stories ?? 0} /></span>
               <span className="k">Panes</span>
               <span className="v"><input name="panes" type="number" min={0} defaultValue={lead?.panes ?? 0} /></span>
+              <span className="k">Rep</span>
+              <span className="v">
+                <select name="rep_id" defaultValue={lead?.rep_id ?? uid}>
+                  {lead?.rep_id && !reps.some(r => r.id === lead.rep_id) && (
+                    <option value={lead.rep_id}>{lead.rep_name ?? lead.rep_id} (legacy)</option>
+                  )}
+                  {reps.map(r => <option key={r.id} value={r.id}>{r.full_name}</option>)}
+                </select>
+              </span>
               {admin && (
                 <>
                   <span className="k">Quote $</span>
