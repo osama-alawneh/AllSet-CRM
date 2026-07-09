@@ -29,13 +29,14 @@ import { JobColumn } from './JobColumn';
 type Patch = { id: number; status: JobStatus; claimed_by?: string | null; claimed_by_name?: string | null };
 
 export function JobsBoard({
-  jobs, role, uid, meName, admin,
+  jobs, role, uid, meName, admin, pendingByJob,
 }: {
   jobs: Job[];
   role: Role;
   uid: string;
   meName: string;
   admin: boolean;
+  pendingByJob?: Record<number, number>;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -131,6 +132,7 @@ export function JobsBoard({
               pending={pending}
               onOpen={open}
               onClaim={onClaim}
+              pendingByJob={pendingByJob}
             />
           ))}
         </div>

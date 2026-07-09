@@ -12,7 +12,7 @@ import type { Role } from '@/lib/auth';
 import { JobCard } from './JobCard';
 
 export function JobColumn({
-  status, jobs, admin, role, uid, pending, onOpen, onClaim,
+  status, jobs, admin, role, uid, pending, onOpen, onClaim, pendingByJob,
 }: {
   status: JobStatus;
   jobs: Job[];
@@ -22,6 +22,7 @@ export function JobColumn({
   pending: boolean;
   onOpen: (id: number) => void;
   onClaim: (id: number) => void;
+  pendingByJob?: Record<number, number>;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   return (
@@ -33,6 +34,9 @@ export function JobColumn({
       {jobs.map(j => {
         const draggable = JOB_STATUSES.some(to => canTransition(role, uid, j, to));
         const canClaim = j.status === 'unclaimed' && (role === 'admin' || role === 'cleaner');
+        // Pending-join badge: only for the roles who can actually act on it (admin, or the
+        // cleaner who owns this job) — mirrors can_decide_join's admin-or-owner shape.
+        const pendingCount = (admin || j.claimed_by === uid) ? (pendingByJob?.[j.id] ?? 0) : 0;
         return (
           <JobCard
             key={j.id}
@@ -43,6 +47,7 @@ export function JobColumn({
             pending={pending}
             onOpen={onOpen}
             onClaim={onClaim}
+            pendingCount={pendingCount}
           />
         );
       })}

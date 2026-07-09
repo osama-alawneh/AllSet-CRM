@@ -6,7 +6,7 @@ import { dayTime, type Job } from '@/lib/jobs';
 const fmt = (n: number) => '$' + Number(n || 0).toLocaleString();
 
 export function JobCard({
-  job, admin, draggable, canClaim, pending, onOpen, onClaim,
+  job, admin, draggable, canClaim, pending, onOpen, onClaim, pendingCount,
 }: {
   job: Job;
   admin: boolean;
@@ -15,6 +15,7 @@ export function JobCard({
   pending: boolean;
   onOpen: (id: number) => void;
   onClaim: (id: number) => void;
+  pendingCount?: number;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } = useDraggable({
     id: String(job.id),
@@ -63,20 +64,29 @@ export function JobCard({
           ⠿
         </button>
       )}
-      <button
-        type="button"
-        className="cardlink addr"
-        onClick={e => { e.stopPropagation(); onOpen(job.id); }}
-        /* Title stays a mouse/touch drag dead zone (Step 2 option: keep these stops
-           rather than duplicating the downPos travel check) — a drag can never start
-           here, so a plain click always reaches onOpen. onKeyDown stop removed: the
-           root no longer carries a keydown listener (see above), so there is nothing
-           left to shield Enter/Space from. */
-        onMouseDown={e => e.stopPropagation()}
-        onTouchStart={e => e.stopPropagation()}
-      >
-        {job.customer_name}
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+        <button
+          type="button"
+          className="cardlink addr"
+          style={{ flex: 1, minWidth: 0 }}
+          onClick={e => { e.stopPropagation(); onOpen(job.id); }}
+          /* Title stays a mouse/touch drag dead zone (Step 2 option: keep these stops
+             rather than duplicating the downPos travel check) — a drag can never start
+             here, so a plain click always reaches onOpen. onKeyDown stop removed: the
+             root no longer carries a keydown listener (see above), so there is nothing
+             left to shield Enter/Space from. */
+          onMouseDown={e => e.stopPropagation()}
+          onTouchStart={e => e.stopPropagation()}
+        >
+          {job.customer_name}
+        </button>
+        {/* Display-only: no click handler of its own, so it never interferes with the
+            drag-handle/activator wiring above — a click here just bubbles to the root's
+            onOpen like the meta text below does. */}
+        {!!pendingCount && (
+          <span className="lbl" style={{ background: 'var(--follow)', flexShrink: 0 }}>{pendingCount} ⏳</span>
+        )}
+      </div>
       <span className="meta">
         {job.address ?? '—'}
         <br />

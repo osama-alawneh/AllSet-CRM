@@ -2,7 +2,7 @@ import { getRole, getSession } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
 import { logQueryError } from '@/lib/log';
 import { buildLeads, type LeadPublicRow, type CustomerGeo } from '@/lib/leads';
-import { buildJobs, visibleJobs, type JobRow, type JobCustomer } from '@/lib/jobs';
+import { buildJobs, visibleJobs, buildMembers, type JobRow, type JobCustomer, type JobMember } from '@/lib/jobs';
 import { buildMapPins } from '@/lib/mapPins';
 import { MapView } from '@/components/map/MapView';
 import { LeadDrawer } from '@/components/leads/LeadDrawer';
@@ -21,20 +21,22 @@ export default async function MapPage({
   const canCreate = role === 'admin' || role === 'rep';
   const sb = await supabaseServer();
 
-  // Role-split jobs fetch, same shape as app/(app)/jobs/page.tsx: admins read base
-  // jobs (incl. price for the drawer); everyone else reads jobs_public (no price).
-  const jobsQuery = admin
+  // Role-split jobs fetch, same shape as app/(app)/jobs/page.tsx: admin/rep read base jobs
+  // (incl. price, cleaner_amount, done_at for the drawer — rep gains base-table read via
+  // the jobs_rep RLS policy, 0023); cleaners read jobs_public (no price).
+  const canReadMoney = admin || role === 'rep';
+  const jobsQuery = canReadMoney
     ? sb
         .from('jobs')
-        .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price')
+        .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price,cleaner_amount,done_at')
         .is('deleted_at', null)
         .order('id')
     : sb
         .from('jobs_public')
-        .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at')
+        .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,cleaner_amount')
         .order('id');
 
-  const [lpRes, csRes, baseRes, jobsRes, psRes] = await Promise.all([
+  const [lpRes, csRes, baseRes, jobsRes, psRes, jmRes] = await Promise.all([
     sb
       .from('leads_public')
       .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at,rep_id')
@@ -43,12 +45,15 @@ export default async function MapPage({
     admin ? sb.from('leads').select('id,quote_value').is('deleted_at', null) : Promise.resolve({ data: null, error: null }),
     jobsQuery,
     sb.from('profiles').select('id,full_name,role'),
+    // Members: feeds the JobDrawer members panel when a job pin is opened on the map.
+    sb.from('job_members').select('id,job_id,cleaner_id,status,is_owner'),
   ]);
   logQueryError('map.page.leads_public', lpRes.error);
   logQueryError('map.page.customers', csRes.error);
   logQueryError('map.page.leads', baseRes.error);
   logQueryError('map.page.jobs', jobsRes.error);
   logQueryError('map.page.profiles', psRes.error);
+  logQueryError('map.page.job_members', jmRes.error);
 
   const lp = lpRes.data;
   const cs = csRes.data;
@@ -60,8 +65,8 @@ export default async function MapPage({
 
   let jobRows: JobRow[] = [];
   let priceById: Map<number, number> | null = null;
-  if (admin) {
-    const rows = (jobsRes.data ?? []) as Array<JobRow & { price: number | null }>;
+  if (canReadMoney) {
+    const rows = (jobsRes.data ?? []) as Array<JobRow & { price: number | null; cleaner_amount: number | null; done_at: string | null }>;
     jobRows = rows.map(r => ({
       id: r.id,
       customer_id: r.customer_id,
@@ -73,6 +78,8 @@ export default async function MapPage({
       description: r.description,
       created_at: r.created_at,
       updated_at: r.updated_at,
+      cleaner_amount: r.cleaner_amount,
+      done_at: r.done_at,
     }));
     priceById = new Map(rows.map(r => [r.id, Number(r.price ?? 0)]));
   } else {
@@ -91,6 +98,10 @@ export default async function MapPage({
   const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], quoteById, names);
   const allJobs = buildJobs(jobRows, (cs ?? []) as JobCustomer[], priceById, names);
   const jobs = visibleJobs(role, uid, allJobs);
+  const allMembers: JobMember[] = buildMembers(
+    (jmRes.data ?? []) as Array<Omit<JobMember, 'cleaner_name'>>,
+    names
+  );
 
   const geoByCustomer = new Map(
     ((cs ?? []) as CustomerGeo[]).map(c => [c.id, { lat: c.lat, lng: c.lng }])
@@ -143,6 +154,7 @@ export default async function MapPage({
           key={selectedJob.id}
           job={selectedJob} role={role} uid={uid} admin={admin}
           customers={customerOptions} leadDetail={leadDetail}
+          members={allMembers.filter(m => m.job_id === selectedJob.id)}
           backTo="/map"
         />
       )}
