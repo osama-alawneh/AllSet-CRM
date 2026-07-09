@@ -29,13 +29,14 @@ import { JobColumn } from './JobColumn';
 type Patch = { id: number; status: JobStatus; claimed_by?: string | null; claimed_by_name?: string | null };
 
 export function JobsBoard({
-  jobs, role, uid, meName, admin, pendingByJob,
+  jobs, role, uid, meName, admin, money, pendingByJob,
 }: {
   jobs: Job[];
   role: Role;
   uid: string;
   meName: string;
   admin: boolean;
+  money: boolean;
   pendingByJob?: Record<number, number>;
 }) {
   const router = useRouter();
@@ -57,6 +58,9 @@ export function JobsBoard({
     useSensor(KeyboardSensor)
   );
   const grouped = groupJobsByStatus(filterJobs(optimistic, q));
+  // New-job affordance: admin + rep create jobs (spec: rep = admin on job money); the
+  // page's `isNew` gate is the real control, this just hides the button for cleaners.
+  const canCreate = role === 'admin' || role === 'rep';
 
   useJobsRealtime();
 
@@ -103,13 +107,13 @@ export function JobsBoard({
             className="btn sec"
             type="button"
             onClick={() => {
-              const t = jobsCsvTable(jobs, admin);
+              const t = jobsCsvTable(jobs, money);
               downloadCSV('clearview-jobs.csv', toCSV(t.headers, t.rows));
             }}
           >
             ⬇ Export CSV
           </button>
-          {admin && (
+          {canCreate && (
             <button className="btn" type="button" onClick={() => router.push('/jobs?new=1', { scroll: false })}>
               + New job
             </button>
@@ -127,6 +131,7 @@ export function JobsBoard({
               status={st}
               jobs={grouped[st]}
               admin={admin}
+              money={money}
               role={role}
               uid={uid}
               pending={pending}

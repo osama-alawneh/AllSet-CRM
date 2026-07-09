@@ -22,14 +22,14 @@ export default async function JobsPage({
   if (!role) redirect('/login');
   const uid = user.id;
   const admin = role === 'admin';
-  const isNew = newParam === '1' && admin; // only admins create jobs
+  const canReadMoney = admin || role === 'rep';
+  const isNew = newParam === '1' && canReadMoney; // admin + rep create jobs (spec: rep = admin on job money)
   const history = admin && deleted === '1'; // admin-only History view (0020); RPCs also block non-admins
   const sb = await supabaseServer();
 
   // Role-split fetch: admin/rep read base jobs (incl. price, cleaner_amount, done_at — rep
   // gains base-table read via the jobs_rep RLS policy, 0023: "rep = admin on job money");
   // cleaners read the jobs_public view (no price column — money stays server-side).
-  const canReadMoney = admin || role === 'rep';
   const jobsQuery = canReadMoney
     ? sb
         .from('jobs')
@@ -148,9 +148,9 @@ export default async function JobsPage({
   return (
     <>
       {list ? (
-        <JobsListSection jobs={visible} admin={admin} />
+        <JobsListSection jobs={visible} admin={admin} money={canReadMoney} />
       ) : (
-        <JobsBoard jobs={visible} role={role} uid={uid} meName={meName} admin={admin} pendingByJob={pendingByJob} />
+        <JobsBoard jobs={visible} role={role} uid={uid} meName={meName} admin={admin} money={canReadMoney} pendingByJob={pendingByJob} />
       )}
       {(selected || isNew) && (
         <JobDrawer

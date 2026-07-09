@@ -47,8 +47,10 @@ export function JobDrawer({
   const canClaim = job?.status === 'unclaimed' && (role === 'admin' || role === 'cleaner');
   // admin + rep both see/set job money (owner-locked visibility matrix, 2026-07-08 spec);
   // cleaners see only cleaner_amount, never price — the `canSeeMoney` gate keeps the
-  // "Price" kv pair (label included) out of the DOM entirely for cleaners.
+  // "Price" kv pair (label included) out of the DOM entirely for cleaners. Same admin/rep
+  // split gates the edit form itself (create/update RPCs widened to admin-or-rep, 0025).
   const canSeeMoney = role === 'admin' || role === 'rep';
+  const canEdit = canSeeMoney;
 
   // Members panel derivations (all roles) — mirrors can_decide_join (0024) for the
   // Approve/Reject gate; the RPC re-checks server-side regardless of this client hint.
@@ -108,9 +110,9 @@ export function JobDrawer({
   };
   const submit = (fd: FormData) => {
     setError(null);
-    // Admin blanking the (prefilled) price is a deliberate "clear to $0". The whole job
-    // edit form is admin-only (Edit button is {admin &&}-gated), so a present-but-blank
-    // price means clear, not "keep old value". Safe on create too.
+    // Admin/rep blanking the (prefilled) price is a deliberate "clear to $0". The whole job
+    // edit form is admin-or-rep-only (Edit button is {canEdit &&}-gated), so a
+    // present-but-blank price means clear, not "keep old value". Safe on create too.
     blankMoneyToZero(fd, 'price');
     blankMoneyToZero(fd, 'cleaner_amount');
     startTransition(async () => {
@@ -263,7 +265,7 @@ export function JobDrawer({
             {canClaim && (
               <button className="btn-p" type="button" disabled={pending} onClick={claim}>Claim job</button>
             )}
-            {admin && (
+            {canEdit && (
               <button className="btn-p" type="button" disabled={pending} onClick={() => { setError(null); setEditing(true); }}>
                 ✎ Edit
               </button>

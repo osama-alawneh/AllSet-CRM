@@ -12,11 +12,12 @@ import type { Role } from '@/lib/auth';
 import { JobCard } from './JobCard';
 
 export function JobColumn({
-  status, jobs, admin, role, uid, pending, onOpen, onClaim, pendingByJob,
+  status, jobs, admin, money, role, uid, pending, onOpen, onClaim, pendingByJob,
 }: {
   status: JobStatus;
   jobs: Job[];
   admin: boolean;
+  money: boolean;
   role: Role;
   uid: string;
   pending: boolean;
@@ -41,7 +42,7 @@ export function JobColumn({
           <JobCard
             key={j.id}
             job={j}
-            admin={admin}
+            money={money}
             draggable={draggable}
             canClaim={canClaim}
             pending={pending}

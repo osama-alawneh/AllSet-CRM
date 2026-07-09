@@ -8,13 +8,17 @@ import { HistoryToggle } from '@/components/ui/HistoryToggle';
 import { JobsListTable } from './JobsListTable';
 
 export function JobsListSection({
-  jobs, admin,
+  jobs, admin, money,
 }: {
   jobs: Job[];
   admin: boolean;
+  money: boolean;
 }) {
   const router = useRouter();
   const open = (id: number) => router.push(`/jobs?view=list&j=${id}`, { scroll: false });
+  // New-job affordance: admin + rep create jobs (spec: rep = admin on job money); money
+  // already means admin-or-rep for job data, so it doubles as the create gate here.
+  const canCreate = money;
 
   // Realtime: same private 'jobs' broadcast subscription as JobsBoard, so a claim in
   // another window refreshes the list view too. Debounced (250ms) router.refresh().
@@ -30,20 +34,20 @@ export function JobsListSection({
             className="btn sec"
             type="button"
             onClick={() => {
-              const t = jobsCsvTable(jobs, admin);
+              const t = jobsCsvTable(jobs, money);
               downloadCSV('clearview-jobs.csv', toCSV(t.headers, t.rows));
             }}
           >
             ⬇ Export CSV
           </button>
-          {admin && (
+          {canCreate && (
             <button className="btn" type="button" onClick={() => router.push('/jobs?view=list&new=1', { scroll: false })}>
               + New job
             </button>
           )}
         </div>
       </div>
-      <JobsListTable jobs={jobs} admin={admin} onOpen={open} />
+      <JobsListTable jobs={jobs} money={money} onOpen={open} />
     </section>
   );
 }

@@ -110,4 +110,16 @@ describe('JobDrawer members panel + join requests', () => {
     expect(text).toContain('$50'); // 100 / 2 approved members
     expect(text).not.toContain('Price');
   });
+
+  it('(e) rep sees the price and the ✎ Edit button (spec: rep = admin on job money)', () => {
+    const members = [member({})];
+    const { getByText } = render(
+      <JobDrawer
+        job={job({})} role="rep" uid={OTHER_CLEANER} admin={false}
+        members={members}
+      />
+    );
+    expect(getByText('✎ Edit')).toBeTruthy();
+    expect(getByText('$200')).toBeTruthy(); // job.price
+  });
 });

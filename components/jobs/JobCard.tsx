@@ -6,10 +6,10 @@ import { dayTime, type Job } from '@/lib/jobs';
 const fmt = (n: number) => '$' + Number(n || 0).toLocaleString();
 
 export function JobCard({
-  job, admin, draggable, canClaim, pending, onOpen, onClaim, pendingCount,
+  job, money, draggable, canClaim, pending, onOpen, onClaim, pendingCount,
 }: {
   job: Job;
-  admin: boolean;
+  money: boolean;
   draggable: boolean;
   canClaim: boolean;
   pending: boolean;
@@ -91,7 +91,7 @@ export function JobCard({
         {job.address ?? '—'}
         <br />
         {job.service ?? 'TBD'} · {job.scheduled_date ? dayTime(job.scheduled_date) : 'TBD'}
-        {admin && job.price ? ` · ${fmt(job.price)}` : ''}
+        {money && job.price ? ` · ${fmt(job.price)}` : ''}
       </span>
       <div style={{ marginTop: 8 }}>
         {canClaim ? (

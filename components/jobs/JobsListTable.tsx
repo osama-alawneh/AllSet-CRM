@@ -6,7 +6,7 @@ import { filterJobs } from '@/lib/search';
 const fmt = (n: number) => '$' + Number(n || 0).toLocaleString();
 const day = (s: string) => s.slice(0, 10);
 
-export function JobsListTable({ jobs, admin, onOpen }: { jobs: Job[]; admin: boolean; onOpen: (id: number) => void }) {
+export function JobsListTable({ jobs, money, onOpen }: { jobs: Job[]; money: boolean; onOpen: (id: number) => void }) {
   const [q, setQ] = useState('');
   const shown = filterJobs(jobs, q);
   return (
@@ -17,7 +17,7 @@ export function JobsListTable({ jobs, admin, onOpen }: { jobs: Job[]; admin: boo
           <thead>
             <tr>
               <th scope="col">#</th><th scope="col">Customer</th><th scope="col">Service</th><th scope="col">Date</th>
-              <th scope="col">Status</th><th scope="col">Claimed by</th><th scope="col">Created</th>{admin && <th scope="col">Price</th>}
+              <th scope="col">Status</th><th scope="col">Claimed by</th><th scope="col">Created</th>{money && <th scope="col">Price</th>}
             </tr>
           </thead>
           <tbody>
@@ -38,11 +38,11 @@ export function JobsListTable({ jobs, admin, onOpen }: { jobs: Job[]; admin: boo
                 <td><span className="badge" style={{ background: 'var(--chip)', color: jobStatusColor[j.status] }}>{jobStatusLabel[j.status]}</span></td>
                 <td>{j.claimed_by_name ?? '—'}</td>
                 <td>{day(j.created_at)}</td>
-                {admin && <td style={{ color: 'var(--won)', fontWeight: 700 }}>{j.price ? fmt(j.price) : '—'}</td>}
+                {money && <td style={{ color: 'var(--won)', fontWeight: 700 }}>{j.price ? fmt(j.price) : '—'}</td>}
               </tr>
             ))}
             {shown.length === 0 && (
-              <tr><td colSpan={admin ? 8 : 7} style={{ color: 'var(--muted)' }}>No jobs match.</td></tr>
+              <tr><td colSpan={money ? 8 : 7} style={{ color: 'var(--muted)' }}>No jobs match.</td></tr>
             )}
           </tbody>
         </table>
