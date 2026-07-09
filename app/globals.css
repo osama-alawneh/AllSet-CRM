@@ -297,8 +297,8 @@ button.mpin:focus-visible { outline: 2px solid var(--accent); outline-offset: 2p
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
-/* settings / users (Plan 7) */
-.userform { display: grid; grid-template-columns: 1fr 1fr 1fr auto auto auto auto; gap: 8px; align-items: end; }
+/* settings / users (Plan 7; Task 6: form moved into a Drawer, submit button lives in .acts) */
+.userform { display: grid; grid-template-columns: 1fr 1fr 1fr auto auto auto; gap: 8px; align-items: end; }
 @media (max-width: 900px) { .userform { grid-template-columns: 1fr; } }
 
 /* Plan 3: allow touch-scroll of the column; long-press (TouchSensor delay) still wins for drags */
