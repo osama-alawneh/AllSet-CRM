@@ -42,7 +42,7 @@ export default async function MapPage({
     sb.from('customers').select('id,name,address,phone,email,lat,lng,active'),
     admin ? sb.from('leads').select('id,quote_value').is('deleted_at', null) : Promise.resolve({ data: null, error: null }),
     jobsQuery,
-    sb.from('profiles').select('id,full_name'),
+    sb.from('profiles').select('id,full_name,role'),
   ]);
   logQueryError('map.page.leads_public', lpRes.error);
   logQueryError('map.page.customers', csRes.error);
@@ -79,10 +79,15 @@ export default async function MapPage({
     jobRows = (jobsRes.data ?? []) as JobRow[];
   }
 
-  const names = new Map((psRes.data ?? []).map(p => [p.id as string, p.full_name as string]));
-  // Task 22: map's LeadDrawer render is read-only (no isNew/customers passed below), so it
-  // only needs rep_name resolution for display — the existing profiles fetch (already used
-  // for jobs' claimed_by_name) doubles as the rep names map, no new query needed.
+  // Task 22: the existing profiles fetch (already used for jobs' claimed_by_name) doubles
+  // as the rep names map for buildLeads AND — widened with `role` — feeds the LeadDrawer's
+  // Rep select. The map's LeadDrawer IS editable (canEdit={canCreate} gates the Edit
+  // button), so it needs the same reps/uid the leads page passes; no new query needed.
+  const profiles = (psRes.data ?? []) as Array<{ id: string; full_name: string; role: string }>;
+  const names = new Map(profiles.map(p => [p.id, p.full_name]));
+  const reps = profiles
+    .filter(p => p.role === 'admin' || p.role === 'rep')
+    .map(p => ({ id: p.id, full_name: p.full_name }));
   const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], quoteById, names);
   const allJobs = buildJobs(jobRows, (cs ?? []) as JobCustomer[], priceById, names);
   const jobs = visibleJobs(role, uid, allJobs);
@@ -131,7 +136,7 @@ export default async function MapPage({
     <section className="screen screen-fill">
       <MapView pins={pins} token={token} canCreate={canCreate} openLeadId={lParam ?? null} />
       {selectedLead && (
-        <LeadDrawer key={selectedLead.id} lead={selectedLead} admin={admin} canEdit={canCreate} backTo="/map" />
+        <LeadDrawer key={selectedLead.id} lead={selectedLead} admin={admin} canEdit={canCreate} backTo="/map" reps={reps} uid={uid} />
       )}
       {selectedJob && role && (
         <JobDrawer
