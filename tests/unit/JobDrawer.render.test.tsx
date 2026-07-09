@@ -1,10 +1,13 @@
 // @vitest-environment jsdom
 //
-// Money model Task 4: JobDrawer's Members panel + join-request workflow (migrations
-// 0023/0024). Pins the visibility matrix at the DOM level: cleaners can request to join
-// a claimed job's pot, an owner (or admin) can decide pending requests, and — the money
-// visibility matrix's cleaner half — the string "Price" must never reach a cleaner's DOM,
-// even as a masked placeholder (the old money-hidden dots behavior is gone by design).
+// Money model Task 3: JobDrawer polish (migration 0027) — pins the drawer's DOM contract for
+// Task 10's owner walkthrough: (a) members render as a table below the actions row instead of
+// the old minirow list, (b) an empty member set still renders a table with a placeholder row,
+// (c) per-member share $ figures are gone — the cleaner's own "your share" line is the ONLY
+// share figure left in the drawer, (d) the join-request button lives in the actions row and
+// flips to a disabled "Requested" state once the viewer has a pending request of their own,
+// (e) recurrence metadata (↻ Repeats / Spawned from / the edit-form recur_days input) is
+// admin/rep-only — the string "Repeat" must never reach a cleaner's DOM.
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 
@@ -49,51 +52,47 @@ const member = (over: Partial<JobMember>): JobMember => ({
   ...over,
 });
 
-describe('JobDrawer members panel + join requests', () => {
-  it('(a) cleaner non-member on a claimed job sees Request to join', () => {
-    const members = [member({})]; // just the owner
-    const { getByText } = render(
-      <JobDrawer
-        job={job({})} role="cleaner" uid={NON_MEMBER_CLEANER} admin={false}
-        members={members}
-      />
-    );
-    expect(getByText('Request to join')).toBeTruthy();
-  });
-
-  it('(b) owner sees Approve/Reject on a pending member', () => {
+describe('JobDrawer members table + join requests', () => {
+  it('(a) members render as a table: owner (★ + "owner"), approved, and pending rows; Approve/Reject gated by canDecide', () => {
     const members = [
-      member({}),
-      member({ id: 2, cleaner_id: OTHER_CLEANER, cleaner_name: 'Pending Cleaner', status: 'pending', is_owner: false }),
-    ];
-    const { getByText } = render(
-      <JobDrawer
-        job={job({})} role="cleaner" uid={OWNER} admin={false}
-        members={members}
-      />
-    );
-    expect(getByText('Approve')).toBeTruthy();
-    expect(getByText('Reject')).toBeTruthy();
-  });
-
-  it('(c) non-owner approved cleaner sees neither decide buttons nor a request-to-join button', () => {
-    const members = [
-      member({}),
+      member({}), // owner, approved
       member({ id: 2, cleaner_id: OTHER_CLEANER, cleaner_name: 'Second Cleaner', status: 'approved', is_owner: false }),
       member({ id: 3, cleaner_id: NON_MEMBER_CLEANER, cleaner_name: 'Pending Cleaner', status: 'pending', is_owner: false }),
     ];
-    const { queryByText } = render(
-      <JobDrawer
-        job={job({})} role="cleaner" uid={OTHER_CLEANER} admin={false}
-        members={members}
-      />
+    const { container, getByText } = render(
+      <JobDrawer job={job({})} role="admin" uid={OWNER} admin members={members} />
     );
-    expect(queryByText('Approve')).toBeNull();
-    expect(queryByText('Reject')).toBeNull();
-    expect(queryByText('Request to join')).toBeNull();
+    const table = container.querySelector('.tblwrap > table.tbl');
+    expect(table).toBeTruthy();
+    const rows = table!.querySelectorAll('tbody tr');
+    expect(rows.length).toBe(3);
+    expect(container.textContent).toContain('Owner Cleaner ★');
+    expect(container.textContent).toContain('owner');
+    expect(getByText('Approve')).toBeTruthy();
+    expect(getByText('Reject')).toBeTruthy();
+
+    // non-owner approved viewer without decide rights: no Approve/Reject anywhere
+    cleanup();
+    const nonDecider = render(
+      <JobDrawer job={job({})} role="cleaner" uid={OTHER_CLEANER} admin={false} members={members} />
+    );
+    expect(nonDecider.queryByText('Approve')).toBeNull();
+    expect(nonDecider.queryByText('Reject')).toBeNull();
   });
 
-  it('(d) cleaner sees pot + share text, and the string "Price" is absent from their drawer', () => {
+  it('(b) an empty member set on a claimed job still renders a table with a "no joiners requested" row', () => {
+    const { container, getByText } = render(
+      <JobDrawer job={job({})} role="admin" uid={OWNER} admin members={[]} />
+    );
+    const table = container.querySelector('.tblwrap > table.tbl');
+    expect(table).toBeTruthy();
+    const rows = table!.querySelectorAll('tbody tr');
+    expect(rows.length).toBe(1);
+    expect(rows[0].querySelectorAll('td')[0].getAttribute('colspan')).toBe('3');
+    expect(getByText('no joiners requested')).toBeTruthy();
+  });
+
+  it('(c) per-member share $ figures are gone from the table — "your share" is the only share figure', () => {
     const members = [
       member({}),
       member({ id: 2, cleaner_id: NON_MEMBER_CLEANER, cleaner_name: 'Me', status: 'approved', is_owner: false }),
@@ -105,21 +104,46 @@ describe('JobDrawer members panel + join requests', () => {
       />
     );
     const text = container.textContent ?? '';
-    expect(text).toContain('Pot');
     expect(text).toContain('Your share');
-    expect(text).toContain('$50'); // 100 / 2 approved members
+    const shareOccurrences = text.split('$50').length - 1;
+    expect(shareOccurrences).toBe(1); // 100 / 2 approved members, appears once (the "your share" line)
     expect(text).not.toContain('Price');
   });
 
-  it('(e) rep sees the price and the ✎ Edit button (spec: rep = admin on job money)', () => {
-    const members = [member({})];
-    const { getByText } = render(
-      <JobDrawer
-        job={job({})} role="rep" uid={OTHER_CLEANER} admin={false}
-        members={members}
-      />
+  it('(d) non-member cleaner sees "Request to join" in the actions row; once own-pending, a disabled "Requested" button renders in the same slot', () => {
+    const members = [member({})]; // just the owner
+    const { getByText, queryByText, rerender } = render(
+      <JobDrawer job={job({})} role="cleaner" uid={NON_MEMBER_CLEANER} admin={false} members={members} />
     );
-    expect(getByText('✎ Edit')).toBeTruthy();
-    expect(getByText('$200')).toBeTruthy(); // job.price
+    const requestBtn = getByText('Request to join') as HTMLButtonElement;
+    expect(requestBtn.closest('.acts')).toBeTruthy();
+    expect(queryByText('Requested')).toBeNull();
+
+    const pendingMembers = [
+      member({}),
+      member({ id: 2, cleaner_id: NON_MEMBER_CLEANER, cleaner_name: 'Me', status: 'pending', is_owner: false }),
+    ];
+    rerender(
+      <JobDrawer job={job({})} role="cleaner" uid={NON_MEMBER_CLEANER} admin={false} members={pendingMembers} />
+    );
+    expect(queryByText('Request to join')).toBeNull();
+    const requestedBtn = getByText('Requested') as HTMLButtonElement;
+    expect(requestedBtn.closest('.acts')).toBeTruthy();
+    expect(requestedBtn.disabled).toBe(true);
+  });
+
+  it('(e) admin sees "↻ every 14 days" for recur_days: 14; cleaner drawer never contains the string "Repeat"', () => {
+    const members = [member({})];
+    const admin = render(
+      <JobDrawer job={job({ recur_days: 14 })} role="admin" uid={OWNER} admin members={members} />
+    );
+    expect(admin.container.textContent).toContain('↻');
+    expect(admin.container.textContent).toContain('every 14 days');
+    cleanup();
+
+    const cleanerView = render(
+      <JobDrawer job={job({ recur_days: 14 })} role="cleaner" uid={OWNER} admin={false} members={members} />
+    );
+    expect(cleanerView.container.textContent ?? '').not.toContain('Repeat');
   });
 });

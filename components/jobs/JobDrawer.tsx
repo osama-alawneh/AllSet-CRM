@@ -54,16 +54,18 @@ export function JobDrawer({
 
   // Members panel derivations (all roles) — mirrors can_decide_join (0024) for the
   // Approve/Reject gate; the RPC re-checks server-side regardless of this client hint.
-  const approvedMembers = members.filter(m => m.status === 'approved');
-  const pendingMembers = members.filter(m => m.status === 'pending');
-  const approvedCount = approvedMembers.length;
+  const approvedCount = members.filter(m => m.status === 'approved').length;
   const myMember = members.find(m => m.cleaner_id === uid);
   const myPending = myMember?.status === 'pending';
   const canDecide = role === 'admin' || members.some(m => m.is_owner && m.cleaner_id === uid && m.status === 'approved');
   const perHeadShare = shareOf(job?.cleaner_amount ?? null, approvedCount);
   const myShare = myMember?.status === 'approved' ? perHeadShare : null;
-  const showRequestJoin = role === 'cleaner' && !!job && job.claimed_by != null && job.status !== 'done'
-    && myMember?.status !== 'approved' && !myPending;
+  // Join-request slot in the actions row: eligible non-member cleaners get the interactive
+  // button; a cleaner with their own pending request sees a disabled "Requested" state in the
+  // same slot instead (replaces the old "Requested · waiting" text under the members list).
+  const showJoinSlot = role === 'cleaner' && !!job && job.claimed_by != null && job.status !== 'done'
+    && myMember?.status !== 'approved';
+  const showRequestJoin = showJoinSlot && !myPending;
 
   const change = (status: JobStatus) => {
     if (!job || status === job.status) return;
@@ -180,43 +182,32 @@ export function JobDrawer({
                   <span className="v" style={{ color: 'var(--won)' }}>{job.price ? fmt(job.price) : '—'}</span>
                 </>
               )}
-            </div>
-          </div>
-
-          {job.claimed_by != null && (
-            <div className="sec">
-              <span className="lbl">Members</span>
-              <div className="kv">
-                <span className="k">Pot</span>
-                <span className="v">{job.cleaner_amount ? fmt(job.cleaner_amount) : '—'}</span>
-                {role === 'cleaner' && (
-                  <>
-                    <span className="k">Your share</span>
-                    <span className="v">{myShare != null ? fmt(myShare) : '—'}</span>
-                  </>
-                )}
-              </div>
-              {approvedMembers.map(m => (
-                <div className="minirow" style={{ cursor: 'default' }} key={m.id}>
-                  <span>{m.cleaner_name}{m.is_owner ? ' ★' : ''}</span>
-                  <span>{perHeadShare != null ? fmt(perHeadShare) : '—'}</span>
-                </div>
-              ))}
-              {canDecide && pendingMembers.map(m => (
-                <div className="minirow" style={{ cursor: 'default' }} key={m.id}>
-                  <span>{m.cleaner_name}</span>
-                  <span style={{ display: 'flex', gap: 6 }}>
-                    <button className="btn-s" type="button" disabled={pending} onClick={() => decide(m.id, true)}>Approve</button>
-                    <button className="btn-s" type="button" disabled={pending} onClick={() => decide(m.id, false)}>Reject</button>
-                  </span>
-                </div>
-              ))}
-              {myPending && <p style={{ color: 'var(--muted)', fontSize: 11 }}>Requested · waiting</p>}
-              {showRequestJoin && (
-                <button className="btn sec" type="button" disabled={pending} onClick={join}>Request to join</button>
+              {job.claimed_by != null && (
+                <>
+                  <span className="k">Cleaner pot</span>
+                  <span className="v">{job.cleaner_amount ? fmt(job.cleaner_amount) : '—'}</span>
+                </>
+              )}
+              {role === 'cleaner' && job.claimed_by != null && (
+                <>
+                  <span className="k">Your share</span>
+                  <span className="v">{myShare != null ? fmt(myShare) : '—'}</span>
+                </>
+              )}
+              {canSeeMoney && !!job.recur_days && (
+                <>
+                  <span className="k">↻ Repeats</span>
+                  <span className="v">{`every ${job.recur_days} days`}</span>
+                </>
+              )}
+              {canSeeMoney && job.recur_parent_id != null && (
+                <>
+                  <span className="k">Spawned from</span>
+                  <span className="v">{`#${String(job.recur_parent_id).padStart(4, '0')}`}</span>
+                </>
               )}
             </div>
-          )}
+          </div>
 
           {job.lead_id != null && leadDetail && (
             <div className="sec">
@@ -276,8 +267,57 @@ export function JobDrawer({
             {admin && (
               <button className="btn-s btn-danger" type="button" disabled={pending} onClick={remove}>🗑 Delete</button>
             )}
+            {showJoinSlot && (
+              showRequestJoin ? (
+                <button
+                  className="btn-s" type="button" disabled={pending} onClick={join}
+                  style={{ borderColor: 'var(--prog)', color: 'var(--prog)' }}
+                >
+                  Request to join
+                </button>
+              ) : (
+                <button
+                  className="btn-s" type="button" disabled
+                  style={{ borderColor: 'var(--muted)', color: 'var(--muted)' }}
+                >
+                  Requested
+                </button>
+              )
+            )}
             <button className="btn-s" type="button" onClick={close}>Close</button>
           </div>
+
+          {job.claimed_by != null && (
+            <div className="sec">
+              <span className="lbl">Members</span>
+              <div className="tblwrap">
+                <table className="tbl" aria-label="Job members">
+                  <thead>
+                    <tr><th>Member</th><th>Status</th><th>Action</th></tr>
+                  </thead>
+                  <tbody>
+                    {members.length === 0 && (
+                      <tr><td colSpan={3}>no joiners requested</td></tr>
+                    )}
+                    {members.map(m => (
+                      <tr key={m.id}>
+                        <td>{m.cleaner_name}{m.is_owner ? ' ★' : ''}</td>
+                        <td>{m.is_owner ? 'owner' : m.status}</td>
+                        <td>
+                          {m.status === 'pending' && canDecide ? (
+                            <span style={{ display: 'flex', gap: 6 }}>
+                              <button className="btn-s" type="button" disabled={pending} onClick={() => decide(m.id, true)}>Approve</button>
+                              <button className="btn-s" type="button" disabled={pending} onClick={() => decide(m.id, false)}>Reject</button>
+                            </span>
+                          ) : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -313,6 +353,10 @@ export function JobDrawer({
               <span className="v"><input name="price" type="number" min={0} step="0.01" defaultValue={job?.price ?? ''} placeholder="0.00" /></span>
               <span className="k">Cleaner pot $</span>
               <span className="v"><input name="cleaner_amount" type="number" step="0.01" className="num" defaultValue={job?.cleaner_amount ?? ''} /></span>
+              <span className="k">Repeat every</span>
+              <span className="v">
+                <input name="recur_days" type="number" min={0} step="1" className="num" defaultValue={job?.recur_days ?? ''} placeholder="0" /> days
+              </span>
             </div>
           </div>
           <div className="sec">
