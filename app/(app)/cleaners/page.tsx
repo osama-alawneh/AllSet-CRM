@@ -29,16 +29,20 @@ export default async function CleanersPage() {
   const month = leaderboard(earningRows, names, curMonth);
   const allTime = leaderboard(earningRows, names);
 
-  // Zero-rows append: cleaner-role profiles with no completed jobs yet don't appear in either
-  // leaderboard() output (it only ever sees cleaner_earnings rows) — add them explicitly so
-  // every cleaner on the roster shows up, even at 0 jobs / $0.
-  const seen = new Set(allTime.map(r => r.cleaner_id));
-  const zeroRows: LeaderRow[] = profiles
-    .filter(p => p.role === 'cleaner' && !seen.has(p.id))
-    .map(p => ({ cleaner_id: p.id, name: p.full_name, jobsDone: 0, earnings: 0 }));
+  // Zero-rows append: cleaner-role profiles with no earnings in a given board don't appear in
+  // that leaderboard() output (it only ever sees cleaner_earnings rows) — add them explicitly
+  // so every cleaner on the roster shows up, even at 0 jobs / $0. Computed per board (spec):
+  // a cleaner with past-month earnings but none this month still needs a $0 row on the month
+  // board, so each board's zero-set is derived from its own dataset, not all-time's.
+  const zeroRowsFor = (board: LeaderRow[]): LeaderRow[] => {
+    const seen = new Set(board.map(r => r.cleaner_id));
+    return profiles
+      .filter(p => p.role === 'cleaner' && !seen.has(p.id))
+      .map(p => ({ cleaner_id: p.id, name: p.full_name, jobsDone: 0, earnings: 0 }));
+  };
 
-  const monthBoard = [...month, ...zeroRows];
-  const allBoard = [...allTime, ...zeroRows];
+  const monthBoard = [...month, ...zeroRowsFor(month)];
+  const allBoard = [...allTime, ...zeroRowsFor(allTime)];
 
   return (
     <section className="screen">
