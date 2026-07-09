@@ -9,10 +9,14 @@ import {
   revenueMTD, overdueTotal, chartBuckets14d, jobsThisWeek, winRate,
   type RevenueInvoice, type WeekJob, type WinLead,
 } from '@/lib/dashboard';
+import { leaderboard, monthKey, type EarningRow } from '@/lib/earnings';
+import { fmtMoney } from '@/lib/invoices';
 import { KpiCountUp } from '@/components/dashboard/KpiCountUp';
 import { RevenueChart } from '@/components/dashboard/RevenueChart';
 import { ClaimableJobs, type ClaimableJob } from '@/components/dashboard/ClaimableJobs';
 import { MiniMap } from '@/components/dashboard/MiniMap';
+import { Leaderboard } from '@/components/dashboard/Leaderboard';
+import { MoneyRow } from '@/components/dashboard/MoneyRow';
 
 export default async function DashboardPage() {
   const user = await getSession();
@@ -31,13 +35,17 @@ export default async function DashboardPage() {
     ? sb.from('jobs').select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price').is('deleted_at', null).order('id')
     : sb.from('jobs_public').select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at').order('id');
 
-  const [jobsRes, csRes, psRes, lpRes, invRes, itemRes] = await Promise.all([
+  const [jobsRes, csRes, psRes, lpRes, invRes, itemRes, ceRes, crRes] = await Promise.all([
     jobsQuery,
     sb.from('customers').select('id,name,address,phone,email,lat,lng'),
     sb.from('profiles').select('id,full_name'),
     sb.from('leads_public').select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at,rep_id').order('id'),
     admin ? sb.from('invoices').select('id,status,issue_date') : Promise.resolve({ data: null }),
     admin ? sb.from('invoice_items').select('invoice_id,qty,unit_price') : Promise.resolve({ data: null }),
+    // cleaner_earnings is transparent to ALL roles (owner call); company_revenue role-gates
+    // INSIDE the view — cleaners get [] back, not an error, so no branching is needed here.
+    sb.from('cleaner_earnings').select('cleaner_id,job_id,done_at,share'),
+    sb.from('company_revenue').select('month,job_revenue,expenses,net'),
   ]);
   logQueryError('dashboard.jobs', jobsRes.error);
   logQueryError('dashboard.customers', csRes.error);
@@ -45,6 +53,8 @@ export default async function DashboardPage() {
   logQueryError('dashboard.leadsPublic', lpRes.error);
   logQueryError('dashboard.invoices', 'error' in invRes ? invRes.error : null);
   logQueryError('dashboard.invoiceItems', 'error' in itemRes ? itemRes.error : null);
+  logQueryError('dashboard.cleanerEarnings', ceRes.error);
+  logQueryError('dashboard.companyRevenue', crRes.error);
 
   // ---- everyone: jobs (role-split price), leads (win rate + pins), customers ----
   let jobRows: JobRow[] = [];
@@ -96,6 +106,25 @@ export default async function DashboardPage() {
     chart = chartBuckets14d(rev, now);
   }
 
+  // ---- money model: transparent leaderboard (all roles) + admin/rep money row / cleaner
+  // "my earnings" card. Split math lives ONLY in the cleaner_earnings view — leaderboard()
+  // sums the already-computed shares it fetched, it never re-derives pot/approved math.
+  const earningRows = (ceRes.data ?? []) as EarningRow[];
+  const curMonth = monthKey(now.toISOString());
+  const monthBoard = leaderboard(earningRows, names, curMonth);
+  const allBoard = leaderboard(earningRows, names);
+
+  const revenueRows = (crRes.data ?? []) as { month: string; job_revenue: number; expenses: number; net: number }[];
+  const curRevenue = revenueRows.find(r => r.month === curMonth) ?? null;
+  const moneyMonth = curRevenue
+    ? { revenue: Number(curRevenue.job_revenue), expenses: Number(curRevenue.expenses), net: Number(curRevenue.net) }
+    : null;
+  const allTimeNet = revenueRows.reduce((s, r) => s + Number(r.net), 0);
+
+  const myRows = earningRows.filter(r => r.cleaner_id === uid);
+  const myMonth = leaderboard(myRows, names, curMonth)[0] ?? null;
+  const myAll = leaderboard(myRows, names)[0] ?? null;
+
   return (
     <section className="screen">
       <div className="kpis">
@@ -128,6 +157,30 @@ export default async function DashboardPage() {
           </div>
         )}
       </div>
+
+      {role === 'cleaner' ? (
+        <div className="kpis">
+          <div className="kpi box">
+            <span className="tag">$</span>
+            <div className="lbl">My earnings · this month</div>
+            <div className="val">{fmtMoney(myMonth?.earnings ?? 0)}</div>
+          </div>
+          <div className="kpi box">
+            <span className="tag">$</span>
+            <div className="lbl">My earnings · all-time</div>
+            <div className="val">{fmtMoney(myAll?.earnings ?? 0)}</div>
+          </div>
+          <div className="kpi box">
+            <span className="tag">✓</span>
+            <div className="lbl">Jobs done</div>
+            <div className="val">{myAll?.jobsDone ?? 0}</div>
+          </div>
+        </div>
+      ) : (
+        <MoneyRow month={moneyMonth} allTimeNet={allTimeNet} />
+      )}
+
+      <Leaderboard month={monthBoard} allTime={allBoard} uid={uid} />
 
       <div className="grid2">
         <div className="panel box">
