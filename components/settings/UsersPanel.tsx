@@ -58,12 +58,24 @@ export function UsersPanel({ users, meId }: { users: PanelUser[]; meId: string }
               <button type="button" className="close" onClick={() => setCreating(false)} aria-label="Close">✕</button>
             </div>
             <div className="sec userform">
-              <input name="full_name" placeholder="Full name" aria-label="Full name" required autoComplete="off" />
-              <input name="email" type="email" placeholder="email@company.com" aria-label="Email" required autoComplete="off" />
-              <input name="password" type="password" placeholder="Password (min 8)" aria-label="Password" required minLength={8} autoComplete="new-password" />
-              <select name="role" defaultValue="rep" aria-label="Role">
-                {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
+              <div>
+                <label className="lbl" htmlFor="new-user-name">Full name</label><br />
+                <input id="new-user-name" name="full_name" required autoComplete="off" />
+              </div>
+              <div>
+                <label className="lbl" htmlFor="new-user-email">Email</label><br />
+                <input id="new-user-email" name="email" type="email" placeholder="email@company.com" required autoComplete="off" />
+              </div>
+              <div>
+                <label className="lbl" htmlFor="new-user-password">Password</label><br />
+                <input id="new-user-password" name="password" type="password" placeholder="min 8 characters" required minLength={8} autoComplete="new-password" />
+              </div>
+              <div>
+                <label className="lbl" htmlFor="new-user-role">Role</label><br />
+                <select id="new-user-role" name="role" defaultValue="rep">
+                  {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
               <div>
                 <label className="lbl" htmlFor="new-user-phone">Phone</label><br />
                 <input id="new-user-phone" name="phone" type="tel" placeholder="555-0100" autoComplete="off" />

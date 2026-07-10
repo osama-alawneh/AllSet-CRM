@@ -168,7 +168,6 @@ export function ExpensesSection({ rows, jobOptions }: { rows: ExpenseRow[]; jobO
                               type="button"
                               disabled={pending}
                               onClick={() => onDelete(r.id)}
-                              style={{ minHeight: 44 }}
                             >
                               Delete
                             </button>

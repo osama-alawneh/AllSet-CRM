@@ -277,8 +277,13 @@ button.mpin:focus-visible { outline: 2px solid var(--accent); outline-offset: 2p
 .timeline .ev .t::before { content: ""; position: absolute; left: 0; top: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
 .acts { display: flex; gap: 8px; margin-top: 22px; flex-wrap: wrap; }
 .acts button { flex: 1; min-width: 120px; padding: 11px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; border-radius: 4px; }
+/* Standalone base so these read as buttons anywhere (table-cell Approve/Reject/Delete,
+   not just inside .acts). Inside .acts the higher-specificity `.acts button` rule above
+   still wins for the wider action-row padding/size. */
+.btn-p, .btn-s, .btn-danger { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 8px 13px; border-radius: 4px; white-space: nowrap; }
 .btn-p { background: var(--accent); color: var(--on-accent); border: 1.5px solid var(--ink); } [data-theme="dark"] .btn-p { border-color: var(--accent); }
 .btn-s { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+.btn-s:hover { border-color: var(--ink); } [data-theme="dark"] .btn-s:hover { border-color: var(--accent); }
 
 /* invoice line items (Plan 5 reuses) */
 .items { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
@@ -301,9 +306,10 @@ button.mpin:focus-visible { outline: 2px solid var(--accent); outline-offset: 2p
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
-/* settings / users (Plan 7; Task 6: form moved into a Drawer, submit button lives in .acts) */
-.userform { display: grid; grid-template-columns: 1fr 1fr 1fr auto auto auto; gap: 8px; align-items: end; }
-@media (max-width: 900px) { .userform { grid-template-columns: 1fr; } }
+/* settings / users (Plan 7; Task 6: form lives in a Drawer — narrow at every viewport,
+   so fields always stack in one column) */
+.userform { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.userform input, .userform select { width: 100%; }
 
 /* Plan 3: allow touch-scroll of the column; long-press (TouchSensor delay) still wins for drags */
 .kanban .card2 { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
@@ -326,8 +332,8 @@ button.mpin:focus-visible { outline: 2px solid var(--accent); outline-offset: 2p
 @media (pointer: coarse) {
   input, select, textarea { font-size: 16px; }
   /* 44px minimum touch targets (Apple HIG) */
-  .btn, .iconbtn, .claim, .drawer .close, .viewtoggle button, .acts button, .pop .go, .pop .x,
-  .statuspick button, .copybtn, .qa a { min-height: 44px; }
+  .btn, .btn-p, .btn-s, .btn-danger, .iconbtn, .claim, .drawer .close, .viewtoggle button,
+  .acts button, .pop .go, .pop .x, .statuspick button, .copybtn, .qa a { min-height: 44px; }
   .nav a { min-height: 44px; align-items: center; }
   /* Map pins stay 16px visually; expand the hit area invisibly. */
   .mpin::after { content: ""; position: absolute; inset: -14px; }
