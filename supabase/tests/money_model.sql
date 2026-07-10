@@ -1,5 +1,5 @@
 begin;
-select plan(140);
+select plan(142);
 
 -- fixtures (as postgres/superuser — bypasses RLS + grants, same idiom as other suites) ------
 insert into auth.users (id, instance_id, aud, role, email) values
@@ -470,9 +470,17 @@ select is((select scheduled_date from jobs where recur_parent_id=current_setting
   'successor scheduled_date = parent.scheduled_date + interval ''14 days''');
 
 -- 26. (item 5) bouncing the parent done -> in_progress -> done still leaves exactly one successor
---     (the on-conflict do-nothing guard prevents a second spawn).
+--     (the on-conflict do-nothing guard prevents a second spawn). The same-id pin right after
+--     the bounce is what distinguishes "the successor survived" from "deleted and respawned" —
+--     the partial unique index alone would not block a delete+respawn, so a bare count=1 after
+--     the re-done could pass either way.
+select set_config('test.recur_succ_id',
+  (select id::text from jobs where recur_parent_id=current_setting('test.recur_parent_id')::bigint), true);
 select lives_ok($$ select set_job_status(current_setting('test.recur_parent_id')::bigint,'in_progress'::job_status) $$,
   'admin bounces the recurring parent off done');
+select is((select id::text from jobs where recur_parent_id=current_setting('test.recur_parent_id')::bigint),
+  current_setting('test.recur_succ_id'),
+  'the successor survives the parent bouncing off done — same row id, not delete+respawn');
 select lives_ok($$ select set_job_status(current_setting('test.recur_parent_id')::bigint,'done'::job_status) $$,
   'admin marks the recurring parent done again');
 select is((select count(*)::int from jobs where recur_parent_id=current_setting('test.recur_parent_id')::bigint),
@@ -516,6 +524,7 @@ set local request.jwt.claims = '{"sub":"90000000-0000-0000-0000-000000000082"}';
 select is((select status from jobs_public where id=current_setting('test.recur_grandchild_id')::bigint),
   'unclaimed', 'cleaner reads the successor as a normal unclaimed row via jobs_public');
 select hasnt_column('jobs_public','recur_days','jobs_public does not expose recur_days (0027)');
+select hasnt_column('jobs_public','recur_parent_id','jobs_public does not expose recur_parent_id (0027)');
 
 select * from finish();
 rollback;

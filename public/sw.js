@@ -1,17 +1,23 @@
-const CACHE = 'clearview-v2';
+// v3: cache-version bump so browsers holding a v2 cache full of stale dev chunks (Turbopack
+// dev chunk URLs are path-derived, not content-hashed — cache-first kept serving old JS
+// against fresh HTML => hydration mismatches). skipWaiting + clients.claim make the updated
+// worker take over on the next load instead of waiting for every tab to close, so the stale
+// cache is dropped promptly and the dev-side eviction in SWRegister can reach the page.
+const CACHE = 'clearview-v3';
 const PRECACHE = ['/offline', '/icon.svg', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png'];
 
 // install: precache ONLY the offline page + app icons (never role-specific HTML).
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(PRECACHE)));
 });
 
-// activate: drop any old versioned caches.
+// activate: drop any old versioned caches, take over open clients immediately.
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    )
+    ).then(() => self.clients.claim())
   );
 });
 

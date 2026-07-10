@@ -69,6 +69,11 @@ export function JobDrawer({
 
   const change = (status: JobStatus) => {
     if (!job || status === job.status) return;
+    // unclaimed → claimed is a CLAIM, not a plain status write: route it through the
+    // race-safe claimJob action (same path as the "Claim job" button and the board's
+    // drag-to-claim) — setJobStatus here would leave an ownerless claimed job (admin)
+    // or bounce off the RPC's own-jobs guard (cleaner).
+    if (job.status === 'unclaimed' && status === 'claimed') { claim(); return; }
     if (status === 'done' && !(job.cleaner_amount != null && job.cleaner_amount > 0)
       && !window.confirm('No cleaner pot set — no payout will be created. Continue?')) return;
     setError(null);
@@ -184,12 +189,10 @@ export function JobDrawer({
                   <span className="v" style={{ color: 'var(--won)' }}>{job.price ? fmt(job.price) : '—'}</span>
                 </>
               )}
-              {job.claimed_by != null && (
-                <>
-                  <span className="k">Cleaner pot</span>
-                  <span className="v">{job.cleaner_amount ? fmt(job.cleaner_amount) : '—'}</span>
-                </>
-              )}
+              {/* Spec §B1: the pot shows unconditionally (even unclaimed) — cleaners decide
+                  whether to claim based on it. Only "Your share" stays membership-gated. */}
+              <span className="k">Cleaner pot</span>
+              <span className="v">{job.cleaner_amount ? fmt(job.cleaner_amount) : '—'}</span>
               {role === 'cleaner' && job.claimed_by != null && (
                 <>
                   <span className="k">Your share</span>
