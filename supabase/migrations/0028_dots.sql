@@ -63,3 +63,66 @@ end $$;
 grant execute on function create_dot(float8, float8) to authenticated;
 grant execute on function update_dot(bigint, text, text, public.dot_status) to authenticated;
 grant execute on function delete_dot(bigint) to authenticated;
+
+-- ==== Atomic converts ========================================================
+-- The claiming read IS the delete: `delete ... returning` under READ COMMITTED
+-- means two concurrent converts of one dot cannot both proceed — the loser's
+-- DELETE matches 0 rows and raises instead of minting a duplicate customer.
+-- Coordinates are NOT parameters; the dot row is their single source.
+-- Provenance: customers insert mirrors 0022 create_lead_from_pin (newest);
+-- leads insert mirrors 0021 create_lead's column set (quote stored directly —
+-- the role check already restricts callers to admin/rep, the widened money
+-- rule of 0029); jobs insert mirrors 0027 create_job (price coalesce-to-0,
+-- status unclaimed; no recur — the dot form doesn't offer it).
+create function convert_dot_to_lead(
+  p_dot_id bigint, p_name text, p_phone text, p_address text,
+  p_service text, p_status lead_status, p_note text, p_quote numeric default null
+) returns bigint
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_uid uuid := auth.uid();
+  v_lat float8; v_lng float8;
+  v_customer_id bigint; v_lead_id bigint;
+begin
+  if coalesce(public.auth_role() in ('admin','rep'), false) is not true then
+    raise exception 'Not authorized to convert dots';
+  end if;
+  delete from public.dots where id = p_dot_id returning lat, lng into v_lat, v_lng;
+  if not found then raise exception 'Dot % not found', p_dot_id; end if;
+  insert into public.customers (name, address, phone, lat, lng, type, created_by)
+  values (p_name, p_address, p_phone, v_lat, v_lng, 'residential', v_uid)
+  returning id into v_customer_id;
+  -- status 'won' fires the existing won->job trigger (0006) — intended.
+  insert into public.leads (customer_id, service, note, quote_value, status, created_by, rep_id)
+  values (v_customer_id, p_service, p_note, coalesce(p_quote, 0), p_status, v_uid, v_uid)
+  returning id into v_lead_id;
+  return v_lead_id;
+end $$;
+
+create function convert_dot_to_job(
+  p_dot_id bigint, p_name text, p_phone text, p_address text,
+  p_service text, p_description text, p_scheduled timestamptz,
+  p_price numeric default null, p_cleaner_amount numeric default null
+) returns bigint
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_uid uuid := auth.uid();
+  v_lat float8; v_lng float8;
+  v_customer_id bigint; v_job_id bigint;
+begin
+  if coalesce(public.auth_role() in ('admin','rep'), false) is not true then
+    raise exception 'Not authorized to convert dots';
+  end if;
+  delete from public.dots where id = p_dot_id returning lat, lng into v_lat, v_lng;
+  if not found then raise exception 'Dot % not found', p_dot_id; end if;
+  insert into public.customers (name, address, phone, lat, lng, type, created_by)
+  values (p_name, p_address, p_phone, v_lat, v_lng, 'residential', v_uid)
+  returning id into v_customer_id;
+  insert into public.jobs (customer_id, service, description, scheduled_date, price, cleaner_amount, status)
+  values (v_customer_id, p_service, p_description, p_scheduled, coalesce(p_price, 0), p_cleaner_amount, 'unclaimed')
+  returning id into v_job_id;
+  return v_job_id;
+end $$;
+
+grant execute on function convert_dot_to_lead(bigint, text, text, text, text, lead_status, text, numeric) to authenticated;
+grant execute on function convert_dot_to_job(bigint, text, text, text, text, text, timestamptz, numeric, numeric) to authenticated;
