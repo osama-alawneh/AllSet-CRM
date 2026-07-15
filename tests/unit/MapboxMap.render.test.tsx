@@ -19,6 +19,7 @@ vi.mock('mapbox-gl', () => {
     project = vi.fn(() => ({ x: 0, y: 0 }));
     flyTo = vi.fn();
     getContainer = vi.fn(() => document.createElement('div'));
+    getCanvasContainer = vi.fn(() => document.createElement('div'));
     constructor() {
       mapInstances.push(this);
     }
