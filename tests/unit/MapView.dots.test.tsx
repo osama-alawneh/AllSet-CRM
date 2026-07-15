@@ -58,10 +58,11 @@ describe('MapView dots', () => {
     });
     expect(createDot).toHaveBeenCalled();
     expect(container.querySelector('.pop-dot')).toBeTruthy();
-    // Fresh dot (id 99) is absent from props — the placeholder must show the
-    // clicked coords (jsdom 0×0 rect → unproject(0,0)), not 0.0000°.
-    expect(container.querySelector('.pop-dot')!.textContent).toContain('41.6730°, -91.5480°');
-    expect(container.querySelector('.pop-dot')!.textContent).not.toContain('0.0000');
+    // Fresh dot (id 99) is absent from props — the placeholder must carry the
+    // clicked coords (jsdom 0×0 rect → unproject(0,0)) as data attrs, not 0.0000.
+    const card = container.querySelector('.pop-dot')!;
+    expect(card.getAttribute('data-lat')).toBe('41.6730');
+    expect(card.getAttribute('data-lng')).toBe('-91.5480');
   });
   it('surfaces a createDot failure as an alert and opens no popup', async () => {
     vi.mocked(createDot).mockResolvedValueOnce({ error: 'boom' });

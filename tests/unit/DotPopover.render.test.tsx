@@ -29,10 +29,16 @@ describe('DotPopover main view', () => {
     render(<DotPopover dot={dot} canEdit xPct={50} yPct={50} onClose={() => {}} />);
     expect((container.querySelector('input[name="label"]') as HTMLInputElement).value).toBe('12 Oak St');
     expect((container.querySelector('textarea[name="notes"]') as HTMLTextAreaElement).value).toBe('big dog');
-    const chips = container.querySelectorAll('.statuspick button');
+    const chips = container.querySelectorAll('button.dp-chip');
     expect(chips).toHaveLength(5);
+    // color flows through the --dp-c custom property, never inline background
+    expect((chips[0] as HTMLElement).style.getPropertyValue('--dp-c')).toBe('var(--won)');
+    expect([...chips].every(c => c.querySelector('i') !== null)).toBe(true);
     expect([...chips].find(c => c.textContent?.includes('Callback'))?.className).toContain('sel');
     for (const t of ['Save', 'Lead', 'Job', 'Delete Dot']) expect(byText(t)).toBeTruthy();
+    const card = container.querySelector('.pop-dot') as HTMLElement;
+    expect(card.getAttribute('data-lat')).toBe('42.3000');
+    expect(card.getAttribute('data-lng')).toBe('-83.0000');
   });
   it('status chip click calls updateDot immediately with current fields', async () => {
     render(<DotPopover dot={dot} canEdit xPct={50} yPct={50} onClose={() => {}} />);
@@ -56,6 +62,12 @@ describe('DotPopover cleaner read-only', () => {
     expect(container.textContent).toContain('Callback');
     expect(byText('Delete Dot')).toBeUndefined();
     expect(byText('Lead')).toBeUndefined();
+    expect(container.textContent).not.toContain('°'); // coords left the DOM
+  });
+  it('unlabeled dot falls back to "Unlabeled dot" (no coords)', () => {
+    render(<DotPopover dot={{ ...dot, label: '' }} canEdit={false} xPct={50} yPct={50} onClose={() => {}} />);
+    expect(container.textContent).toContain('Unlabeled dot');
+    expect(container.textContent).not.toContain('42.3');
   });
 });
 
