@@ -100,22 +100,6 @@ export function groupByStatus(leads: Lead[]): Record<LeadStatus, Lead[]> {
   return out;
 }
 
-export type PinInput = { name: string; address: string; lat: number; lng: number; status: LeadStatus };
-
-export function parsePinForm(
-  fd: FormData
-): { ok: true; value: PinInput } | { ok: false; error: string } {
-  const name = String(fd.get('name') ?? '').trim();
-  const address = String(fd.get('address') ?? '').trim();
-  const lat = Number(fd.get('lat'));
-  const lng = Number(fd.get('lng'));
-  const status = String(fd.get('status') ?? '');
-  if (!name) return { ok: false, error: 'Address or name is required' };
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return { ok: false, error: 'Invalid coordinates' };
-  if (!LEAD_STATUSES.includes(status as LeadStatus)) return { ok: false, error: 'Invalid status' };
-  return { ok: true, value: { name, address, lat, lng, status: status as LeadStatus } };
-}
-
 export type LeadInput = {
   customer_id: number; service: string; description: string | null;
   stories: number | null; panes: number | null; note: string | null; quote: number | null;

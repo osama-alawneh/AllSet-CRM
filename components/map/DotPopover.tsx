@@ -7,7 +7,7 @@ import { updateDot, deleteDot, convertDotToLead, convertDotToJob } from '@/app/(
 type View = 'main' | 'lead' | 'job';
 
 // Three-view dot popup (spec: main / Lead form / Job form). Positioned like
-// the old PinPopover: xPct/yPct clamped so it never hangs off the map edge.
+// the old create-lead popover: xPct/yPct clamped so it never hangs off the map edge.
 export function DotPopover({
   dot, canEdit, xPct, yPct, onClose,
 }: {

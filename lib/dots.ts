@@ -31,7 +31,7 @@ const optMoney = (fd: FormData, k: string): { ok: true; n: number | null } | { o
 };
 // Shared head of both convert forms: dot id + customer identity. Name falls
 // back to the address (door-knock: often no name yet), matching the old
-// PinPopover's spirit; customers.name is NOT NULL so one of them must exist.
+// create-lead popover's spirit; customers.name is NOT NULL so one of them must exist.
 function parseHead(fd: FormData):
   | { ok: true; dot_id: number; name: string; phone: string | null; address: string; service: string }
   | { ok: false; error: string } {

@@ -19,7 +19,7 @@ export const navForRole = (role: Role): NavItem[] =>
 
 const TITLES: Record<string, [string, string]> = {
   '/dashboard': ['Dashboard / Daily Ops', 'role-aware overview'],
-  '/map':       ['Map / Pin Board', 'click empty space to drop a pin'],
+  '/map':       ['Map / Pin Board', 'click empty space to drop a dot'],
   '/leads':     ['Leads / Pipeline', 'drag to change status'],
   '/jobs':      ['Jobs / Board', 'claim to lock · drag status'],
   '/invoices':  ['Invoices / Billing', 'create · print PDF · export'],

@@ -14,7 +14,7 @@ export function MiniMap({ pins, token }: { pins: Pin[]; token: string | null }) 
   const router = useRouter();
   const impl = pickMapImpl(token);
   const mapPins = useMemo<MapPin[]>(() => pins.map(p => ({ kind: 'lead', ...p })), [pins]);
-  const onPinClick = (pin: MapPin) => router.push(`/map?l=${pin.id}`);
+  const onPinClick = (pin: MapPin, _x: number, _y: number) => router.push(`/map?l=${pin.id}`);
   return (
     <div style={{ cursor: 'pointer' }} onClick={() => router.push('/map')}>
       {impl === 'mapbox' ? (
