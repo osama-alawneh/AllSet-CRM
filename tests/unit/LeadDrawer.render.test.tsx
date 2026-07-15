@@ -45,7 +45,7 @@ describe('LeadDrawer Rep select for a rep_id absent from the current options (de
       rep_name: 'Old Rep',
     });
     const { container, getByText } = render(
-      <LeadDrawer lead={l} admin canEdit backTo="/leads" reps={reps} uid="90000000-0000-0000-0000-000000000031" />
+      <LeadDrawer lead={l} admin money={true} canEdit backTo="/leads" reps={reps} uid="90000000-0000-0000-0000-000000000031" />
     );
     fireEvent.click(getByText('✎ Edit'));
     const select = container.querySelector('select[name="rep_id"]') as HTMLSelectElement;
@@ -61,7 +61,7 @@ describe('LeadDrawer Rep select for a rep_id absent from the current options (de
   it('falls back to the raw id label when rep_name failed to resolve', () => {
     const l = lead({ rep_id: '90000000-0000-0000-0000-000000000099', rep_name: null });
     const { container, getByText } = render(
-      <LeadDrawer lead={l} admin canEdit backTo="/leads" reps={reps} uid="90000000-0000-0000-0000-000000000031" />
+      <LeadDrawer lead={l} admin money={true} canEdit backTo="/leads" reps={reps} uid="90000000-0000-0000-0000-000000000031" />
     );
     fireEvent.click(getByText('✎ Edit'));
     const select = container.querySelector('select[name="rep_id"]') as HTMLSelectElement;
@@ -73,11 +73,41 @@ describe('LeadDrawer Rep select for a rep_id absent from the current options (de
   it('does not add a legacy option when rep_id IS among the current options (control case)', () => {
     const l = lead({ rep_id: reps[0].id, rep_name: reps[0].full_name });
     const { container, getByText } = render(
-      <LeadDrawer lead={l} admin canEdit backTo="/leads" reps={reps} uid={reps[0].id} />
+      <LeadDrawer lead={l} admin money={true} canEdit backTo="/leads" reps={reps} uid={reps[0].id} />
     );
     fireEvent.click(getByText('✎ Edit'));
     const select = container.querySelector('select[name="rep_id"]') as HTMLSelectElement;
     expect(select.options.length).toBe(reps.length);
     expect(select.value).toBe(reps[0].id);
+  });
+});
+
+describe('LeadDrawer money prop (Task 8: rep quote UI widening)', () => {
+  it('rep (money, not admin) sees the quote value but no Delete button', () => {
+    const l = lead({ quote_value: 250 });
+    const { container, queryByText } = render(
+      <LeadDrawer lead={l} admin={false} money={true} canEdit backTo="/leads" reps={reps} uid={reps[0].id} />
+    );
+    expect(container.textContent).toContain('$250');
+    expect(container.textContent).not.toContain('•••••');
+    expect(queryByText('🗑 Delete')).toBeNull();
+  });
+
+  it('cleaner-shaped caller (money=false) still sees masked quote', () => {
+    const l = lead({ quote_value: 250 });
+    const { container } = render(
+      <LeadDrawer lead={l} admin={false} money={false} canEdit backTo="/leads" reps={reps} uid={reps[0].id} />
+    );
+    expect(container.textContent).toContain('•••••');
+  });
+
+  it('rep sees the Quote $ input in edit mode', () => {
+    const l = lead({ quote_value: 250 });
+    const { container, getByText } = render(
+      <LeadDrawer lead={l} admin={false} money={true} canEdit backTo="/leads" reps={reps} uid={reps[0].id} />
+    );
+    fireEvent.click(getByText('✎ Edit'));
+    const input = container.querySelector('input[name="quote"]');
+    expect(input).toBeTruthy();
   });
 });

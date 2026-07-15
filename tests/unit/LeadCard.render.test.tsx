@@ -55,7 +55,7 @@ const lead: Lead = {
 };
 
 function setup(onOpen = vi.fn(), draggable = true) {
-  const utils = render(<LeadCard lead={lead} admin={false} draggable={draggable} onOpen={onOpen} />);
+  const utils = render(<LeadCard lead={lead} money={false} draggable={draggable} onOpen={onOpen} />);
   const root = utils.container.querySelector('.card2') as HTMLElement;
   const handle = utils.container.querySelector('.draghandle') as HTMLElement;
   const title = utils.container.querySelector('.cardlink.addr') as HTMLElement;

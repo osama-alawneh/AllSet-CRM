@@ -4,11 +4,11 @@ import { statusLabel, statusColor, type Lead, type LeadStatus } from '@/lib/lead
 import { LeadCard } from './LeadCard';
 
 export function KanbanColumn({
-  status, leads, admin, canEdit, onOpen,
+  status, leads, money, canEdit, onOpen,
 }: {
   status: LeadStatus;
   leads: Lead[];
-  admin: boolean;
+  money: boolean;
   canEdit: boolean;
   onOpen: (id: number) => void;
 }) {
@@ -20,7 +20,7 @@ export function KanbanColumn({
         <span className="cnt">{leads.length}</span>
       </div>
       {leads.map(l => (
-        <LeadCard key={l.id} lead={l} admin={admin} draggable={canEdit} onOpen={onOpen} />
+        <LeadCard key={l.id} lead={l} money={money} draggable={canEdit} onOpen={onOpen} />
       ))}
       {leads.length === 0 && (
         <div className="meta" style={{ color: 'var(--muted)', fontSize: 10 }}>— drop here —</div>

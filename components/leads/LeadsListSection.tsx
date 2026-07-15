@@ -7,10 +7,11 @@ import { HistoryToggle } from '@/components/ui/HistoryToggle';
 import { LeadsListTable } from './LeadsListTable';
 
 export function LeadsListSection({
-  leads, admin, canEdit,
+  leads, admin, money, canEdit,
 }: {
   leads: Lead[];
   admin: boolean;
+  money: boolean;
   canEdit: boolean;
 }) {
   const router = useRouter();
@@ -26,7 +27,7 @@ export function LeadsListSection({
             className="btn sec"
             type="button"
             onClick={() => {
-              const t = leadsCsvTable(leads, admin);
+              const t = leadsCsvTable(leads, money);
               downloadCSV('clearview-leads.csv', toCSV(t.headers, t.rows));
             }}
           >
@@ -39,7 +40,7 @@ export function LeadsListSection({
           )}
         </div>
       </div>
-      <LeadsListTable leads={leads} admin={admin} onOpen={open} />
+      <LeadsListTable leads={leads} money={money} onOpen={open} />
     </section>
   );
 }

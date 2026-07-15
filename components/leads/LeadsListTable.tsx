@@ -6,7 +6,7 @@ import { filterLeads } from '@/lib/search';
 const fmt = (n: number) => '$' + Number(n || 0).toLocaleString();
 const day = (s: string) => s.slice(0, 10);
 
-export function LeadsListTable({ leads, admin, onOpen }: { leads: Lead[]; admin: boolean; onOpen: (id: number) => void }) {
+export function LeadsListTable({ leads, money, onOpen }: { leads: Lead[]; money: boolean; onOpen: (id: number) => void }) {
   const [q, setQ] = useState('');
   const shown = filterLeads(leads, q);
   return (
@@ -17,7 +17,7 @@ export function LeadsListTable({ leads, admin, onOpen }: { leads: Lead[]; admin:
           <thead>
             <tr>
               <th scope="col">#</th><th scope="col">Customer</th><th scope="col">Service</th><th scope="col">Status</th>
-              <th scope="col">Stories</th><th scope="col">Panes</th><th scope="col">Created</th>{admin && <th scope="col">Quote</th>}
+              <th scope="col">Stories</th><th scope="col">Panes</th><th scope="col">Created</th>{money && <th scope="col">Quote</th>}
             </tr>
           </thead>
           <tbody>
@@ -38,11 +38,11 @@ export function LeadsListTable({ leads, admin, onOpen }: { leads: Lead[]; admin:
                 <td>{l.stories ?? '—'}</td>
                 <td>{l.panes ?? '—'}</td>
                 <td>{day(l.created_at)}</td>
-                {admin && <td style={{ color: 'var(--won)', fontWeight: 700 }}>{l.quote_value ? fmt(l.quote_value) : '—'}</td>}
+                {money && <td style={{ color: 'var(--won)', fontWeight: 700 }}>{l.quote_value ? fmt(l.quote_value) : '—'}</td>}
               </tr>
             ))}
             {shown.length === 0 && (
-              <tr><td colSpan={admin ? 8 : 7} style={{ color: 'var(--muted)' }}>No leads match.</td></tr>
+              <tr><td colSpan={money ? 8 : 7} style={{ color: 'var(--muted)' }}>No leads match.</td></tr>
             )}
           </tbody>
         </table>

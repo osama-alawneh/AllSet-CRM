@@ -43,7 +43,8 @@ export default async function MapPage({
       .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at,rep_id')
       .order('id'),
     sb.from('customers').select('id,name,address,phone,email,lat,lng,active'),
-    admin ? sb.from('leads').select('id,quote_value').is('deleted_at', null) : Promise.resolve({ data: null, error: null }),
+    // Task 8 (0029's leads_rep policy): rep now reads base `leads` where not deleted too.
+    canReadMoney ? sb.from('leads').select('id,quote_value').is('deleted_at', null) : Promise.resolve({ data: null, error: null }),
     jobsQuery,
     sb.from('profiles').select('id,full_name,role'),
     // Members: feeds the JobDrawer members panel when a job pin is opened on the map.
@@ -62,7 +63,7 @@ export default async function MapPage({
   const cs = csRes.data;
 
   let quoteById: Map<number, number> | null = null;
-  if (admin) {
+  if (canReadMoney) {
     quoteById = new Map((baseRes.data ?? []).map(b => [b.id, Number(b.quote_value ?? 0)]));
   }
 
@@ -157,7 +158,7 @@ export default async function MapPage({
         openLeadId={lParam ?? null} openJobId={jParam ?? null}
       />
       {selectedLead && (
-        <LeadDrawer key={selectedLead.id} lead={selectedLead} admin={admin} canEdit={canCreate} backTo="/map" reps={reps} uid={uid} />
+        <LeadDrawer key={selectedLead.id} lead={selectedLead} admin={admin} money={canReadMoney} canEdit={canCreate} backTo="/map" reps={reps} uid={uid} />
       )}
       {selectedJob && role && (
         <JobDrawer

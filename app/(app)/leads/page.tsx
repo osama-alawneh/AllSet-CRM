@@ -21,6 +21,11 @@ export default async function LeadsPage({
   const list = view === 'list';
   const backTo = list ? '/leads?view=list' : '/leads';
   const admin = role === 'admin';
+  // Task 8 (0029's leads_rep policy widened base-leads SELECT + the money gate to
+  // admin-or-rep): this page already redirects non-admin/rep above, so canReadMoney is
+  // always true here — kept as an expression (not a literal `true`) for greppability
+  // alongside the identical const on app/(app)/map/page.tsx.
+  const canReadMoney = role === 'admin' || role === 'rep';
   const history = admin && deleted === '1'; // admin-only History view (0020); RPCs also block non-admins
   const user = await getSession();
   const uid = user?.id ?? '';
@@ -32,7 +37,9 @@ export default async function LeadsPage({
       .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at,rep_id')
       .order('id'),
     sb.from('customers').select('id,name,address,phone,email,lat,lng,active'),
-    admin ? sb.from('leads').select('id,quote_value').is('deleted_at', null) : Promise.resolve({ data: null, error: null }),
+    // Base-leads quote read: unconditional — this page is admin/rep-only (redirect above)
+    // and 0029's `leads_rep` policy now lets reps read base `leads` where not deleted.
+    sb.from('leads').select('id,quote_value').is('deleted_at', null),
     // History fetch: deliberately the ONE base-leads read that does NOT exclude deleted_at —
     // it wants exactly the opposite set.
     history
@@ -60,10 +67,7 @@ export default async function LeadsPage({
     .filter(p => p.role === 'admin' || p.role === 'rep')
     .map(p => ({ id: p.id, full_name: p.full_name }));
 
-  let quoteById: Map<number, number> | null = null;
-  if (admin) {
-    quoteById = new Map((baseRes.data ?? []).map(b => [b.id, Number(b.quote_value ?? 0)]));
-  }
+  const quoteById: Map<number, number> = new Map((baseRes.data ?? []).map(b => [b.id, Number(b.quote_value ?? 0)]));
 
   const leads = buildLeads((lp ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], quoteById, repNames);
   const selected = lParam ? leads.find(l => l.id === Number(lParam)) ?? null : null;
@@ -85,14 +89,14 @@ export default async function LeadsPage({
   return (
     <>
       {list ? (
-        <LeadsListSection leads={leads} admin={admin} canEdit={true} />
+        <LeadsListSection leads={leads} admin={admin} money={canReadMoney} canEdit={true} />
       ) : (
-        <KanbanBoard leads={leads} admin={admin} canEdit={true} />
+        <KanbanBoard leads={leads} admin={admin} money={canReadMoney} canEdit={true} />
       )}
       {(selected || isNew) && (
         <LeadDrawer
           key={selected?.id ?? 'new'}
-          lead={selected} admin={admin} canEdit={true} backTo={backTo}
+          lead={selected} admin={admin} money={canReadMoney} canEdit={true} backTo={backTo}
           isNew={isNew && !selected} customers={customerOptions}
           reps={reps} uid={uid}
         />

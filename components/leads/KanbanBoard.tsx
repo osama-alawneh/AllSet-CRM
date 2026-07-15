@@ -24,10 +24,11 @@ import { HistoryToggle } from '@/components/ui/HistoryToggle';
 import { KanbanColumn } from './KanbanColumn';
 
 export function KanbanBoard({
-  leads, admin, canEdit,
+  leads, admin, money, canEdit,
 }: {
   leads: Lead[];
   admin: boolean;
+  money: boolean;
   canEdit: boolean;
 }) {
   const router = useRouter();
@@ -82,7 +83,7 @@ export function KanbanBoard({
             type="button"
             onClick={() => {
               // Export the committed `leads` prop, NOT the optimistic drag state.
-              const t = leadsCsvTable(leads, admin);
+              const t = leadsCsvTable(leads, money);
               downloadCSV('clearview-leads.csv', toCSV(t.headers, t.rows));
             }}
           >
@@ -104,7 +105,7 @@ export function KanbanBoard({
               key={st}
               status={st}
               leads={grouped[st]}
-              admin={admin}
+              money={money}
               canEdit={canEdit}
               onOpen={open}
             />
