@@ -2,9 +2,13 @@
 import { useState, useTransition, type CSSProperties } from 'react';
 import { DOT_STATUSES, dotStatusColor, dotStatusLabel, type Dot, type DotStatus } from '@/lib/dots';
 import { SERVICE_TYPES, LEAD_STATUSES, statusLabel } from '@/lib/leads';
-import { updateDot, deleteDot, convertDotToLead, convertDotToJob } from '@/app/(app)/map/actions';
+import { createDot, updateDot, deleteDot, convertDotToLead, convertDotToJob } from '@/app/(app)/map/actions';
 
 type View = 'main' | 'lead' | 'job';
+
+// id null = pending: opened from a bare map click, not in the DB yet. The first
+// committing action creates it (spec 2026-07-15 dot-pending-commit).
+export type PopDot = Omit<Dot, 'id'> & { id: number | null };
 
 // All chip color flows from --dp-c (globals.css color-mixes it into the card
 // color). Never set background/color inline here — it would override the
@@ -14,9 +18,10 @@ const chipStyle = (st: DotStatus) => ({ '--dp-c': dotStatusColor[st] }) as CSSPr
 // Three-view dot popup (spec: main / Lead form / Job form). Positioned like
 // the old create-lead popover: xPct/yPct clamped so it never hangs off the map edge.
 export function DotPopover({
-  dot, canEdit, xPct, yPct, onClose,
+  dot, canEdit, xPct, yPct, onClose, onCreated,
 }: {
-  dot: Dot; canEdit: boolean; xPct: number; yPct: number; onClose: () => void;
+  dot: PopDot; canEdit: boolean; xPct: number; yPct: number; onClose: () => void;
+  onCreated?: (id: number) => void;
 }) {
   const [view, setView] = useState<View>('main');
   const [label, setLabel] = useState(dot.label);
@@ -25,30 +30,46 @@ export function DotPopover({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const pos = { left: `min(max(${xPct}%, 130px), calc(100% - 130px))`, top: `${yPct}%` } as const;
+  const pos = { left: `min(max(${xPct}%, 150px), calc(100% - 150px))`, top: `${yPct}%` } as const;
   // Coords live as data attrs (MapView's fresh-dot regression test reads them);
   // they no longer render as text.
   const coords = { 'data-lat': dot.lat.toFixed(4), 'data-lng': dot.lng.toFixed(4) };
 
+  // Pending dots are created lazily on the first committing action. onCreated
+  // lets the parent adopt the real id without remounting the popup (the popup
+  // is keyed on the parent's seq, not the id).
+  const ensureId = async (): Promise<{ id?: number; error?: string }> => {
+    if (dot.id != null) return { id: dot.id };
+    const res = await createDot(dot.lat, dot.lng);
+    if (res.id != null) onCreated?.(res.id);
+    return res;
+  };
+
   const save = (st: DotStatus = status) => {
     setError(null);
     startTransition(async () => {
-      const res = await updateDot(dot.id, label.trim(), notes.trim(), st);
+      const made = await ensureId();
+      if (made.id == null) { setError(made.error ?? 'Could not create dot'); return; }
+      const res = await updateDot(made.id, label.trim(), notes.trim(), st);
       if (res.error) setError(res.error);
     });
   };
   const pick = (st: DotStatus) => { setStatus(st); save(st); }; // chip click saves immediately
   const remove = () => {
+    if (dot.id == null) { onClose(); return; } // pending: nothing in the DB to delete
+    const id = dot.id;
     setError(null);
     startTransition(async () => {
-      const res = await deleteDot(dot.id);
+      const res = await deleteDot(id);
       if (res.error) setError(res.error); else onClose();
     });
   };
   const convert = (fn: typeof convertDotToLead) => (fd: FormData) => {
     setError(null);
-    fd.set('dot_id', String(dot.id));
     startTransition(async () => {
+      const made = await ensureId();
+      if (made.id == null) { setError(made.error ?? 'Could not create dot'); return; }
+      fd.set('dot_id', String(made.id));
       const res = await fn(fd); // success redirects away
       if (res?.error) setError(res.error);
     });
