@@ -315,3 +315,5 @@ OWNER WALKTHROUGH CHECKLIST (run on local stack, npx supabase start + npm run de
 [ ] VETO POINT: dashboard MiniMap no longer shows LOST leads (deliberate alignment w/ /map) — accept or veto
 [ ] Rep on /leads: sees quote column/field, can edit quote, NO Delete button, NO deleted-leads history section
 [ ] Admin on /leads: Delete button + deleted-leads history still present
+OWNER WALKTHROUGH PASSED 2026-07-14. Veto point ACCEPTED (dashboard MiniMap lost-lead exclusion stays). Owner cleared merge. MAP DOTS CLOSED — merged to main (merge commit follows repo convention).
+OWNER FEEDBACK CARRY (logged 2026-07-14, owner verbatim intent): does NOT like the dot popup (DotPopover) DESIGN — visual/UX gripe, no functional complaint, no specifics given yet. Backlog: redesign DotPopover look (get specifics from owner first; frontend-design rules apply — consistency #1). Candidate rider for small-changes wave or its own polish item.
