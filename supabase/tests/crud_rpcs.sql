@@ -76,8 +76,8 @@ select lives_ok($$ select create_lead(900031,'Admin-attributed lead','d',1,4,'n'
   '90000000-0000-0000-0000-000000000031') $$, 'admin create_lead with explicit p_rep_id runs');
 select is((select rep_id from leads where service='Admin-attributed lead'),
   '90000000-0000-0000-0000-000000000031'::uuid, 'admin create_lead persists explicit p_rep_id (can be a rep, not just self)');
-select is((select quote_value from leads where service='Rep lead v2'), 0::numeric,
-          'rep quote arguments were ignored on create AND update (money admin-only)');
+select is((select quote_value from leads where service='Rep lead v2'), 777::numeric,
+          'rep quote stored on update (money widened admin-or-rep)');
 select lives_ok($$ select update_lead((select id from leads where service='Admin lead'),
   'Admin lead','d',1,4,'n',650) $$, 'admin update_lead runs');
 select is((select quote_value from leads where service='Admin lead'), 650::numeric, 'admin quote update applied');

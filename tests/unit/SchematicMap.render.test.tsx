@@ -45,12 +45,12 @@ describe('SchematicMap pin contract (Task 10)', () => {
     expect(job.classList.contains('mpin-job')).toBe(true);
   });
 
-  it('clicking a pin calls onPinClick with that pin object', () => {
+  it('clicking a pin calls onPinClick with that pin object and its container %', () => {
     const { container, onPinClick } = setup();
     const job = Array.from(container.querySelectorAll('button.mpin'))
       .find(b => b.getAttribute('aria-label') === jobPin.label)!;
     fireEvent.click(job);
     expect(onPinClick).toHaveBeenCalledTimes(1);
-    expect(onPinClick).toHaveBeenCalledWith(jobPin);
+    expect(onPinClick).toHaveBeenCalledWith(jobPin, expect.any(Number), expect.any(Number));
   });
 });

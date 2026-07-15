@@ -8,7 +8,9 @@ export type MapImplProps = {
   canCreate: boolean;
   overlay: React.ReactNode;
   onMapClick: (lat: number, lng: number, xPct: number, yPct: number) => void;
-  onPinClick: (pin: MapPin) => void;
+  // Impls pass the pin's container-% so MapView can position the dot popup
+  // (mapbox needs its Map instance to project lat/lng; MapView never sees it).
+  onPinClick: (pin: MapPin, xPct: number, yPct: number) => void;
   height?: number | string;
 };
 
@@ -18,8 +20,11 @@ export function SchematicMap({ pins, canCreate, overlay, onMapClick, onPinClick,
     const target = e.target as HTMLElement;
     if (target.closest('.mpin') || target.closest('.pop')) return;
     const r = e.currentTarget.getBoundingClientRect();
-    const xPct = ((e.clientX - r.left) / r.width) * 100;
-    const yPct = ((e.clientY - r.top) / r.height) * 100;
+    // Guard div-by-zero: a not-yet-laid-out container (or jsdom, which never
+    // computes real box sizes) reports a 0×0 rect — Infinity would otherwise
+    // flow into the dot popup's `min()/calc()` position CSS and blow up.
+    const xPct = r.width > 0 ? ((e.clientX - r.left) / r.width) * 100 : 0;
+    const yPct = r.height > 0 ? ((e.clientY - r.top) / r.height) * 100 : 0;
     const { lat, lng } = unproject(xPct, yPct);
     onMapClick(lat, lng, xPct, yPct);
   };
@@ -45,11 +50,11 @@ export function SchematicMap({ pins, canCreate, overlay, onMapClick, onPinClick,
           <button
             key={pinKey(pin)}
             type="button"
-            className={pin.kind === 'job' ? 'mpin mpin-job' : 'mpin'}
+            className={pin.kind === 'job' ? 'mpin mpin-job' : pin.kind === 'dot' ? 'mpin mpin-dot' : 'mpin'}
             aria-label={pin.label}
             title={pin.label}
             style={{ left: `${xPct}%`, top: `${yPct}%`, '--pc': pinColor(pin) } as React.CSSProperties}
-            onClick={e => { e.stopPropagation(); onPinClick(pin); }}
+            onClick={e => { e.stopPropagation(); onPinClick(pin, xPct, yPct); }}
           >
             <i />
           </button>

@@ -18,10 +18,11 @@ const day = (s: string) => s.slice(0, 10);
 export type RepOption = { id: string; full_name: string };
 
 export function LeadDrawer({
-  lead, admin, canEdit, backTo, isNew = false, customers = [], reps = [], uid = '',
+  lead, admin, money, canEdit, backTo, isNew = false, customers = [], reps = [], uid = '',
 }: {
   lead: Lead | null;
   admin: boolean;
+  money: boolean;
   canEdit: boolean;
   backTo: string;
   isNew?: boolean;
@@ -49,8 +50,9 @@ export function LeadDrawer({
 
   const submit = (fd: FormData) => {
     setError(null);
-    // Admin blanking the (prefilled) quote is a deliberate "clear to $0". The quote input
-    // is {admin &&}-gated, so present-in-fd ⇒ admin; absent (rep) stays absent and the RPC
+    // Blanking the (prefilled) quote is a deliberate "clear to $0". The quote input is
+    // {money &&}-gated, so present-in-fd ⇒ money-capable (admin or rep, per 0029's widened
+    // money gate); a caller rendered money=false (e.g. cleaner-shaped) omits it and the RPC
     // keeps ignoring it. Safe on create too (blank quote already stores 0 there).
     blankMoneyToZero(fd, 'quote');
     startTransition(async () => {
@@ -114,7 +116,7 @@ export function LeadDrawer({
               <span className="k">Panes</span><span className="v">{lead.panes ?? '—'}</span>
               <span className="k">Rep</span><span className="v">{lead.rep_name ?? '—'}</span>
               <span className="k">Quote</span>
-              {admin
+              {money
                 ? <span className="v" style={{ color: 'var(--won)' }}>{lead.quote_value ? fmt(lead.quote_value) : '—'}</span>
                 : <span className="v money-hidden">•••••</span>}
             </div>
@@ -206,7 +208,7 @@ export function LeadDrawer({
                   {reps.map(r => <option key={r.id} value={r.id}>{r.full_name}</option>)}
                 </select>
               </span>
-              {admin && (
+              {money && (
                 <>
                   <span className="k">Quote $</span>
                   <span className="v"><input name="quote" type="number" min={0} step="0.01" defaultValue={lead?.quote_value ?? ''} placeholder="0.00" /></span>

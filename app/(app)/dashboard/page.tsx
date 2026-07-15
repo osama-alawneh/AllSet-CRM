@@ -4,7 +4,9 @@ import { getRole, getSession } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
 import { logQueryError } from '@/lib/log';
 import { buildJobs, visibleJobs, type JobRow, type JobCustomer } from '@/lib/jobs';
-import { buildLeads, statusLabel, type LeadPublicRow, type CustomerGeo, type Pin } from '@/lib/leads';
+import { buildLeads, statusLabel, type LeadPublicRow, type CustomerGeo } from '@/lib/leads';
+import { dotStatusLabel, type Dot } from '@/lib/dots';
+import type { MapPin } from '@/lib/mapPins';
 import {
   revenueMTD, overdueTotal, chartBuckets14d, jobsThisWeek, winRate,
   type RevenueInvoice, type WeekJob, type WinLead,
@@ -35,7 +37,7 @@ export default async function DashboardPage() {
     ? sb.from('jobs').select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price').is('deleted_at', null).order('id')
     : sb.from('jobs_public').select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at').order('id');
 
-  const [jobsRes, csRes, psRes, lpRes, invRes, itemRes, ceRes, crRes] = await Promise.all([
+  const [jobsRes, csRes, psRes, lpRes, invRes, itemRes, ceRes, crRes, dotsRes] = await Promise.all([
     jobsQuery,
     sb.from('customers').select('id,name,address,phone,email,lat,lng'),
     sb.from('profiles').select('id,full_name'),
@@ -46,6 +48,7 @@ export default async function DashboardPage() {
     // INSIDE the view — cleaners get [] back, not an error, so no branching is needed here.
     sb.from('cleaner_earnings').select('cleaner_id,job_id,done_at,share'),
     sb.from('company_revenue').select('month,job_revenue,expenses,net'),
+    sb.from('dots').select('id,lat,lng,label,notes,status').order('id'),
   ]);
   logQueryError('dashboard.jobs', jobsRes.error);
   logQueryError('dashboard.customers', csRes.error);
@@ -55,6 +58,7 @@ export default async function DashboardPage() {
   logQueryError('dashboard.invoiceItems', 'error' in itemRes ? itemRes.error : null);
   logQueryError('dashboard.cleanerEarnings', ceRes.error);
   logQueryError('dashboard.companyRevenue', crRes.error);
+  logQueryError('dashboard.dots', dotsRes.error);
 
   // ---- everyone: jobs (role-split price), leads (win rate + pins), customers ----
   let jobRows: JobRow[] = [];
@@ -84,12 +88,19 @@ export default async function DashboardPage() {
 
   const leads = buildLeads((lpRes.data ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], null);
   const wr = Math.round(winRate(leads as WinLead[]) * 100);
-  const pins: Pin[] = leads
-    .filter(l => l.lat != null && l.lng != null)
-    .map(l => ({
-      id: l.id, lat: l.lat as number, lng: l.lng as number, status: l.status,
-      label: `${l.customer_name} — ${statusLabel[l.status]}`,
-    }));
+  const dotRows = (dotsRes.data ?? []) as Dot[];
+  const pins: MapPin[] = [
+    ...leads
+      .filter(l => l.status !== 'lost' && l.lat != null && l.lng != null)
+      .map<MapPin>(l => ({
+        kind: 'lead', id: l.id, lat: l.lat as number, lng: l.lng as number, status: l.status,
+        label: `${l.customer_name} — ${statusLabel[l.status]}`,
+      })),
+    ...dotRows.map<MapPin>(d => ({
+      kind: 'dot', id: d.id, lat: d.lat, lng: d.lng, status: d.status,
+      label: `${d.label || 'Dot'} — ${dotStatusLabel[d.status]}`,
+    })),
+  ];
 
   // ---- admin-only money (non-admins NEVER fetch invoices or receive these values) ----
   let revenue = 0, overdue = 0, chart: number[] = [];

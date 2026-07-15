@@ -6,10 +6,10 @@ import type { Lead } from '@/lib/leads';
 const fmt = (n: number) => '$' + Number(n || 0).toLocaleString();
 
 export function LeadCard({
-  lead, admin, draggable, onOpen,
+  lead, money, draggable, onOpen,
 }: {
   lead: Lead;
-  admin: boolean;
+  money: boolean;
   draggable: boolean;
   onOpen: (id: number) => void;
 }) {
@@ -79,7 +79,7 @@ export function LeadCard({
         <br />
         {lead.stories ?? '?'}-story · {lead.panes ?? '?'} panes · {lead.service ?? 'TBD'}
       </span>
-      {admin && lead.quote_value ? <div className="val">{fmt(lead.quote_value)}</div> : null}
+      {money && lead.quote_value ? <div className="val">{fmt(lead.quote_value)}</div> : null}
     </div>
   );
 }

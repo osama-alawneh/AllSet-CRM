@@ -4,6 +4,7 @@ import { logQueryError } from '@/lib/log';
 import { buildLeads, type LeadPublicRow, type CustomerGeo } from '@/lib/leads';
 import { buildJobs, visibleJobs, buildMembers, type JobRow, type JobCustomer, type JobMember } from '@/lib/jobs';
 import { buildMapPins } from '@/lib/mapPins';
+import type { Dot } from '@/lib/dots';
 import { MapView } from '@/components/map/MapView';
 import { LeadDrawer } from '@/components/leads/LeadDrawer';
 import { JobDrawer, type LeadDetail } from '@/components/jobs/JobDrawer';
@@ -36,17 +37,19 @@ export default async function MapPage({
         .select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,cleaner_amount')
         .order('id');
 
-  const [lpRes, csRes, baseRes, jobsRes, psRes, jmRes] = await Promise.all([
+  const [lpRes, csRes, baseRes, jobsRes, psRes, jmRes, dotsRes] = await Promise.all([
     sb
       .from('leads_public')
       .select('id,customer_id,status,service,description,stories,panes,note,created_at,updated_at,rep_id')
       .order('id'),
     sb.from('customers').select('id,name,address,phone,email,lat,lng,active'),
-    admin ? sb.from('leads').select('id,quote_value').is('deleted_at', null) : Promise.resolve({ data: null, error: null }),
+    // Task 8 (0029's leads_rep policy): rep now reads base `leads` where not deleted too.
+    canReadMoney ? sb.from('leads').select('id,quote_value').is('deleted_at', null) : Promise.resolve({ data: null, error: null }),
     jobsQuery,
     sb.from('profiles').select('id,full_name,role'),
     // Members: feeds the JobDrawer members panel when a job pin is opened on the map.
     sb.from('job_members').select('id,job_id,cleaner_id,status,is_owner'),
+    sb.from('dots').select('id,lat,lng,label,notes,status').order('id'),
   ]);
   logQueryError('map.page.leads_public', lpRes.error);
   logQueryError('map.page.customers', csRes.error);
@@ -54,12 +57,13 @@ export default async function MapPage({
   logQueryError('map.page.jobs', jobsRes.error);
   logQueryError('map.page.profiles', psRes.error);
   logQueryError('map.page.job_members', jmRes.error);
+  logQueryError('map.page.dots', dotsRes.error);
 
   const lp = lpRes.data;
   const cs = csRes.data;
 
   let quoteById: Map<number, number> | null = null;
-  if (admin) {
+  if (canReadMoney) {
     quoteById = new Map((baseRes.data ?? []).map(b => [b.id, Number(b.quote_value ?? 0)]));
   }
 
@@ -108,7 +112,8 @@ export default async function MapPage({
   const geoByCustomer = new Map(
     ((cs ?? []) as CustomerGeo[]).map(c => [c.id, { lat: c.lat, lng: c.lng }])
   );
-  const pins = buildMapPins(leads, jobs, geoByCustomer);
+  const dotRows = (dotsRes.data ?? []) as Dot[];
+  const pins = buildMapPins(leads, jobs, geoByCustomer, dotRows);
 
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || null; // empty string → null
 
@@ -147,9 +152,13 @@ export default async function MapPage({
 
   return (
     <section className="screen screen-fill">
-      <MapView pins={pins} token={token} canCreate={canCreate} openLeadId={lParam ?? null} />
+      <MapView
+        pins={pins} dots={dotRows} token={token}
+        canCreate={canCreate} canEditDots={canCreate}
+        openLeadId={lParam ?? null} openJobId={jParam ?? null}
+      />
       {selectedLead && (
-        <LeadDrawer key={selectedLead.id} lead={selectedLead} admin={admin} canEdit={canCreate} backTo="/map" reps={reps} uid={uid} />
+        <LeadDrawer key={selectedLead.id} lead={selectedLead} admin={admin} money={canReadMoney} canEdit={canCreate} backTo="/map" reps={reps} uid={uid} />
       )}
       {selectedJob && role && (
         <JobDrawer

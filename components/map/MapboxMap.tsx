@@ -86,14 +86,16 @@ export function MapboxMap({
       const el = document.createElement('div');
       const inner = document.createElement('button');
       inner.type = 'button';
-      inner.className = pin.kind === 'job' ? 'mpin mpin-job' : 'mpin';
+      inner.className = pin.kind === 'job' ? 'mpin mpin-job' : pin.kind === 'dot' ? 'mpin mpin-dot' : 'mpin';
       inner.title = pin.label;
       inner.setAttribute('aria-label', pin.label);
       inner.style.setProperty('--pc', pinColor(pin));
       inner.innerHTML = '<i></i>';
       inner.addEventListener('click', ev => {
         ev.stopPropagation();
-        onPinClick(pin);
+        const p = map.project([pin.lng, pin.lat]);
+        const rect = map.getContainer().getBoundingClientRect();
+        onPinClick(pin, (p.x / rect.width) * 100, (p.y / rect.height) * 100);
       });
       el.appendChild(inner);
       const marker = new mapboxgl.Marker({ element: el }).setLngLat([pin.lng, pin.lat]).addTo(map);

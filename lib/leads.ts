@@ -35,8 +35,6 @@ export type Lead = {
   rep_name: string | null;    // resolved full name (or null)
 };
 
-export type Pin = { id: number; lat: number; lng: number; status: LeadStatus; label: string };
-
 // Shapes the server pages fetch: leads_public view + a slim customers projection.
 export type LeadPublicRow = {
   id: number;
@@ -98,22 +96,6 @@ export function groupByStatus(leads: Lead[]): Record<LeadStatus, Lead[]> {
   const out: Record<LeadStatus, Lead[]> = { new: [], follow: [], won: [], lost: [] };
   for (const l of leads) out[l.status].push(l);
   return out;
-}
-
-export type PinInput = { name: string; address: string; lat: number; lng: number; status: LeadStatus };
-
-export function parsePinForm(
-  fd: FormData
-): { ok: true; value: PinInput } | { ok: false; error: string } {
-  const name = String(fd.get('name') ?? '').trim();
-  const address = String(fd.get('address') ?? '').trim();
-  const lat = Number(fd.get('lat'));
-  const lng = Number(fd.get('lng'));
-  const status = String(fd.get('status') ?? '');
-  if (!name) return { ok: false, error: 'Address or name is required' };
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return { ok: false, error: 'Invalid coordinates' };
-  if (!LEAD_STATUSES.includes(status as LeadStatus)) return { ok: false, error: 'Invalid status' };
-  return { ok: true, value: { name, address, lat, lng, status: status as LeadStatus } };
 }
 
 export type LeadInput = {
