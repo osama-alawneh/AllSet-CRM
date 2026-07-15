@@ -5,12 +5,13 @@ import { act } from 'react';
 import React from 'react';
 
 vi.mock('@/app/(app)/map/actions', () => ({
+  createDot: vi.fn(async () => ({ id: 99 })),
   updateDot: vi.fn(async () => ({})),
   deleteDot: vi.fn(async () => ({})),
   convertDotToLead: vi.fn(async () => ({})),
   convertDotToJob: vi.fn(async () => ({})),
 }));
-import { updateDot, deleteDot } from '@/app/(app)/map/actions';
+import { createDot, updateDot, deleteDot } from '@/app/(app)/map/actions';
 import { DotPopover } from '@/components/map/DotPopover';
 import { DotCounts } from '@/components/map/DotCounts';
 import type { Dot } from '@/lib/dots';
@@ -51,6 +52,34 @@ describe('DotPopover main view', () => {
     await act(async () => { byText('Delete Dot')!.click(); });
     expect(deleteDot).toHaveBeenCalledWith(7);
     expect(onClose).toHaveBeenCalled();
+  });
+});
+
+describe('DotPopover pending dot (id null)', () => {
+  const pending = { id: null, lat: 42.3, lng: -83.0, label: '', notes: '', status: 'unmarked' as const };
+  it('chip click creates the dot, reports it up, then updates it', async () => {
+    const onCreated = vi.fn();
+    render(<DotPopover dot={pending} canEdit xPct={50} yPct={50} onClose={() => {}} onCreated={onCreated} />);
+    await act(async () => { byText('Yes')!.click(); });
+    expect(createDot).toHaveBeenCalledWith(42.3, -83.0);
+    expect(onCreated).toHaveBeenCalledWith(99);
+    expect(updateDot).toHaveBeenCalledWith(99, '', '', 'yes');
+  });
+  it('createDot failure surfaces in the popup alert; no update, no adoption', async () => {
+    vi.mocked(createDot).mockResolvedValueOnce({ error: 'boom' });
+    const onCreated = vi.fn();
+    render(<DotPopover dot={pending} canEdit xPct={50} yPct={50} onClose={() => {}} onCreated={onCreated} />);
+    await act(async () => { byText('Yes')!.click(); });
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain('boom');
+    expect(updateDot).not.toHaveBeenCalled();
+    expect(onCreated).not.toHaveBeenCalled();
+  });
+  it('Delete Dot on a pending dot just closes — no server call', async () => {
+    const onClose = vi.fn();
+    render(<DotPopover dot={pending} canEdit xPct={50} yPct={50} onClose={onClose} />);
+    await act(async () => { byText('Delete Dot')!.click(); });
+    expect(onClose).toHaveBeenCalled();
+    expect(deleteDot).not.toHaveBeenCalled();
   });
 });
 
