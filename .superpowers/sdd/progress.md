@@ -340,3 +340,24 @@ OWNER WALKTHROUGH CHECKLIST (npx supabase start + npm run dev, /map):
 [ ] Phone/touch: all buttons ≥44px
 [ ] MINOR-1 FEEL CHECK: mouse-click near top-right of label input — does ✕ hit area steal the click? (fix = coarse-scope the hit area; accept or order fix)
 [ ] Keyboard: Tab through chips — focus rings clip at card edges (Minor-2, accept or order fix)
+
+DOT PENDING-COMMIT WAVE (same branch feat/dotpopover-redesign, WAVE-BASE a9864f1, spec 38694ea, plan 7538ff5, owner-approved via Q&A: create-on-first-action / click-away-closes / 300px):
+Task 1: complete (commit 4a71dee, pending-commit test contract — MapView no-create-on-click + click-away + chip-adopts-id guard [expected-green regression guard], DotPopover pending describe [chip create-report-update chain, failure alert, delete-discard]; reviewer verified all 5 reds genuine + 1 green genuine against live component source; 5 fail/15 pass; review approved. Minor: report misattributed failure-test's first failing assertion [doc nit, not code].)
+Task 2: complete (commit d33eb02, DotPopover [PopDot id-nullable, onCreated, ensureId lazy create, remove() pending short-circuit, clamp 150] + MapView [OpenDot id|null + seq, sync onMapClick close-or-open-pending, absence rule id!=null guard, seq-keyed popup, onCreated adopts id + fresh + router.refresh, createError/createDot-import removed]; opus reviewer walked edge cases [double-create blocked by disabled=pending, pending survives props refresh, seq reuse safe across null render, late-resolve create can't resurrect closed popup]; 20/20 target, 273/273 full, tsc clean; review approved. Minors CARRY: (1) onMapClick/onPinClick not byte-verbatim to brief [verbose closures + redundant `as` cast, behavior identical, tsc clean — process drift]; (2) close-mid-commit race leaves an unlabeled created dot [brief-inherent, spec-consistent — walkthrough note].)
+Task 3: complete (commit 4ed8c54, globals.css exactly 3 edits — pop-dot 260->300 [pairs with T2 clamp 150], dp-body + scrollbar-width thin + scrollbar-gutter stable, new .pop select 100% after .pop input; dp- block/color-mixes/statuspick/go/x byte-identical; battery 273/lint 0/tsc/build; review approved, zero findings.)
+Task 4: complete. Closeout battery green at 6dff2d2 (controller-run): 274/274 unit (37 files), lint 0, tsc clean, build all routes. No DB changes — pgTAP untouched.
+WAVE REVIEW (fable, a9864f1..4ed8c54 + fix re-verify): verdict READY FOR WALKTHROUGH at 6dff2d2. All 7 focus areas PASS (map click pure state both impls; seq keying + adoption; ensureId failure paths; absence/drawer/fresh handshakes; pending remove no-op; both observables test-enforced; CSS exactly 3 rules + clamp 150 = half of 300).
+IMPORTANT FOUND+FIXED (commit 6dff2d2, TDD, reviewer CONFIRMED RESOLVED): onCreated adoption lacked pending guard — late createDot resolution could retarget a popup the user had moved to a SAVED dot (silent wrong-record writes). Fix: adopt only while prev.id == null; race pinned by controlled-promise test (last updateDot targets 7 not 99, deliberately tolerating the spec-accepted orphan write via toHaveBeenLastCalledWith).
+MINORS (all CARRY): (1) T1 report doc nit; (2) T2 verbose onMapClick/onPinClick closures + dead `(prev as OpenDot|null)?.seq` cast [behavior identical — fold into next touch]; (3) close-mid-commit race leaves unlabeled orphan dot [spec-accepted — walkthrough note]; (4) adoption-guard MapView chip test wouldn't catch a key-regression remount [harden: type into label pre-chip, assert value survives]; (5) chip renders selected after failed create [matches pre-existing updateDot-failure pattern]; (6) residual pending->pending stale-id adoption race [bounded, self-evident, one-round-trip window; full fix needs popup-identity plumbing in onCreated].
+Wave commits: 38694ea spec, 7538ff5 plan, 4a71dee tests, d33eb02 components, 4ed8c54 css, 6dff2d2 fix. Branch pushed. NOT merged, NO PR — owner walkthrough decides.
+OWNER WALKTHROUGH CHECKLIST (pending-commit wave; npm run dev, /map admin):
+[ ] Misclick on map -> popup opens, ✕/Esc/click-away -> NO dot anywhere (check /map after refresh)
+[ ] Click-away while popup open: closes only; next click opens new popup
+[ ] Chip on fresh click -> dot appears with that status, popup stays, edits survive
+[ ] Save with label+notes on fresh click -> dot persisted with fields
+[ ] Lead/Job on fresh click -> lead/job created, dot gone (converted), drawer opens
+[ ] Offline/failure on first action -> error INSIDE popup, no ghost dot after retry
+[ ] Existing dot click -> popup/edit/delete unchanged
+[ ] Card 300px: forms breathe, scrollbar thin + beside inputs, selects full width (both forms)
+[ ] Both themes still correct (no CSS regression in chips/caret)
+[ ] KNOWN RACE (accepted): closing/moving popup the instant after a chip/Save click can leave an unlabeled dot — refresh shows it; delete if unwanted
