@@ -6,10 +6,9 @@ import { pickMapImpl } from '@/lib/geo';
 import { visibleMapPins, type MapPin } from '@/lib/mapPins';
 import type { Dot } from '@/lib/dots';
 import type { GeocodeSuggestion } from '@/lib/geocode';
-import { createDot } from '@/app/(app)/map/actions';
 import { SchematicMap } from './SchematicMap';
 import { MapSearch } from './MapSearch';
-import { DotPopover } from './DotPopover';
+import { DotPopover, type PopDot } from './DotPopover';
 import { DotCounts } from './DotCounts';
 import { Legend } from './Legend';
 
@@ -18,10 +17,14 @@ import { Legend } from './Legend';
 const MapboxMap = dynamic(() => import('./MapboxMap').then(m => m.MapboxMap), { ssr: false });
 
 type FlyTarget = { lat: number; lng: number; seq: number };
+// id null = pending: popup opened from a bare map click; the dot isn't in the DB
+// until the first committing action inside the popup (spec dot-pending-commit).
 // fresh: created this session and possibly not yet in `dots` (router.refresh in
 // flight) — the absence-close rule below must not fire on it before first sight.
-// lat/lng: real coords for the fresh-dot placeholder (props haven't caught up yet).
-type OpenDot = { id: number; lat: number; lng: number; xPct: number; yPct: number; fresh: boolean };
+// lat/lng: real coords for the pending/fresh placeholder (props haven't caught up).
+// seq: stable popup identity for the React key — the pending id filling in must
+// NOT remount the popup (a remount would wipe typed label/notes mid-save).
+type OpenDot = { id: number | null; lat: number; lng: number; xPct: number; yPct: number; fresh: boolean; seq: number };
 
 export function MapView({
   pins, dots, token, canCreate, canEditDots, openLeadId, openJobId,
@@ -36,7 +39,6 @@ export function MapView({
 }) {
   const router = useRouter();
   const [openDot, setOpenDot] = useState<OpenDot | null>(null);
-  const [createError, setCreateError] = useState<string | null>(null);
   const [flyTo, setFlyTo] = useState<FlyTarget | null>(null);
   const [showLeads, setShowLeads] = useState(true);
   const [showJobs, setShowJobs] = useState(true);
@@ -54,29 +56,30 @@ export function MapView({
     setOpenDot(null);
   }
   // 2) The open dot vanished from props (teammate deleted/converted it, or our
-  //    own delete landed). `fresh` dots are exempt until first seen in props.
-  if (openDot) {
+  //    own delete landed). Pending dots (id null) are never in props — skip;
+  //    `fresh` dots are exempt until first seen in props.
+  if (openDot && openDot.id != null) {
     const present = dots.some(d => d.id === openDot.id);
     if (present && openDot.fresh) setOpenDot({ ...openDot, fresh: false });
     if (!present && !openDot.fresh) setOpenDot(null);
   }
 
+  // Bare map click never writes: popup open -> just close it (click-away);
+  // nothing open -> open a pending dot at the click point.
   const onMapClick = (lat: number, lng: number, xPct: number, yPct: number) => {
     if (!canCreate) return;
-    setCreateError(null); // stale error clears on the next attempt
-    void (async () => {
-      const res = await createDot(lat, lng);
-      if (res.id != null) {
-        setOpenDot({ id: res.id, lat, lng, xPct, yPct, fresh: true });
-        router.refresh();
-      } else {
-        setCreateError(res.error ?? 'Could not create dot');
-      }
-    })();
+    setOpenDot((prev: OpenDot | null): (OpenDot | null) => {
+      if (prev) return null;
+      const s = (prev as OpenDot | null)?.seq ?? 0;
+      return { id: null, lat, lng, xPct, yPct, fresh: true, seq: s + 1 };
+    });
   };
   const onPinClick = (pin: MapPin, xPct: number, yPct: number) => {
     if (pin.kind === 'dot') {
-      setOpenDot({ id: pin.id, lat: pin.lat, lng: pin.lng, xPct, yPct, fresh: false });
+      setOpenDot((prev: OpenDot | null): OpenDot => {
+        const s = (prev as OpenDot | null)?.seq ?? 0;
+        return { id: pin.id, lat: pin.lat, lng: pin.lng, xPct, yPct, fresh: false, seq: s + 1 };
+      });
       return;
     }
     setOpenDot(null);
@@ -87,17 +90,23 @@ export function MapView({
 
   const visible = visibleMapPins(pins, { leads: showLeads, jobs: showJobs, dots: showDots });
 
-  // A fresh dot may not be in props yet — render the popup on a local default.
-  const openDotData: Dot | null = openDot
+  // Pending (id null) and fresh dots aren't in props — render on a local placeholder.
+  const openDotData: PopDot | null = openDot
     ? dots.find(d => d.id === openDot.id)
-      ?? (openDot.fresh ? { id: openDot.id, lat: openDot.lat, lng: openDot.lng, label: '', notes: '', status: 'unmarked' } : null)
+      ?? (openDot.id == null || openDot.fresh
+          ? { id: openDot.id, lat: openDot.lat, lng: openDot.lng, label: '', notes: '', status: 'unmarked' }
+          : null)
     : null;
   const overlay = openDot && openDotData ? (
     <DotPopover
-      key={openDot.id}
+      key={openDot.seq}
       dot={openDotData} canEdit={canEditDots}
       xPct={openDot.xPct} yPct={openDot.yPct}
       onClose={() => setOpenDot(null)}
+      onCreated={id => {
+        setOpenDot(prev => (prev && prev.id == null ? { ...prev, id, fresh: true } : prev));
+        router.refresh();
+      }}
     />
   ) : null;
 
@@ -119,7 +128,6 @@ export function MapView({
           </button>
         </div>
         {canCreate && <span className="hint">✚ click empty space to drop a dot</span>}
-        {createError && <p className="form-err" role="alert" style={{ margin: 0 }}>{createError}</p>}
       </div>
       {impl === 'mapbox' ? (
         <MapboxMap

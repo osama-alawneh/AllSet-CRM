@@ -13,7 +13,7 @@ vi.mock('@/app/(app)/map/actions', () => ({
   convertDotToLead: vi.fn(async () => ({})),
   convertDotToJob: vi.fn(async () => ({})),
 }));
-import { createDot } from '@/app/(app)/map/actions';
+import { createDot, updateDot } from '@/app/(app)/map/actions';
 import { MapView } from '@/components/map/MapView';
 import type { MapPin } from '@/lib/mapPins';
 import type { Dot } from '@/lib/dots';
@@ -51,33 +51,42 @@ describe('MapView dots', () => {
     expect(container.querySelector('.pop-dot')).toBeTruthy();
     expect(push).not.toHaveBeenCalled();
   });
-  it('clicking empty map calls createDot and opens the popup on the new id', async () => {
+  it('clicking empty map opens a pending popup without creating a dot', async () => {
     render(<MapView {...base} />);
     await act(async () => {
       (container.querySelector('.map') as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 10, clientY: 10 }));
     });
-    expect(createDot).toHaveBeenCalled();
+    expect(createDot).not.toHaveBeenCalled();
     expect(container.querySelector('.pop-dot')).toBeTruthy();
-    // Fresh dot (id 99) is absent from props — the placeholder must show the
-    // clicked coords (jsdom 0×0 rect → unproject(0,0)), not 0.0000°.
-    expect(container.querySelector('.pop-dot')!.textContent).toContain('41.6730°, -91.5480°');
-    expect(container.querySelector('.pop-dot')!.textContent).not.toContain('0.0000');
+    // Pending placeholder must carry the clicked coords (jsdom 0×0 rect →
+    // unproject(0,0)) as data attrs, not 0.0000 — 5fa824c regression observable.
+    const card = container.querySelector('.pop-dot')!;
+    expect(card.getAttribute('data-lat')).toBe('41.6730');
+    expect(card.getAttribute('data-lng')).toBe('-91.5480');
   });
-  it('surfaces a createDot failure as an alert and opens no popup', async () => {
-    vi.mocked(createDot).mockResolvedValueOnce({ error: 'boom' });
+  it('map click while a popup is open just closes it — no dot created', async () => {
+    render(<MapView {...base} />);
+    const mapClick = () => act(async () => {
+      (container.querySelector('.map') as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 10, clientY: 10 }));
+    });
+    await mapClick();
+    expect(container.querySelector('.pop-dot')).toBeTruthy();
+    await mapClick(); // click-away: closes, never creates
+    expect(container.querySelector('.pop-dot')).toBeNull();
+    expect(createDot).not.toHaveBeenCalled();
+    await mapClick(); // next click starts a new pending dot
+    expect(container.querySelector('.pop-dot')).toBeTruthy();
+  });
+  it('status chip on a pending dot creates the dot, adopts the id, keeps the popup', async () => {
     render(<MapView {...base} />);
     await act(async () => {
       (container.querySelector('.map') as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 10, clientY: 10 }));
     });
-    const alert = container.querySelector('[role="alert"]');
-    expect(alert?.textContent).toContain('boom');
-    expect(container.querySelector('.pop-dot')).toBeNull();
-    // Next click succeeds — error clears, popup opens.
-    await act(async () => {
-      (container.querySelector('.map') as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 10, clientY: 10 }));
-    });
-    expect(container.querySelector('[role="alert"].form-err')).toBeNull();
-    expect(container.querySelector('.pop-dot')).toBeTruthy();
+    const yes = [...container.querySelectorAll('button.dp-chip')].find(b => b.textContent?.includes('Yes'))!;
+    await act(async () => { (yes as HTMLButtonElement).click(); });
+    expect(createDot).toHaveBeenCalledTimes(1);
+    expect(updateDot).toHaveBeenCalledWith(99, '', '', 'yes'); // id 99 adopted from the createDot mock
+    expect(container.querySelector('.pop-dot')).toBeTruthy(); // no remount wipe / no close
   });
   it('cleaner (canEditDots=false, canCreate=false): dot click opens read-only popup, map click does nothing', async () => {
     render(<MapView {...base} canCreate={false} canEditDots={false} />);
@@ -101,5 +110,19 @@ describe('MapView dots', () => {
     act(() => { (container.querySelector('.mpin-dot') as HTMLButtonElement).click(); });
     render(<MapView {...base} openJobId="5" />);
     expect(container.querySelector('.pop-dot')).toBeNull();
+  });
+  it('late createDot resolution cannot retarget a popup that moved to a saved dot', async () => {
+    let resolveCreate!: (v: { id?: number; error?: string }) => void;
+    vi.mocked(createDot).mockImplementationOnce(() => new Promise(r => { resolveCreate = r; }));
+    render(<MapView {...base} />);
+    await act(async () => {
+      (container.querySelector('.map') as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 10, clientY: 10 }));
+    });
+    const yes = () => [...container.querySelectorAll('button.dp-chip')].find(b => b.textContent?.includes('Yes'))!;
+    await act(async () => { (yes() as HTMLButtonElement).click(); }); // createDot in flight
+    act(() => { (container.querySelector('.mpin-dot') as HTMLButtonElement).click(); }); // popup replaced by saved dot 7
+    await act(async () => { resolveCreate({ id: 99 }); }); // late adoption must NOT retarget dot 7's popup
+    await act(async () => { (yes() as HTMLButtonElement).click(); });
+    expect(updateDot).toHaveBeenLastCalledWith(7, '12 Oak St', '', 'yes');
   });
 });

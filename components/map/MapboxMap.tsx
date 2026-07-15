@@ -78,7 +78,12 @@ export function MapboxMap({
   useEffect(() => {
     markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
-    if (!map) return;
+    // The construction effect's cleanup removes the map, but setMap(null) only
+    // lands on the NEXT render — so for one commit (token change, dev Fast
+    // Refresh) this effect can re-run while state still holds the removed
+    // instance. A removed map has no canvas container (Map.remove() sets it
+    // undefined) and Marker.addTo would crash reading .appendChild of it.
+    if (!map || !map.getCanvasContainer()) return;
     for (const pin of pins) {
       // Mapbox owns the OUTER marker element's transform, so put .mpin styling on an
       // INNER child (its own rotate/translate does not fight Mapbox's positioning).
@@ -107,7 +112,7 @@ export function MapboxMap({
   // on every selection, so re-picking the same address still re-flies. The marker
   // clears on the next selection or any map click.
   useEffect(() => {
-    if (!map || !flyTo) return;
+    if (!map || !flyTo || !map.getCanvasContainer()) return; // removed-map guard, see marker effect
     map.flyTo({ center: [flyTo.lng, flyTo.lat], zoom: 16 });
     searchMarkerRef.current?.remove();
     searchMarkerRef.current = new mapboxgl.Marker({ color: '#f5a623' })
