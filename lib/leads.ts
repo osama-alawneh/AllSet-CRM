@@ -35,8 +35,6 @@ export type Lead = {
   rep_name: string | null;    // resolved full name (or null)
 };
 
-export type Pin = { id: number; lat: number; lng: number; status: LeadStatus; label: string };
-
 // Shapes the server pages fetch: leads_public view + a slim customers projection.
 export type LeadPublicRow = {
   id: number;

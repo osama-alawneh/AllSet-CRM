@@ -20,7 +20,8 @@ const MapboxMap = dynamic(() => import('./MapboxMap').then(m => m.MapboxMap), { 
 type FlyTarget = { lat: number; lng: number; seq: number };
 // fresh: created this session and possibly not yet in `dots` (router.refresh in
 // flight) — the absence-close rule below must not fire on it before first sight.
-type OpenDot = { id: number; xPct: number; yPct: number; fresh: boolean };
+// lat/lng: real coords for the fresh-dot placeholder (props haven't caught up yet).
+type OpenDot = { id: number; lat: number; lng: number; xPct: number; yPct: number; fresh: boolean };
 
 export function MapView({
   pins, dots, token, canCreate, canEditDots, openLeadId, openJobId,
@@ -35,6 +36,7 @@ export function MapView({
 }) {
   const router = useRouter();
   const [openDot, setOpenDot] = useState<OpenDot | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
   const [flyTo, setFlyTo] = useState<FlyTarget | null>(null);
   const [showLeads, setShowLeads] = useState(true);
   const [showJobs, setShowJobs] = useState(true);
@@ -61,17 +63,20 @@ export function MapView({
 
   const onMapClick = (lat: number, lng: number, xPct: number, yPct: number) => {
     if (!canCreate) return;
+    setCreateError(null); // stale error clears on the next attempt
     void (async () => {
       const res = await createDot(lat, lng);
       if (res.id != null) {
-        setOpenDot({ id: res.id, xPct, yPct, fresh: true });
+        setOpenDot({ id: res.id, lat, lng, xPct, yPct, fresh: true });
         router.refresh();
+      } else {
+        setCreateError(res.error ?? 'Could not create dot');
       }
     })();
   };
   const onPinClick = (pin: MapPin, xPct: number, yPct: number) => {
     if (pin.kind === 'dot') {
-      setOpenDot({ id: pin.id, xPct, yPct, fresh: false });
+      setOpenDot({ id: pin.id, lat: pin.lat, lng: pin.lng, xPct, yPct, fresh: false });
       return;
     }
     setOpenDot(null);
@@ -85,7 +90,7 @@ export function MapView({
   // A fresh dot may not be in props yet — render the popup on a local default.
   const openDotData: Dot | null = openDot
     ? dots.find(d => d.id === openDot.id)
-      ?? (openDot.fresh ? { id: openDot.id, lat: 0, lng: 0, label: '', notes: '', status: 'unmarked' } : null)
+      ?? (openDot.fresh ? { id: openDot.id, lat: openDot.lat, lng: openDot.lng, label: '', notes: '', status: 'unmarked' } : null)
     : null;
   const overlay = openDot && openDotData ? (
     <DotPopover
@@ -114,6 +119,7 @@ export function MapView({
           </button>
         </div>
         {canCreate && <span className="hint">✚ click empty space to drop a dot</span>}
+        {createError && <p className="form-err" role="alert" style={{ margin: 0 }}>{createError}</p>}
       </div>
       {impl === 'mapbox' ? (
         <MapboxMap

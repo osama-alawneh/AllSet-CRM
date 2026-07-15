@@ -58,6 +58,26 @@ describe('MapView dots', () => {
     });
     expect(createDot).toHaveBeenCalled();
     expect(container.querySelector('.pop-dot')).toBeTruthy();
+    // Fresh dot (id 99) is absent from props — the placeholder must show the
+    // clicked coords (jsdom 0×0 rect → unproject(0,0)), not 0.0000°.
+    expect(container.querySelector('.pop-dot')!.textContent).toContain('41.6730°, -91.5480°');
+    expect(container.querySelector('.pop-dot')!.textContent).not.toContain('0.0000');
+  });
+  it('surfaces a createDot failure as an alert and opens no popup', async () => {
+    vi.mocked(createDot).mockResolvedValueOnce({ error: 'boom' });
+    render(<MapView {...base} />);
+    await act(async () => {
+      (container.querySelector('.map') as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 10, clientY: 10 }));
+    });
+    const alert = container.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain('boom');
+    expect(container.querySelector('.pop-dot')).toBeNull();
+    // Next click succeeds — error clears, popup opens.
+    await act(async () => {
+      (container.querySelector('.map') as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 10, clientY: 10 }));
+    });
+    expect(container.querySelector('[role="alert"].form-err')).toBeNull();
+    expect(container.querySelector('.pop-dot')).toBeTruthy();
   });
   it('cleaner (canEditDots=false, canCreate=false): dot click opens read-only popup, map click does nothing', async () => {
     render(<MapView {...base} canCreate={false} canEditDots={false} />);
