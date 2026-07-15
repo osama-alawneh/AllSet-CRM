@@ -201,13 +201,14 @@ button.mpin:focus-visible { outline: 2px solid var(--accent); outline-offset: 2p
 .pop { position: absolute; z-index: 20; width: 230px; padding: 13px; transform: translate(-50%, 12px); }
 .pop h4 { margin: 0 0 3px; font-size: 12px; text-transform: uppercase; } .pop p { margin: 0 0 10px; font-size: 10px; color: var(--muted); }
 .pop input { width: 100%; margin-bottom: 8px; }
+.pop select { width: 100%; margin-bottom: 8px; }
 .statuspick { display: flex; gap: 6px; margin-bottom: 10px; }
 .statuspick button { flex: 1; padding: 7px 0; font-size: 9px; text-transform: uppercase; border: 1.5px solid var(--line); border-radius: 4px; background: transparent; color: var(--muted); }
 .statuspick button.sel { color: var(--on-status); border-color: transparent; }
 .pop .go { flex: 1; padding: 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; border: 1.5px solid var(--ink); border-radius: 4px; background: var(--accent); color: var(--on-accent); }
 [data-theme="dark"] .pop .go { border-color: var(--accent); }
 .pop .x { padding: 8px 11px; font-size: 10px; border: 1.5px solid var(--line); border-radius: 4px; background: transparent; color: var(--muted); }
-.pop.pop-dot { width: 260px; }
+.pop.pop-dot { width: 300px; }
 .pop textarea { width: 100%; margin-bottom: 8px; min-height: 54px; }
 .statuspick-wrap { flex-wrap: wrap; }
 .statuspick-wrap button { flex: 1 1 30%; }
@@ -226,7 +227,7 @@ button.mpin:focus-visible { outline: 2px solid var(--accent); outline-offset: 2p
   border-left: 1.5px solid var(--ink); border-top: 1.5px solid var(--ink);
 }
 [data-theme="dark"] .pop-dot::after { border-color: var(--line); }
-.dp-body { max-height: min(72vh, 440px); overflow-y: auto; }
+.dp-body { max-height: min(72vh, 440px); overflow-y: auto; scrollbar-width: thin; scrollbar-gutter: stable; }
 .dp-x {
   position: absolute; top: 6px; right: 6px; z-index: 1; width: 24px; height: 24px;
   display: grid; place-items: center; padding: 0; background: transparent;
