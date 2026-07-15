@@ -104,7 +104,7 @@ export function MapView({
       xPct={openDot.xPct} yPct={openDot.yPct}
       onClose={() => setOpenDot(null)}
       onCreated={id => {
-        setOpenDot(prev => (prev ? { ...prev, id, fresh: true } : prev));
+        setOpenDot(prev => (prev && prev.id == null ? { ...prev, id, fresh: true } : prev));
         router.refresh();
       }}
     />

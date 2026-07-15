@@ -111,4 +111,18 @@ describe('MapView dots', () => {
     render(<MapView {...base} openJobId="5" />);
     expect(container.querySelector('.pop-dot')).toBeNull();
   });
+  it('late createDot resolution cannot retarget a popup that moved to a saved dot', async () => {
+    let resolveCreate!: (v: { id?: number; error?: string }) => void;
+    vi.mocked(createDot).mockImplementationOnce(() => new Promise(r => { resolveCreate = r; }));
+    render(<MapView {...base} />);
+    await act(async () => {
+      (container.querySelector('.map') as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 10, clientY: 10 }));
+    });
+    const yes = () => [...container.querySelectorAll('button.dp-chip')].find(b => b.textContent?.includes('Yes'))!;
+    await act(async () => { (yes() as HTMLButtonElement).click(); }); // createDot in flight
+    act(() => { (container.querySelector('.mpin-dot') as HTMLButtonElement).click(); }); // popup replaced by saved dot 7
+    await act(async () => { resolveCreate({ id: 99 }); }); // late adoption must NOT retarget dot 7's popup
+    await act(async () => { (yes() as HTMLButtonElement).click(); });
+    expect(updateDot).toHaveBeenLastCalledWith(7, '12 Oak St', '', 'yes');
+  });
 });
