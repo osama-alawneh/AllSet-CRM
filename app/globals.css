@@ -481,3 +481,7 @@ input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; marg
   .topbar .tbtitle h1 { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .topbar .tbtitle .ref { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
+
+/* Hamburger nav drawer (owner call): the shared .drawer's min(440px, 94vw) blankets
+   a phone; the nav list only needs sidebar-ish width. Variant class from MobileNav. */
+.drawer.drawer-nav { width: min(280px, 78vw); padding: 16px 14px; }

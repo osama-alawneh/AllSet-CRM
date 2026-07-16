@@ -5,10 +5,11 @@ const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export function Drawer({
-  onClose, labelId, children,
+  onClose, labelId, className, children,
 }: {
   onClose: () => void;
   labelId?: string;
+  className?: string; // extra variant class on the panel (e.g. drawer-nav)
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLElement>(null);
@@ -50,7 +51,7 @@ export function Drawer({
   return (
     <>
       <div className="scrim open" onClick={onClose} />
-      <aside ref={ref} tabIndex={-1} className="drawer box open" role="dialog" aria-modal="true" aria-labelledby={labelId}>
+      <aside ref={ref} tabIndex={-1} className={className ? `drawer box open ${className}` : 'drawer box open'} role="dialog" aria-modal="true" aria-labelledby={labelId}>
         {children}
       </aside>
     </>

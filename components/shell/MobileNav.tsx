@@ -19,7 +19,7 @@ export function MobileNav({ children }: { children: React.ReactNode }) {
         ☰
       </button>
       {open && (
-        <Drawer onClose={() => setOpen(false)} labelId="mobile-nav-title">
+        <Drawer onClose={() => setOpen(false)} labelId="mobile-nav-title" className="drawer-nav">
           <span id="mobile-nav-title" className="lbl">Navigation</span>
           {children}
         </Drawer>
