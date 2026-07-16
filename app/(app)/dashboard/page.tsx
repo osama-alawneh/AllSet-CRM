@@ -87,8 +87,9 @@ export default async function DashboardPage() {
   const jpw = jobsThisWeek(jobs as WeekJob[], now);
 
   const leads = buildLeads((lpRes.data ?? []) as LeadPublicRow[], (cs ?? []) as CustomerGeo[], null);
-  const wr = Math.round(winRate(leads as WinLead[]) * 100);
   const dotRows = (dotsRes.data ?? []) as Dot[];
+  const noDots = dotRows.filter(d => d.status === 'no').length;
+  const wr = Math.round(winRate(leads as WinLead[], noDots) * 100);
   const pins: MapPin[] = [
     ...leads
       .filter(l => l.status !== 'lost' && l.lat != null && l.lng != null)
