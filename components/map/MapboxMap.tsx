@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css'; // imported ONLY here, never in a server file
-import { MAP_BOUNDS } from '@/lib/geo';
+import { MAP_BOUNDS, MAP_STYLE, FLY_TO_OPTS } from '@/lib/geo';
 import { pinColor } from '@/lib/mapPins';
 import type { MapImplProps } from './SchematicMap';
 
@@ -43,7 +43,7 @@ export function MapboxMap({
       mapboxgl.accessToken = token;
       const m = new mapboxgl.Map({
         container,
-        style: 'mapbox://styles/mapbox/satellite-streets-v12',
+        style: MAP_STYLE,
         bounds: [
           [MAP_BOUNDS.minLng, MAP_BOUNDS.minLat],
           [MAP_BOUNDS.maxLng, MAP_BOUNDS.maxLat],
@@ -112,7 +112,7 @@ export function MapboxMap({
   // clears on the next selection or any map click.
   useEffect(() => {
     if (!map || !flyTo || !map.getCanvasContainer()) return; // removed-map guard, see marker effect
-    map.flyTo({ center: [flyTo.lng, flyTo.lat], zoom: 16 });
+    map.flyTo({ center: [flyTo.lng, flyTo.lat], zoom: 16, ...FLY_TO_OPTS });
     searchMarkerRef.current?.remove();
     searchMarkerRef.current = new mapboxgl.Marker({ color: '#f5a623' })
       .setLngLat([flyTo.lng, flyTo.lat])

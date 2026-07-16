@@ -9,7 +9,11 @@ import React from 'react';
 // double-mount guaranteed exactly that: mount -> new Map() -> cleanup remove() ->
 // remount. MapboxMap now defers construction one animation frame with cancellation,
 // so the throwaway StrictMode mount never constructs a Map at all.
-const mapInstances: Array<{ remove: ReturnType<typeof vi.fn>; opts?: Record<string, unknown> }> = [];
+const mapInstances: Array<{
+  remove: ReturnType<typeof vi.fn>;
+  flyTo: ReturnType<typeof vi.fn>;
+  opts?: Record<string, unknown>;
+}> = [];
 const markerInstances: Array<Record<string, unknown>> = [];
 
 vi.mock('mapbox-gl', () => {
@@ -152,5 +156,31 @@ describe('MapboxMap StrictMode lifecycle', () => {
     });
     act(() => flushFrames());
     expect(mapInstances[0].opts?.cooperativeGestures).toBeUndefined();
+  });
+
+  it('constructs the map with the shared streets style', () => {
+    act(() => {
+      root.render(
+        <StrictMode>
+          <MapboxMap {...baseProps()} />
+        </StrictMode>,
+      );
+    });
+    act(() => flushFrames());
+    expect(mapInstances[0].opts?.style).toBe('mapbox://styles/mapbox/streets-v12');
+  });
+
+  it('search flyTo uses the fast shared options', () => {
+    act(() => {
+      root.render(
+        <StrictMode>
+          <MapboxMap {...baseProps()} flyTo={{ lat: 42.3, lng: -83.0, seq: 1 }} />
+        </StrictMode>,
+      );
+    });
+    act(() => flushFrames());
+    expect(mapInstances[0].flyTo).toHaveBeenCalledWith(
+      expect.objectContaining({ speed: 2.4, zoom: 16, center: [-83.0, 42.3] })
+    );
   });
 });
