@@ -430,7 +430,8 @@ button.dp-chip:active, .dp-btn:active, .dp-save:active, .dp-danger:active { tran
   background: color-mix(in srgb, var(--card) 82%, transparent);
   backdrop-filter: blur(4px);
 }
-.map-full .maptools { top: 10px; right: 10px; padding: 8px; }
+/* Toolbar is a full-width strip flush with the top edge (owner walkthrough call) */
+.map-full .maptools { top: 0; left: 0; right: 0; border-radius: 0; padding: 8px 12px; }
 .map-full .legend { bottom: 10px; padding: 8px 10px; }
 
 /* No spinner arrows on number fields (owner request): values are typed; the
