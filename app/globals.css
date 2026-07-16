@@ -455,3 +455,16 @@ input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; marg
    targets; .qa centers its items so the taller button doesn't stretch the siblings. */
 .copybtn { flex: 1; text-align: center; padding: 9px; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; background: none; border: 1.5px solid var(--line); border-radius: 4px; cursor: pointer; color: var(--muted); }
 .copybtn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Compact dot popup on phones (owner walkthrough call): the 300px card with 44px
+   targets covered most of the map. Narrow screens trade target height (44 -> 38px,
+   still comfortably tappable) and spacing for map visibility. Placed AFTER the
+   pointer:coarse block so the 38px min-height wins on phones. */
+@media (max-width: 480px) {
+  .pop.pop-dot { width: 260px; padding: 10px; }
+  .pop-dot .dp-grid { gap: 6px; }
+  .pop-dot input, .pop-dot textarea, .pop-dot select { margin-bottom: 6px; }
+  .pop-dot textarea { min-height: 38px; }
+  .dp-body { max-height: min(56vh, 380px); }
+  .dp-chip, .dp-btn, .dp-save, .dp-danger { min-height: 38px; }
+}
