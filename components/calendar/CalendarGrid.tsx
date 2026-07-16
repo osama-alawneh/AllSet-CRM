@@ -42,7 +42,7 @@ export function CalendarGrid({
             <div
               key={day} className="calday" role="button" tabIndex={0}
               onClick={() => setOpenDay(list.length ? day : null)}
-              onKeyDown={e => { if (e.key === 'Enter' && list.length) setOpenDay(day); }}
+              onKeyDown={e => { if ((e.key === 'Enter' || e.key === ' ') && list.length) { e.preventDefault(); setOpenDay(day); } }}
             >
               <span className="caldnum">{Number(day.slice(8))}</span>
               {list.slice(0, CHIP_CAP).map(e => (

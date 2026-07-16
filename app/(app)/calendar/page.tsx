@@ -132,7 +132,10 @@ export default async function CalendarPage({
 
   return (
     <section className="screen">
-      <CalendarGrid month={month} entries={entries} showLeads={showLeads} />
+      {/* key={month}: remount on month nav so the day panel doesn't survive into a
+          month it doesn't belong to; drawer open/close keeps the same m, so the
+          panel correctly persists across those. */}
+      <CalendarGrid key={month} month={month} entries={entries} showLeads={showLeads} />
       {selectedLead && (
         <LeadDrawer key={selectedLead.id} lead={selectedLead} admin={admin} money={canReadMoney} canEdit={canReadMoney} backTo={backTo} reps={reps} uid={uid} />
       )}
