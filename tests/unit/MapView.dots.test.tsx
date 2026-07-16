@@ -125,4 +125,12 @@ describe('MapView dots', () => {
     await act(async () => { (yes() as HTMLButtonElement).click(); });
     expect(updateDot).toHaveBeenLastCalledWith(7, '12 Oak St', '', 'yes');
   });
+  it('renders the full-bleed layout — .map-full root, no panel chrome, no heading', () => {
+    render(<MapView {...base} />);
+    const rootEl = container.firstElementChild!;
+    expect(rootEl.className).toBe('map-full');
+    expect(container.querySelector('h3')).toBeNull();
+    expect(container.querySelector('.maptools')).toBeTruthy(); // toolbar still present (floats via CSS)
+    expect(container.querySelector('.legend')).toBeTruthy();   // legend still present (floats via CSS)
+  });
 });

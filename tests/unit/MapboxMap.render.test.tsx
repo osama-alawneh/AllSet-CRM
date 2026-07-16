@@ -9,7 +9,7 @@ import React from 'react';
 // double-mount guaranteed exactly that: mount -> new Map() -> cleanup remove() ->
 // remount. MapboxMap now defers construction one animation frame with cancellation,
 // so the throwaway StrictMode mount never constructs a Map at all.
-const mapInstances: Array<{ remove: ReturnType<typeof vi.fn> }> = [];
+const mapInstances: Array<{ remove: ReturnType<typeof vi.fn>; opts?: Record<string, unknown> }> = [];
 const markerInstances: Array<Record<string, unknown>> = [];
 
 vi.mock('mapbox-gl', () => {
@@ -20,7 +20,9 @@ vi.mock('mapbox-gl', () => {
     flyTo = vi.fn();
     getContainer = vi.fn(() => document.createElement('div'));
     getCanvasContainer = vi.fn(() => document.createElement('div'));
-    constructor() {
+    opts?: Record<string, unknown>;
+    constructor(opts?: Record<string, unknown>) {
+      this.opts = opts;
       mapInstances.push(this);
     }
   }
@@ -138,5 +140,17 @@ describe('MapboxMap StrictMode lifecycle', () => {
     expect(mapInstances[0].remove).toHaveBeenCalledTimes(1);
     // Re-render something else so afterEach's unmount is a no-op double call.
     root = createRoot(container);
+  });
+
+  it('constructs the map with direct gestures (no cooperativeGestures)', () => {
+    act(() => {
+      root.render(
+        <StrictMode>
+          <MapboxMap {...baseProps()} />
+        </StrictMode>,
+      );
+    });
+    act(() => flushFrames());
+    expect(mapInstances[0].opts?.cooperativeGestures).toBeUndefined();
   });
 });
