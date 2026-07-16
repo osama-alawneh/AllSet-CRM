@@ -7,11 +7,12 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/map',       label: 'Map',       num: '02', roles: ['admin', 'rep', 'cleaner'] },
   { href: '/leads',     label: 'Leads',     num: '03', roles: ['admin', 'rep'] },
   { href: '/jobs',      label: 'Jobs',      num: '04', roles: ['admin', 'rep', 'cleaner'] },
-  { href: '/invoices',  label: 'Invoices',  num: '05', roles: ['admin'] },
-  { href: '/customers', label: 'Customers', num: '06', roles: ['admin', 'rep', 'cleaner'] },
-  { href: '/cleaners',  label: 'Cleaners',  num: '07', roles: ['admin', 'rep', 'cleaner'] },
-  { href: '/expenses',  label: 'Expenses',  num: '08', roles: ['admin', 'rep'] },
-  { href: '/settings',  label: 'Settings',  num: '09', roles: ['admin'] },
+  { href: '/calendar',  label: 'Calendar',  num: '05', roles: ['admin', 'rep', 'cleaner'] },
+  { href: '/invoices',  label: 'Invoices',  num: '06', roles: ['admin'] },
+  { href: '/customers', label: 'Customers', num: '07', roles: ['admin', 'rep', 'cleaner'] },
+  { href: '/cleaners',  label: 'Cleaners',  num: '08', roles: ['admin', 'rep', 'cleaner'] },
+  { href: '/expenses',  label: 'Expenses',  num: '09', roles: ['admin', 'rep'] },
+  { href: '/settings',  label: 'Settings',  num: '10', roles: ['admin'] },
 ];
 
 export const navForRole = (role: Role): NavItem[] =>
@@ -22,6 +23,7 @@ const TITLES: Record<string, [string, string]> = {
   '/map':       ['Map / Pin Board', 'click empty space to drop a dot'],
   '/leads':     ['Leads / Pipeline', 'drag to change status'],
   '/jobs':      ['Jobs / Board', 'claim to lock · drag status'],
+  '/calendar':  ['Calendar / Schedule', 'jobs by schedule · leads by created'],
   '/invoices':  ['Invoices / Billing', 'create · print PDF · export'],
   '/customers': ['Customers / Accounts', 'click a row to open profile'],
   '/cleaners':  ['Cleaners / Leaderboard', 'jobs done + earnings — no revenue here'],
