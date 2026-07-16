@@ -417,11 +417,21 @@ button.dp-chip:active, .dp-btn:active, .dp-save:active, .dp-danger:active { tran
 }
 .drawer { padding-top: calc(22px + env(safe-area-inset-top)); padding-bottom: calc(22px + env(safe-area-inset-bottom)); }
 
-/* Fullscreen map page: the screen stretches to fill .main, the map panel absorbs the
-   free space, and the .map inside grows past its default min(56vh, 520px) cap. */
+/* Fullscreen map page (spec 2026-07-15): the map bleeds the shell padding (20px
+   desktop / 12px ≤860px) and the .main topbar gap (18px), edge-to-edge below the
+   top nav; toolbar and legend float over it. Base .map keeps its border/radius/
+   height cap for the dashboard MiniMap. */
 .screen-fill { flex: 1; min-height: 0; }
-.screen-fill .map-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.screen-fill .map-panel .map { flex: 1; height: auto; min-height: 320px; }
+.map-full { flex: 1; min-height: 320px; position: relative; margin: -18px -20px -20px; }
+@media (max-width: 860px) { .map-full { margin: -18px -12px -12px; } }
+.map-full .map { position: absolute; inset: 0; height: 100%; border: none; border-radius: 0; }
+.map-full .maptools, .map-full .legend {
+  position: absolute; left: 10px; z-index: 15; margin: 0; border-radius: 6px;
+  background: color-mix(in srgb, var(--card) 82%, transparent);
+  backdrop-filter: blur(4px);
+}
+.map-full .maptools { top: 10px; right: 10px; padding: 8px; }
+.map-full .legend { bottom: 10px; padding: 8px 10px; }
 
 /* No spinner arrows on number fields (owner request): values are typed; the
    1-step arrows are useless for stories/panes/money and misfire on touch. */

@@ -111,9 +111,8 @@ export function MapView({
   ) : null;
 
   return (
-    <div className="panel box map-panel">
+    <div className="map-full">
       <div className="maptools">
-        <h3>Pin map / neighborhood</h3>
         {impl === 'mapbox' && <MapSearch token={token!} onSelect={onSearchSelect} />}
         <DotCounts dots={showDots ? dots : []} />
         <div className="layer-toggles" style={{ marginLeft: 'auto' }}>

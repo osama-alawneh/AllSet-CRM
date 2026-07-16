@@ -49,7 +49,6 @@ export function MapboxMap({
           [MAP_BOUNDS.maxLng, MAP_BOUNDS.maxLat],
         ],
         fitBoundsOptions: { padding: 30 },
-        cooperativeGestures: true,
         interactive,
       });
       created = m;
