@@ -240,22 +240,22 @@ button.mpin:focus-visible { outline: 2px solid var(--accent); outline-offset: 2p
 /* Square ✕ sized to the label-input row height (34px = 12px font + 8px padding
    + 1.5px border, ×2); the input narrows to make room so nothing overlaps. */
 .dp-x {
-  position: absolute; top: 14px; right: 14px; z-index: 1; width: 34px; height: 34px;
+  position: absolute; top: 14px; right: 14px; z-index: 1; width: 26px; height: 26px;
   display: grid; place-items: center; padding: 0;
   background: color-mix(in srgb, var(--muted) 16%, transparent);
   border: 1.5px solid color-mix(in srgb, var(--muted) 55%, transparent); border-radius: 4px;
-  color: var(--ink); font-size: 12px; line-height: 1; cursor: pointer;
+  color: var(--ink); font-size: 11px; line-height: 1; cursor: pointer;
   transition: color .15s ease, border-color .15s ease, background .15s ease, transform .15s ease;
 }
-.dp-x::after { content: ""; position: absolute; inset: -5px; border-radius: inherit; } /* 44px hit area */
+.dp-x::after { content: ""; position: absolute; inset: -9px; border-radius: inherit; } /* 44px hit area */
 .dp-x:hover { border-color: var(--muted); background: color-mix(in srgb, var(--muted) 28%, transparent); }
 .dp-x:active { transform: scale(.94); }
 .dp-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.pop-dot input[name="label"] { width: calc(100% - 42px); } /* 34px ✕ + 8px gap */
+.pop-dot input[name="label"] { width: calc(100% - 34px); } /* 26px ✕ + 8px gap */
 @media (pointer: coarse) {
-  /* inputs grow to 16px font on touch → row is 38px tall */
-  .dp-x { width: 38px; height: 38px; }
-  .pop-dot input[name="label"] { width: calc(100% - 46px); }
+  .dp-x { width: 30px; height: 30px; }
+  .dp-x::after { inset: -7px; } /* keep 44px hit area */
+  .pop-dot input[name="label"] { width: calc(100% - 38px); }
 }
 .dp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .dp-full { grid-column: 1 / -1; }
