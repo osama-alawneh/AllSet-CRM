@@ -12,6 +12,7 @@ import React from 'react';
 const mapInstances: Array<{
   remove: ReturnType<typeof vi.fn>;
   flyTo: ReturnType<typeof vi.fn>;
+  addControl: ReturnType<typeof vi.fn>;
   opts?: Record<string, unknown>;
 }> = [];
 const markerInstances: Array<Record<string, unknown>> = [];
@@ -22,6 +23,7 @@ vi.mock('mapbox-gl', () => {
     on = vi.fn();
     project = vi.fn(() => ({ x: 0, y: 0 }));
     flyTo = vi.fn();
+    addControl = vi.fn();
     getContainer = vi.fn(() => document.createElement('div'));
     getCanvasContainer = vi.fn(() => document.createElement('div'));
     opts?: Record<string, unknown>;
@@ -40,7 +42,13 @@ vi.mock('mapbox-gl', () => {
       markerInstances.push(this as unknown as Record<string, unknown>);
     }
   }
-  return { default: { Map: FakeMap, Marker: FakeMarker, accessToken: '' } };
+  class FakeGeolocateControl {
+    options: Record<string, unknown>;
+    constructor(options: Record<string, unknown>) {
+      this.options = options;
+    }
+  }
+  return { default: { Map: FakeMap, Marker: FakeMarker, GeolocateControl: FakeGeolocateControl, accessToken: '' } };
 });
 vi.mock('mapbox-gl/dist/mapbox-gl.css', () => ({}));
 
@@ -182,5 +190,36 @@ describe('MapboxMap StrictMode lifecycle', () => {
     expect(mapInstances[0].flyTo).toHaveBeenCalledWith(
       expect.objectContaining({ speed: 2.4, zoom: 16, center: [-83.0, 42.3] })
     );
+  });
+
+  it('adds a GeolocateControl on the interactive map', () => {
+    act(() => {
+      root.render(
+        <StrictMode>
+          <MapboxMap {...baseProps()} />
+        </StrictMode>,
+      );
+    });
+    act(() => flushFrames());
+    const m = mapInstances[0];
+    expect(m.addControl).toHaveBeenCalledTimes(1);
+    const ctl = m.addControl.mock.calls[0][0] as { options: Record<string, unknown> };
+    expect(ctl.options).toEqual({
+      positionOptions: { enableHighAccuracy: true },
+      trackUserLocation: true,
+      showUserHeading: true,
+    });
+  });
+
+  it('adds NO GeolocateControl when interactive is false (MiniMap)', () => {
+    act(() => {
+      root.render(
+        <StrictMode>
+          <MapboxMap {...baseProps()} interactive={false} />
+        </StrictMode>,
+      );
+    });
+    act(() => flushFrames());
+    expect(mapInstances[0].addControl).not.toHaveBeenCalled();
   });
 });

@@ -52,6 +52,22 @@ export function MapboxMap({
         interactive,
       });
       created = m;
+      // Live user location (owner item 4): button on the map; the browser
+      // permission prompt fires on first click (control-native — no permission
+      // code of ours). trackUserLocation follows until the first manual pan
+      // (mapbox ACTIVE_LOCK -> BACKGROUND), then the blue dot keeps updating
+      // without moving the camera — accepted deviation, see spec item 4.
+      // Interactive surfaces only: MiniMap (interactive=false) gets no control.
+      if (interactive) {
+        m.addControl(
+          new mapboxgl.GeolocateControl({
+            positionOptions: { enableHighAccuracy: true },
+            trackUserLocation: true,
+            showUserHeading: true,
+          }),
+          'top-right'
+        );
+      }
       m.on('click', e => {
         searchMarkerRef.current?.remove();
         searchMarkerRef.current = null;

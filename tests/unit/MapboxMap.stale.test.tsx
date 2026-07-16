@@ -17,6 +17,7 @@ vi.mock('mapbox-gl', () => {
     getContainer() { return document.createElement('div'); }
     getCanvasContainer() { return this._canvasContainer as HTMLElement; }
     flyTo() {}
+    addControl() {}
     remove() { this._canvasContainer = undefined; }
   }
   class FakeMarker {
@@ -26,7 +27,8 @@ vi.mock('mapbox-gl', () => {
     addTo(map: FakeMap) { map.getCanvasContainer().appendChild(this._el); return this; }
     remove() { return this; }
   }
-  return { default: { Map: FakeMap, Marker: FakeMarker, accessToken: '' } };
+  class FakeGeolocateControl {}
+  return { default: { Map: FakeMap, Marker: FakeMarker, GeolocateControl: FakeGeolocateControl, accessToken: '' } };
 });
 import { MapboxMap } from '@/components/map/MapboxMap';
 import type { MapPin } from '@/lib/mapPins';
