@@ -16,7 +16,7 @@ export function Topbar({
   return (
     <div className="topbar">
       {nav && <MobileNav>{nav}</MobileNav>}
-      <div>
+      <div className="tbtitle">
         <h1>{title}</h1>
         <div className="ref">{ref.toUpperCase()}</div>
       </div>

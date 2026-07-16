@@ -468,3 +468,16 @@ input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; marg
   .dp-body { max-height: min(56vh, 380px); }
   .dp-chip, .dp-btn, .dp-save, .dp-danger { min-height: 38px; }
 }
+
+/* Mobile topbar: one row — hamburger, then Search + theme toggle (owner call),
+   title pushed right with ellipsis. Desktop order (title left, ctrls right)
+   untouched; this only reorders via flex order under the shell breakpoint. */
+@media (max-width: 860px) {
+  .topbar { flex-wrap: nowrap; align-items: center; }
+  .topbar .ctrls { order: 1; flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; }
+  .topbar .ctrls .search { flex: 1 1 auto; min-width: 0; }
+  .topbar .ctrls .search input { width: 100%; min-width: 80px; }
+  .topbar .tbtitle { order: 2; min-width: 0; text-align: right; }
+  .topbar .tbtitle h1 { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .topbar .tbtitle .ref { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
