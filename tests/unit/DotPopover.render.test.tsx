@@ -83,6 +83,17 @@ describe('DotPopover pending dot (id null)', () => {
   });
 });
 
+describe('DotPopover flip-up', () => {
+  it('opens upward (dp-up) when the dot sits in the lower half of the map', () => {
+    render(<DotPopover dot={dot} canEdit xPct={50} yPct={80} onClose={() => {}} />);
+    expect((container.querySelector('.pop-dot') as HTMLElement).className).toContain('dp-up');
+  });
+  it('opens downward (no dp-up) in the upper half', () => {
+    render(<DotPopover dot={dot} canEdit xPct={50} yPct={20} onClose={() => {}} />);
+    expect((container.querySelector('.pop-dot') as HTMLElement).className).not.toContain('dp-up');
+  });
+});
+
 describe('DotPopover cleaner read-only', () => {
   it('renders status/label/notes as text with no inputs or action buttons', () => {
     render(<DotPopover dot={dot} canEdit={false} xPct={50} yPct={50} onClose={() => {}} />);

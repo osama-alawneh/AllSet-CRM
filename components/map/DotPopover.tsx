@@ -31,6 +31,8 @@ export function DotPopover({
   const [error, setError] = useState<string | null>(null);
 
   const pos = { left: `min(max(${xPct}%, 150px), calc(100% - 150px))`, top: `${yPct}%` } as const;
+  // Lower half of the map: open the card ABOVE the dot instead of clipping below.
+  const cardCls = yPct > 50 ? 'pop box pop-dot dp-up' : 'pop box pop-dot';
   // Coords live as data attrs (MapView's fresh-dot regression test reads them);
   // they no longer render as text.
   const coords = { 'data-lat': dot.lat.toFixed(4), 'data-lng': dot.lng.toFixed(4) };
@@ -77,7 +79,7 @@ export function DotPopover({
 
   if (!canEdit) {
     return (
-      <div className="pop box pop-dot" style={pos} {...coords} onKeyDown={e => { if (e.key === 'Escape') onClose(); }}>
+      <div className={cardCls} style={pos} {...coords} onKeyDown={e => { if (e.key === 'Escape') onClose(); }}>
         <button type="button" className="dp-x" aria-label="Close" onClick={onClose}>✕</button>
         <div className="dp-body">
           <span className="dp-chip" style={chipStyle(dot.status)}><i />{dotStatusLabel[dot.status]}</span>
@@ -89,7 +91,7 @@ export function DotPopover({
   }
 
   return (
-    <div className="pop box pop-dot" style={pos} {...coords} onKeyDown={e => { if (e.key === 'Escape') onClose(); }}>
+    <div className={cardCls} style={pos} {...coords} onKeyDown={e => { if (e.key === 'Escape') onClose(); }}>
       {view === 'main' && (
         <>
           <button type="button" className="dp-x" aria-label="Close" onClick={onClose}>✕</button>
