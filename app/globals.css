@@ -2,24 +2,32 @@
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
+/* Palette carried over from the old AllSet Rep Portal (NotSlik/AllSet-Rep-Portal, styles.css).
+   That app is glass over a gradient wash, so its surfaces are translucent white on #0b1220 —
+   ours are opaque, so each panel/border/text alpha is flattened against its own base here
+   (e.g. dark --card = white .06 over #0b1220). Hues are theirs; where a hue could not carry
+   text at 4.5:1 on our opaque surfaces it moves within its own family, never across:
+   light theme darkens the whole status set, and dark --lost lifts #ef4444 -> #f4606a (4.33 -> 5.22). */
 :root {
   --font-blueprint: ui-monospace, "Cascadia Code", "Consolas", "SF Mono", monospace;
-  --paper: #e9eef3; --grid: #ccd8e4; --card: #fbfcfe; --ink: #0e2036; --muted: #5f7188;
-  --line: #d3dde8; --accent: #2f6df6; --accent-d: #1a4fc4; --shadow: rgba(14, 32, 54, .10);
-  --won: #0b7a4d; --lost: #c93b3b; --follow: #8f5f0a; --new: #5f7188;
-  --sched: #7a5af0; --prog: #2f6df6; --done: #0b7a4d; --chip: #eef3f9;
-  --paid: #0b7a4d; --sent: #8f5f0a; --draft: #5f7188;
+  --paper: #dfe8f6; --grid: #d0d9e7; --card: #f8fafd; --ink: #1d2532; --muted: #696f78;
+  --line: #c3ccda; --accent: #7c3aed; --accent-d: #6d28d9; --shadow: rgba(70, 90, 120, .18);
+  --won: #15803d; --lost: #b91c1c; --follow: #b45309; --new: #696f78;
+  --sched: #6d28d9; --prog: #0369a1; --done: #15803d; --chip: #e5edfa;
+  --paid: #15803d; --sent: #b45309; --draft: #696f78;
   --on-accent: #ffffff;
   --on-status: #ffffff;
+  /* Their signature: one 90° violet -> sky sweep, identical in both themes. */
+  --grad: linear-gradient(90deg, #7c3aed, #38bdf8);
 }
 [data-theme="dark"] {
-  --paper: #070d18; --grid: #16233b; --card: #0e1830; --ink: #dce6f5; --muted: #7d8db0;
-  --line: #1d2c48; --accent: #38e0ff; --accent-d: #22b8ff; --shadow: rgba(0, 0, 0, .5);
-  --won: #31e6a8; --lost: #ff6b7a; --follow: #ffcb5e; --new: #8b98bd;
-  --sched: #a68bff; --prog: #38e0ff; --done: #31e6a8; --chip: #12203c;
-  --paid: #31e6a8; --sent: #ffcb5e; --draft: #8b98bd;
-  --on-accent: #04101c;
-  --on-status: #04101c;
+  --paper: #0b1220; --grid: #151b29; --card: #1a202d; --ink: #ebeced; --muted: #aaacb1;
+  --line: #2d333f; --accent: #38bdf8; --accent-d: #7dd3fc; --shadow: rgba(0, 0, 0, .5);
+  --won: #22c55e; --lost: #f4606a; --follow: #f59e0b; --new: #aaacb1;
+  --sched: #a78bfa; --prog: #38bdf8; --done: #22c55e; --chip: #232a36;
+  --paid: #22c55e; --sent: #f59e0b; --draft: #aaacb1;
+  --on-accent: #06101a;
+  --on-status: #06101a;
 }
 
 @theme inline {
@@ -83,7 +91,9 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .navbadge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; margin-left: auto; padding: 0 5px; border-radius: 999px; background: var(--lost); color: var(--on-status); font-size: 10px; font-weight: 700; line-height: 1; flex-shrink: 0; }
 .side .foot { margin-top: 16px; padding-top: 14px; border-top: 1.5px dashed var(--line); }
 .who { display: flex; gap: 9px; align-items: center; }
-.who .av { width: 32px; height: 32px; border-radius: 4px; background: linear-gradient(135deg, var(--accent), var(--accent-d)); display: grid; place-items: center; color: var(--on-accent); font-weight: 700; font-size: 13px; }
+/* The avatar carries the old portal's violet -> sky sweep rather than accent/accent-d, so the
+   signature reads the same in both themes (accent-d is the hover shade and flips per theme). */
+.who .av { width: 32px; height: 32px; border-radius: 4px; background: var(--grad); display: grid; place-items: center; color: #ffffff; font-weight: 700; font-size: 13px; }
 .who b { font-size: 12px; display: block; } .who small { font-size: 10px; color: var(--muted); }
 
 /* main / topbar */

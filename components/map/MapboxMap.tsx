@@ -130,7 +130,7 @@ export function MapboxMap({
     if (!map || !flyTo || !map.getCanvasContainer()) return; // removed-map guard, see marker effect
     map.flyTo({ center: [flyTo.lng, flyTo.lat], zoom: 16, ...FLY_TO_OPTS });
     searchMarkerRef.current?.remove();
-    searchMarkerRef.current = new mapboxgl.Marker({ color: '#f5a623' })
+    searchMarkerRef.current = new mapboxgl.Marker({ color: '#f59e0b' })
       .setLngLat([flyTo.lng, flyTo.lat])
       .addTo(map);
   }, [map, flyTo]);

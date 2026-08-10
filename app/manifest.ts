@@ -9,8 +9,8 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: 'AllSet',
     display: 'standalone',
     start_url: '/',
-    background_color: '#070d18',
-    theme_color: '#070d18', // dark is the default theme (decision 2026-07-07)
+    background_color: '#0b1220',
+    theme_color: '#0b1220', // dark is the default theme (decision 2026-07-07)
     icons: [
       { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
       { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

@@ -25,7 +25,7 @@ export async function generateViewport(): Promise<Viewport> {
   const theme = await currentTheme();
   return {
     viewportFit: 'cover',
-    themeColor: theme === 'light' ? '#e9eef3' : '#070d18', // matches --paper per theme (globals.css)
+    themeColor: theme === 'light' ? '#dfe8f6' : '#0b1220', // matches --paper per theme (globals.css)
   };
 }
 
