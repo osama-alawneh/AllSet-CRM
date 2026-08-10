@@ -3,6 +3,8 @@ import { getRole, getSession } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
 import { logQueryError } from '@/lib/log';
 import { buildJobs, visibleJobs, buildMembers, type JobRow, type JobCustomer, type JobMember } from '@/lib/jobs';
+import { resolveMonth, bucketByDay, type CalEntry } from '@/lib/calendar';
+import { JobsCalendarSection } from '@/components/jobs/JobsCalendarSection';
 import { JobsBoard } from '@/components/jobs/JobsBoard';
 import { JobsListSection } from '@/components/jobs/JobsListSection';
 import { JobsHistorySection } from '@/components/jobs/JobsHistorySection';
@@ -12,10 +14,12 @@ import { JobDrawer } from '@/components/jobs/JobDrawer';
 export default async function JobsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ j?: string; new?: string; view?: string; deleted?: string }>;
+  searchParams: Promise<{ j?: string; new?: string; view?: string; deleted?: string; m?: string }>;
 }) {
-  const { j: jParam, new: newParam, view, deleted } = await searchParams;
+  const { j: jParam, new: newParam, view, deleted, m: mParam } = await searchParams;
   const list = view === 'list';
+  const cal = view === 'calendar';
+  const month = resolveMonth(mParam, new Date());
   const user = await getSession();
   if (!user) redirect('/login');
   const role = await getRole();
@@ -151,7 +155,15 @@ export default async function JobsPage({
 
   return (
     <>
-      {list ? (
+      {cal ? (
+        <JobsCalendarSection
+          jobs={visible} month={month}
+          // Maps don't cross the RSC boundary — serialize. `visible` is already role-filtered
+          // by visibleJobs, so cleaners bucket only their own jobs. No extra query.
+          entries={Object.fromEntries(bucketByDay(visible, [])) as Record<string, CalEntry[]>}
+          admin={admin} money={canReadMoney}
+        />
+      ) : list ? (
         <JobsListSection jobs={visible} admin={admin} money={canReadMoney} />
       ) : (
         <JobsBoard jobs={visible} role={role} uid={uid} meName={meName} admin={admin} money={canReadMoney} pendingByJob={pendingByJob} />
@@ -162,7 +174,7 @@ export default async function JobsPage({
           job={selected} role={role} uid={uid} admin={admin}
           isNew={isNew && !selected} customers={customerOptions} leadDetail={leadDetail}
           members={selected ? allMembers.filter(m => m.job_id === selected.id) : []}
-          backTo={list ? '/jobs?view=list' : '/jobs'}
+          backTo={cal ? `/jobs?view=calendar&m=${month}` : list ? '/jobs?view=list' : '/jobs'}
         />
       )}
     </>
