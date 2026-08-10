@@ -415,3 +415,11 @@ OWNER WALKTHROUGH CHECKLIST (calendar-as-a-view; npx supabase start, npm run dev
 [ ] Phone width: cells collapse to count dots; tapping a day opens the day panel
 [ ] Claim a job in a second window — the calendar refreshes on its own (realtime)
 SUPERSEDES the "/calendar nav all roles, month grid, prev/today/next, chips..." line in the 2026-07-16 small-changes checklist — that page no longer exists; the rest of that checklist (Cleaners Pay, map streets/search/locate, win rate) still stands and remains partially walked (map + Cleaners Pay passed 2026-08-10).
+
+## 2026-08-10 — OWNER ACCEPTED EVERYTHING; feat/small-changes MERGED TO MAIN
+Owner order: "all work is accepted. push everything and merge to main and make main the source of truth." Walkthrough closed by acceptance (map + Cleaners Pay had passed; the rest accepted without a separate pass — the calendar checklist above stands as a record, not a gate).
+Merged no-ff 50aa2cf (main 7d48a38..50aa2cf, 19 commits), pushed to origin. feat/small-changes deleted local + remote. MAIN IS NOW THE SOURCE OF TRUTH.
+Contents: small-changes Tasks 1-7 (Cleaners Pay rename, streets-v12 + 2x flyTo, GeolocateControl, calendar lib, old /calendar page, win-rate No-dots, review fixes) + calendar-as-a-view wave (5 tasks) + its doc fixes + two mobile-topbar fixes (663ca4b toggle no longer wraps the bar to two rows; 51a083b search floors at 140px, title ellipsizes — both verified in headless Chrome 320-860px).
+Battery green pre-merge at 51a083b and post-merge on main: lint 0, tsc clean, 327/327 unit (44 files), build all routes (no /calendar, /leads + /jobs present). pgTAP not re-run — no DB file touched since the last green run.
+Carried minors remain open backlog (calendar wave list in the 2026-08-10 entry above; earlier waves' lists unchanged).
+NEXT: branch exp/theme-directions cut from main 50aa2cf — theme experiments against the old AllSet-Rep-Portal palette (https://github.com/NotSlik/AllSet-Rep-Portal: dark #0b1220, violet #7c3aed -> sky #38bdf8 gradient, glass panels, sans/weight-950, big radii; vs our flat mono Blueprint+). Direction not yet chosen.
