@@ -508,9 +508,15 @@ input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; marg
    untouched; this only reorders via flex order under the shell breakpoint. */
 @media (max-width: 860px) {
   .topbar { flex-wrap: nowrap; align-items: center; }
-  .topbar .ctrls { order: 1; flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; }
-  .topbar .ctrls .search { flex: 1 1 auto; min-width: 0; }
-  .topbar .ctrls .search input { width: 100%; min-width: 80px; }
+  /* min-content, not 0: the group must never shrink below search-floor + toggle, or its
+     children spill out of the box and land on top of the title. */
+  .topbar .ctrls { order: 1; flex: 1 1 auto; min-width: min-content; flex-wrap: nowrap; }
+  /* The wrapper is the flex item, so its floor is what actually reserves the width —
+     a min-width on the input alone would just overflow this box. */
+  .topbar .ctrls .search { flex: 1 1 auto; min-width: 140px; }
+  /* Search wins the width fight (owner call): it keeps enough room for the whole
+     "🔍 Search…" placeholder, and the title — which already ellipsizes — gives ground. */
+  .topbar .ctrls .search input { width: 100%; min-width: 0; }
   .topbar .tbtitle { order: 2; min-width: 0; text-align: right; }
   .topbar .tbtitle h1 { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .topbar .tbtitle .ref { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
