@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css'; // imported ONLY here, never in a server file
-import { MAP_BOUNDS } from '@/lib/geo';
+import { MAP_BOUNDS, MAP_STYLE, FLY_TO_OPTS } from '@/lib/geo';
 import { pinColor } from '@/lib/mapPins';
 import type { MapImplProps } from './SchematicMap';
 
@@ -43,7 +43,7 @@ export function MapboxMap({
       mapboxgl.accessToken = token;
       const m = new mapboxgl.Map({
         container,
-        style: 'mapbox://styles/mapbox/satellite-streets-v12',
+        style: MAP_STYLE,
         bounds: [
           [MAP_BOUNDS.minLng, MAP_BOUNDS.minLat],
           [MAP_BOUNDS.maxLng, MAP_BOUNDS.maxLat],
@@ -52,6 +52,22 @@ export function MapboxMap({
         interactive,
       });
       created = m;
+      // Live user location (owner item 4): button on the map; the browser
+      // permission prompt fires on first click (control-native — no permission
+      // code of ours). trackUserLocation follows until the first manual pan
+      // (mapbox ACTIVE_LOCK -> BACKGROUND), then the blue dot keeps updating
+      // without moving the camera — accepted deviation, see spec item 4.
+      // Interactive surfaces only: MiniMap (interactive=false) gets no control.
+      if (interactive) {
+        m.addControl(
+          new mapboxgl.GeolocateControl({
+            positionOptions: { enableHighAccuracy: true },
+            trackUserLocation: true,
+            showUserHeading: true,
+          }),
+          'top-right'
+        );
+      }
       m.on('click', e => {
         searchMarkerRef.current?.remove();
         searchMarkerRef.current = null;
@@ -112,7 +128,7 @@ export function MapboxMap({
   // clears on the next selection or any map click.
   useEffect(() => {
     if (!map || !flyTo || !map.getCanvasContainer()) return; // removed-map guard, see marker effect
-    map.flyTo({ center: [flyTo.lng, flyTo.lat], zoom: 16 });
+    map.flyTo({ center: [flyTo.lng, flyTo.lat], zoom: 16, ...FLY_TO_OPTS });
     searchMarkerRef.current?.remove();
     searchMarkerRef.current = new mapboxgl.Marker({ color: '#f5a623' })
       .setLngLat([flyTo.lng, flyTo.lat])

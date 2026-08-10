@@ -3,6 +3,8 @@ import { getRole, getSession } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
 import { logQueryError } from '@/lib/log';
 import { buildLeads, type LeadPublicRow, type CustomerGeo } from '@/lib/leads';
+import { resolveMonth, bucketByDay, type CalEntry } from '@/lib/calendar';
+import { LeadsCalendarSection } from '@/components/leads/LeadsCalendarSection';
 import { KanbanBoard } from '@/components/leads/KanbanBoard';
 import { LeadsListSection } from '@/components/leads/LeadsListSection';
 import { LeadsHistorySection } from '@/components/leads/LeadsHistorySection';
@@ -12,14 +14,16 @@ import { LeadDrawer } from '@/components/leads/LeadDrawer';
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ l?: string; new?: string; view?: string; deleted?: string }>;
+  searchParams: Promise<{ l?: string; new?: string; view?: string; deleted?: string; m?: string }>;
 }) {
   const role = await getRole();
   if (role !== 'admin' && role !== 'rep') redirect('/dashboard');
-  const { l: lParam, new: newParam, view, deleted } = await searchParams;
+  const { l: lParam, new: newParam, view, deleted, m: mParam } = await searchParams;
   const isNew = newParam === '1';
   const list = view === 'list';
-  const backTo = list ? '/leads?view=list' : '/leads';
+  const cal = view === 'calendar';
+  const month = resolveMonth(mParam, new Date());
+  const backTo = cal ? `/leads?view=calendar&m=${month}` : list ? '/leads?view=list' : '/leads';
   const admin = role === 'admin';
   // Task 8 (0029's leads_rep policy widened base-leads SELECT + the money gate to
   // admin-or-rep): this page already redirects non-admin/rep above, so canReadMoney is
@@ -88,7 +92,15 @@ export default async function LeadsPage({
 
   return (
     <>
-      {list ? (
+      {cal ? (
+        <LeadsCalendarSection
+          leads={leads} month={month}
+          // Maps don't cross the RSC boundary — serialize. Buckets cover every month in the
+          // already-fetched set; the grid renders only the requested one. No extra query.
+          entries={Object.fromEntries(bucketByDay([], leads)) as Record<string, CalEntry[]>}
+          admin={admin} money={canReadMoney} canEdit={true}
+        />
+      ) : list ? (
         <LeadsListSection leads={leads} admin={admin} money={canReadMoney} canEdit={true} />
       ) : (
         <KanbanBoard leads={leads} admin={admin} money={canReadMoney} canEdit={true} />

@@ -7,6 +7,11 @@ describe('navForRole', () => {
       '/dashboard', '/map', '/leads', '/jobs', '/invoices', '/customers', '/cleaners', '/expenses', '/settings',
     ]);
   });
+  it('no role sees a standalone calendar — it lives inside /leads and /jobs', () => {
+    for (const role of ['admin', 'rep', 'cleaner'] as const) {
+      expect(navForRole(role).map(i => i.href)).not.toContain('/calendar');
+    }
+  });
   it('rep sees expenses but no invoices/settings', () => {
     const hrefs = navForRole('rep').map(i => i.href);
     expect(hrefs).toContain('/leads');
@@ -19,8 +24,8 @@ describe('navForRole', () => {
     const hrefs = navForRole('cleaner').map(i => i.href);
     expect(hrefs).toEqual(['/dashboard', '/map', '/jobs', '/customers', '/cleaners']);
   });
-  it('every item has a 2-digit num', () => {
-    for (const i of NAV_ITEMS) expect(i.num).toMatch(/^\d{2}$/);
+  it('numbers run 01..09 with no gaps', () => {
+    expect(NAV_ITEMS.map(i => i.num)).toEqual(['01', '02', '03', '04', '05', '06', '07', '08', '09']);
   });
 });
 
@@ -29,6 +34,9 @@ describe('titleFor', () => {
     expect(titleFor('/customers')[0]).toBe('Customers / Accounts');
     expect(titleFor('/dashboard')[0]).toBe('Dashboard / Daily Ops');
     expect(titleFor('/cleaners')[0]).toBe('Cleaners / Leaderboard');
+  });
+  it('falls back to dashboard for the retired calendar route', () => {
+    expect(titleFor('/calendar')[0]).toBe('Dashboard / Daily Ops');
   });
   it('matches sub-paths and falls back to dashboard', () => {
     expect(titleFor('/customers?c=3'.split('?')[0])[0]).toBe('Customers / Accounts');

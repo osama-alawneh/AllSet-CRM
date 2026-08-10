@@ -91,11 +91,17 @@ describe('jobsThisWeek', () => {
 });
 
 describe('winRate', () => {
-  it('is won / (won + lost)', () => {
-    expect(winRate([{ status: 'won' }, { status: 'won' }, { status: 'lost' }, { status: 'follow' }])).toBeCloseTo(2 / 3);
+  it('divides won by won+lost when there are no No-dots', () => {
+    expect(winRate([{ status: 'won' }, { status: 'won' }, { status: 'lost' }, { status: 'follow' }], 0)).toBeCloseTo(2 / 3);
   });
-  it('is 0 when there are no won or lost leads (zero-division convention)', () => {
-    expect(winRate([{ status: 'new' }, { status: 'follow' }])).toBe(0);
-    expect(winRate([])).toBe(0);
+  it('No-dots widen the denominator (doors that said no are losses)', () => {
+    expect(winRate([{ status: 'won' }, { status: 'lost' }], 2)).toBeCloseTo(1 / 4);
+  });
+  it('No-dots alone still yield 0 (nothing won)', () => {
+    expect(winRate([], 3)).toBe(0);
+  });
+  it('returns 0 with no decided leads and no dots', () => {
+    expect(winRate([{ status: 'new' }, { status: 'follow' }], 0)).toBe(0);
+    expect(winRate([], 0)).toBe(0);
   });
 });

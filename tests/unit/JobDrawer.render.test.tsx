@@ -182,10 +182,10 @@ describe('JobDrawer members table + join requests', () => {
 });
 
 describe('JobDrawer pot row on unclaimed jobs (spec §B1, final-review fix)', () => {
-  // Spec: the cleaner pot shows beneath Price unconditionally — admin/rep see Price + pot,
+  // Spec: the cleaners pay shows beneath Price unconditionally — admin/rep see Price + pay,
   // cleaners see the pot only. A cleaner deciding whether to claim an unclaimed job must
   // see the money on offer; the old `claimed_by != null` gate hid it entirely.
-  it('admin sees Price and Cleaner pot on an unclaimed job', () => {
+  it('admin sees Price and Cleaners Pay on an unclaimed job', () => {
     const { container } = render(
       <JobDrawer
         job={job({ status: 'unclaimed', claimed_by: null, claimed_by_name: null })}
@@ -194,11 +194,11 @@ describe('JobDrawer pot row on unclaimed jobs (spec §B1, final-review fix)', ()
     );
     const text = container.textContent ?? '';
     expect(text).toContain('Price');
-    expect(text).toContain('Cleaner pot');
+    expect(text).toContain('Cleaners Pay');
     expect(text).toContain('$100');
   });
 
-  it('cleaner sees Cleaner pot but never Price on an unclaimed job', () => {
+  it('cleaner sees Cleaners Pay but never Price on an unclaimed job', () => {
     const { container } = render(
       <JobDrawer
         job={job({ status: 'unclaimed', claimed_by: null, claimed_by_name: null })}
@@ -206,7 +206,7 @@ describe('JobDrawer pot row on unclaimed jobs (spec §B1, final-review fix)', ()
       />
     );
     const text = container.textContent ?? '';
-    expect(text).toContain('Cleaner pot');
+    expect(text).toContain('Cleaners Pay');
     expect(text).toContain('$100');
     expect(text).not.toContain('Price');
   });
@@ -256,7 +256,7 @@ describe('JobDrawer done-without-pot confirm (Task 4)', () => {
       <JobDrawer job={job({ cleaner_amount: null })} role="admin" uid={OWNER} admin members={[member({})]} />
     );
     getByText('Done').click();
-    expect(confirm).toHaveBeenCalledWith('No cleaner pot set — no payout will be created. Continue?');
+    expect(confirm).toHaveBeenCalledWith('No cleaners pay set — no payout will be created. Continue?');
     await vi.waitFor(() => expect(actions.setJobStatus).toHaveBeenCalledWith(1, 'done'));
     confirm.mockRestore();
   });
@@ -269,7 +269,7 @@ describe('JobDrawer done-without-pot confirm (Task 4)', () => {
       <JobDrawer job={job({ cleaner_amount: 0 })} role="admin" uid={OWNER} admin members={[member({})]} />
     );
     getByText('Done').click();
-    expect(confirm).toHaveBeenCalledWith('No cleaner pot set — no payout will be created. Continue?');
+    expect(confirm).toHaveBeenCalledWith('No cleaners pay set — no payout will be created. Continue?');
     expect(actions.setJobStatus).not.toHaveBeenCalled();
     confirm.mockRestore();
   });

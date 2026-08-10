@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MAP_BOUNDS, project, unproject, pickMapImpl } from '@/lib/geo';
+import { MAP_BOUNDS, MAP_STYLE, FLY_TO_OPTS, project, unproject, pickMapImpl } from '@/lib/geo';
 
 // The 10 Iowa City seed coordinates (supabase/seed.sql lines 27-36).
 const SEED_COORDS: [number, number][] = [
@@ -49,5 +49,14 @@ describe('pickMapImpl', () => {
   });
   it('uses mapbox when a token is present', () => {
     expect(pickMapImpl('pk.eyJ...')).toBe('mapbox');
+  });
+});
+
+describe('map constants', () => {
+  it('uses the simple streets style (owner: no satellite anywhere)', () => {
+    expect(MAP_STYLE).toBe('mapbox://styles/mapbox/streets-v12');
+  });
+  it('doubles the default flyTo speed', () => {
+    expect(FLY_TO_OPTS).toEqual({ speed: 2.4 });
   });
 });

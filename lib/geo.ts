@@ -33,3 +33,12 @@ export function unproject(xPct: number, yPct: number): { lat: number; lng: numbe
 export function pickMapImpl(token: string | null | undefined): 'mapbox' | 'schematic' {
   return token && token.trim() ? 'mapbox' : 'schematic';
 }
+
+// One style for every Mapbox surface (/map + dashboard MiniMap): the simple
+// vector streets look (house numbers render natively at high zoom). Owner
+// decision 2026-07-14: satellite is gone, no toggle.
+export const MAP_STYLE = 'mapbox://styles/mapbox/streets-v12';
+
+// Camera animation options shared by every flyTo caller. mapbox default speed
+// is 1.2; 2.4 ≈ halves the flight time (owner: "faster map animations").
+export const FLY_TO_OPTS = { speed: 2.4 } as const;

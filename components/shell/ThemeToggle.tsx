@@ -12,8 +12,11 @@ export function ThemeToggle({ initial }: { initial: 'light' | 'dark' }) {
     setDark(!dark);
   };
   return (
+    // Glyph and word are separate elements so the narrow-phone rule can drop the word
+    // without the glyph; aria-label carries the name either way.
     <button className="iconbtn" onClick={toggle} aria-label="Toggle dark mode">
-      {dark ? '◑ Light' : '◐ Dark'}
+      <span className="tglglyph" aria-hidden="true">{dark ? '◑' : '◐'}</span>
+      <span className="tglword">{dark ? 'Light' : 'Dark'}</span>
     </button>
   );
 }

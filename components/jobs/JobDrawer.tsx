@@ -75,7 +75,7 @@ export function JobDrawer({
     // or bounce off the RPC's own-jobs guard (cleaner).
     if (job.status === 'unclaimed' && status === 'claimed') { claim(); return; }
     if (status === 'done' && !(job.cleaner_amount != null && job.cleaner_amount > 0)
-      && !window.confirm('No cleaner pot set — no payout will be created. Continue?')) return;
+      && !window.confirm('No cleaners pay set — no payout will be created. Continue?')) return;
     setError(null);
     startTransition(async () => {
       const res = await setJobStatus(job.id, status);
@@ -191,7 +191,7 @@ export function JobDrawer({
               )}
               {/* Spec §B1: the pot shows unconditionally (even unclaimed) — cleaners decide
                   whether to claim based on it. Only "Your share" stays membership-gated. */}
-              <span className="k">Cleaner pot</span>
+              <span className="k">Cleaners Pay</span>
               <span className="v">{job.cleaner_amount ? fmt(job.cleaner_amount) : '—'}</span>
               {role === 'cleaner' && job.claimed_by != null && (
                 <>
@@ -356,7 +356,7 @@ export function JobDrawer({
               <span className="v"><input name="scheduled_date" type="datetime-local" defaultValue={job?.scheduled_date?.slice(0, 16) ?? ''} /></span>
               <span className="k">Price $</span>
               <span className="v"><input name="price" type="number" min={0} step="0.01" defaultValue={job?.price ?? ''} placeholder="0.00" /></span>
-              <span className="k">Cleaner pot $</span>
+              <span className="k">Cleaners Pay $</span>
               <span className="v"><input name="cleaner_amount" type="number" step="0.01" className="num" defaultValue={job?.cleaner_amount ?? ''} /></span>
               <span className="k">Repeat every</span>
               <span className="v">

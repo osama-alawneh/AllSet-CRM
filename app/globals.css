@@ -103,7 +103,8 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .scard.active { background: var(--chip); }
 .scard b { font-size: 12px; display: block; }
 .scard small { font-size: 10px; color: var(--muted); display: block; line-height: 1.5; }
-.iconbtn { background: transparent; border: 1.5px solid var(--line); border-radius: 6px; padding: 7px 10px; font-size: 12px; color: var(--muted); min-width: 44px; }
+.iconbtn { background: transparent; border: 1.5px solid var(--line); border-radius: 6px; padding: 7px 10px; font-size: 12px; color: var(--muted); min-width: 44px; white-space: nowrap; }
+.iconbtn .tglglyph + .tglword { margin-left: 5px; }
 .iconbtn:hover { color: var(--ink); border-color: var(--ink); }
 
 .screen { display: flex; flex-direction: column; gap: 18px; animation: fade .35s ease; }
@@ -290,6 +291,26 @@ span.dp-chip { margin-bottom: 8px; cursor: default; } /* read-only static chip *
 [data-theme="dark"] .dp-danger { color: var(--lost); }
 button.dp-chip:active, .dp-btn:active, .dp-save:active, .dp-danger:active { transform: scale(.97); }
 .dp-chip:disabled, .dp-btn:disabled, .dp-save:disabled, .dp-danger:disabled { opacity: .45; cursor: default; }
+
+/* Calendar (phones-first: chips collapse to count dots under 720px) */
+.calhead { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+.calhead h3, .calhead h4 { margin: 0; }
+.calnav { display: flex; gap: 6px; }
+.calgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.caldow { font-size: 9px; text-transform: uppercase; color: var(--muted); text-align: center; padding: 4px 0; }
+.calblank { min-height: 72px; }
+.calday { min-height: 72px; border: 1.5px solid var(--line); border-radius: 6px; padding: 4px; display: flex; flex-direction: column; gap: 2px; cursor: pointer; overflow: hidden; }
+.caldnum { font-size: 10px; font-weight: 700; color: var(--muted); }
+.calchip { display: block; font-size: 10px; line-height: 1.5; padding: 1px 4px; border-radius: 4px; border-left: 3px solid var(--pc); background: var(--chip); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; color: inherit; }
+.calmore { font-size: 9px; color: var(--muted); }
+.caldots { display: none; gap: 3px; }
+.caldots i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.caldaypanel { margin-top: 10px; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+@media (max-width: 720px) {
+  .calday { min-height: 44px; }
+  .calday .calchip, .calday .calmore { display: none; }
+  .caldots { display: inline-flex; }
+}
 
 /* kanban (Plans 3-4 reuse) */
 .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
@@ -487,12 +508,27 @@ input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; marg
    untouched; this only reorders via flex order under the shell breakpoint. */
 @media (max-width: 860px) {
   .topbar { flex-wrap: nowrap; align-items: center; }
-  .topbar .ctrls { order: 1; flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; }
-  .topbar .ctrls .search { flex: 1 1 auto; min-width: 0; }
-  .topbar .ctrls .search input { width: 100%; min-width: 80px; }
+  /* min-content, not 0: the group must never shrink below search-floor + toggle, or its
+     children spill out of the box and land on top of the title. */
+  .topbar .ctrls { order: 1; flex: 1 1 auto; min-width: min-content; flex-wrap: nowrap; }
+  /* The wrapper is the flex item, so its floor is what actually reserves the width —
+     a min-width on the input alone would just overflow this box. */
+  .topbar .ctrls .search { flex: 1 1 auto; min-width: 140px; }
+  /* Search wins the width fight (owner call): it keeps enough room for the whole
+     "🔍 Search…" placeholder, and the title — which already ellipsizes — gives ground. */
+  .topbar .ctrls .search input { width: 100%; min-width: 0; }
   .topbar .tbtitle { order: 2; min-width: 0; text-align: right; }
   .topbar .tbtitle h1 { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .topbar .tbtitle .ref { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Buttons keep their intrinsic width — without this the toggle is squeezed narrower
+     than its label and wraps to three lines, doubling the topbar's height. */
+  .topbar .ctrls .iconbtn { flex: 0 0 auto; }
+}
+
+/* Small phones: four things don't fit one row, so the toggle goes icon-only and the
+   search input takes the width back. aria-label already names the button. */
+@media (max-width: 480px) {
+  .topbar .ctrls .iconbtn .tglword { display: none; }
 }
 
 /* Hamburger nav drawer (owner call): the shared .drawer's min(440px, 94vw) blankets

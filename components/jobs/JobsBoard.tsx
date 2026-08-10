@@ -72,7 +72,7 @@ export function JobsBoard({
     const job = optimistic.find(j => j.id === id);
     if (!job || !canTransition(role, uid, job, to)) return;
     if (to === 'done' && !(job.cleaner_amount != null && job.cleaner_amount > 0)
-      && !window.confirm('No cleaner pot set — no payout will be created. Continue?')) return;
+      && !window.confirm('No cleaners pay set — no payout will be created. Continue?')) return;
     setError(null);
     // unclaimed → claimed drops route through claimJob (race-safe first-claim-wins RPC),
     // same as the card's Claim button — NOT setJobStatus, which would silently overwrite

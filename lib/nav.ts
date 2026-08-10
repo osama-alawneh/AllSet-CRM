@@ -20,8 +20,8 @@ export const navForRole = (role: Role): NavItem[] =>
 const TITLES: Record<string, [string, string]> = {
   '/dashboard': ['Dashboard / Daily Ops', 'role-aware overview'],
   '/map':       ['Map / Pin Board', 'click empty space to drop a dot'],
-  '/leads':     ['Leads / Pipeline', 'drag to change status'],
-  '/jobs':      ['Jobs / Board', 'claim to lock · drag status'],
+  '/leads':     ['Leads / Pipeline', 'drag to change status · board · list · calendar'],
+  '/jobs':      ['Jobs / Board', 'claim to lock · drag status · board · list · calendar'],
   '/invoices':  ['Invoices / Billing', 'create · print PDF · export'],
   '/customers': ['Customers / Accounts', 'click a row to open profile'],
   '/cleaners':  ['Cleaners / Leaderboard', 'jobs done + earnings — no revenue here'],

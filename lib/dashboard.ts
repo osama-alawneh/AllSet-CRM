@@ -57,10 +57,12 @@ export function jobsThisWeek(jobs: WeekJob[], now: Date | string): number {
   ).length;
 }
 
-// won / (won + lost); 0 when the denominator is 0 (convention: no decided leads → 0%).
-export function winRate(leads: WinLead[]): number {
+// won / (won + lost + noDots); 0 when the denominator is 0. noDots = dots
+// currently marked 'no' (owner 2026-07-14: a door that said no is a loss;
+// converted/deleted dots are hard-deleted so they drop out naturally).
+export function winRate(leads: WinLead[], noDots: number): number {
   const won = leads.filter(l => l.status === 'won').length;
   const lost = leads.filter(l => l.status === 'lost').length;
-  const denom = won + lost;
+  const denom = won + lost + noDots;
   return denom === 0 ? 0 : won / denom;
 }
