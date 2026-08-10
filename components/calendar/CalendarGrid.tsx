@@ -5,33 +5,37 @@ import { addMonths, monthGrid, monthLabel, type CalEntry } from '@/lib/calendar'
 
 const CHIP_CAP = 3; // chips per cell before "+n more"
 
-// Month grid. Entries arrive pre-bucketed and pre-colored (server did role
-// filtering — cleaners never receive lead entries). Chip click deep-links the
-// drawer; the month param rides along so Back/close keeps the view. Tapping a
-// day opens a panel listing everything (the phones-first path — cells collapse
-// to count dots below the CSS breakpoint).
+// Month grid. Entries arrive pre-bucketed and pre-colored (the host page did the role
+// filtering — cleaners never receive lead entries). `kind` says which host is rendering:
+// it picks the base path, so every link stays inside that host's calendar view. Chip click
+// deep-links the drawer; view+month ride along so Back/close keeps the grid. Tapping a day
+// opens a panel listing everything (the phones-first path — cells collapse to count dots
+// below the CSS breakpoint).
 export function CalendarGrid({
-  month, entries, showLeads,
+  month, entries, kind,
 }: {
   month: string;
   entries: Record<string, CalEntry[]>;
-  showLeads: boolean;
+  kind: 'lead' | 'job';
 }) {
   const { days, leadingBlanks } = monthGrid(month);
   const [openDay, setOpenDay] = useState<string | null>(null);
 
-  const chipHref = (e: CalEntry) => `/calendar?m=${month}&${e.kind === 'job' ? 'j' : 'l'}=${e.id}`;
+  const base = kind === 'lead' ? '/leads' : '/jobs';
+  const monthHref = (m: string | null) => (m ? `${base}?view=calendar&m=${m}` : `${base}?view=calendar`);
+  const chipHref = (e: CalEntry) => `${base}?view=calendar&m=${month}&${e.kind === 'job' ? 'j' : 'l'}=${e.id}`;
+  const hint = kind === 'lead' ? '◆ leads by created' : '● jobs by schedule';
 
   return (
     <section className="panel box">
       <div className="calhead">
         <h3>{monthLabel(month)}</h3>
         <div className="calnav">
-          <Link className="chip" href={`/calendar?m=${addMonths(month, -1)}`}>‹ Prev</Link>
-          <Link className="chip" href="/calendar">Today</Link>
-          <Link className="chip" href={`/calendar?m=${addMonths(month, 1)}`}>Next ›</Link>
+          <Link className="chip" href={monthHref(addMonths(month, -1))}>‹ Prev</Link>
+          <Link className="chip" href={monthHref(null)}>Today</Link>
+          <Link className="chip" href={monthHref(addMonths(month, 1))}>Next ›</Link>
         </div>
-        <span className="hint">● jobs by schedule{showLeads ? ' · ◆ leads by created' : ''}</span>
+        <span className="hint">{hint}</span>
       </div>
       <div className="calgrid">
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => <div key={d} className="caldow">{d}</div>)}
