@@ -415,7 +415,8 @@ button.dp-chip:active, .dp-btn:active, .dp-save:active, .dp-danger:active { tran
 .kv .k { color: var(--muted); } .kv .v { text-align: right; font-weight: 700; }
 .kv input, .kv select { text-align: right; width: 100%; }
 .qa { display: flex; align-items: center; gap: 7px; margin-top: 12px; }
-.qa a { flex: 1; text-align: center; padding: 10px; border: 1px solid var(--line); border-radius: var(--r-sm); font-size: 12px; font-weight: 800; text-transform: none; letter-spacing: 0; color: var(--ink); background: var(--surface-2); }
+.qa { flex-wrap: wrap; }
+.qa a { flex: 1 1 auto; min-width: fit-content; white-space: nowrap; text-align: center; padding: 10px; border: 1px solid var(--line); border-radius: var(--r-sm); font-size: 12px; font-weight: 800; text-transform: none; letter-spacing: 0; color: var(--ink); background: var(--surface-2); }
 .qa a:hover { border-color: var(--accent); color: var(--accent); }
 .tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); margin-top: 18px; }
 .tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; padding: 9px 10px; font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--muted); margin-bottom: -1px; }
@@ -430,7 +431,10 @@ button.dp-chip:active, .dp-btn:active, .dp-save:active, .dp-danger:active { tran
 .timeline .ev .t { position: relative; padding-left: 14px; }
 .timeline .ev .t::before { content: ""; position: absolute; left: 0; top: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
 .acts { display: flex; gap: 8px; margin-top: 22px; flex-wrap: wrap; }
-.acts button { flex: 1; min-width: 120px; padding: 12px; font-size: 13px; font-weight: 900; letter-spacing: 0; text-transform: none; border-radius: var(--r-sm); }
+/* min-width: fit-content, not a fixed floor: these buttons are nowrap, so a flex basis
+   narrower than the label ("Deactivate customer") pushed the text outside the border.
+   They still grow to share the row; when the row can't hold them they wrap instead. */
+.acts button { flex: 1 1 auto; min-width: fit-content; padding: 12px; font-size: 13px; font-weight: 900; letter-spacing: 0; text-transform: none; border-radius: var(--r-sm); }
 /* Standalone base so these read as buttons anywhere (table-cell Approve/Reject/Delete,
    not just inside .acts). Inside .acts the higher-specificity `.acts button` rule above
    still wins for the wider action-row padding/size. */
