@@ -158,8 +158,10 @@ export default async function JobsPage({
       {cal ? (
         <JobsCalendarSection
           jobs={visible} month={month}
-          // Maps don't cross the RSC boundary — serialize. `visible` is already role-filtered
-          // by visibleJobs, so cleaners bucket only their own jobs. No extra query.
+          // Maps don't cross the RSC boundary — serialize. `visible` is the same set the
+          // board and list already render; visibleJobs is a pass-through seam (owner
+          // decision 2026-07-09 — every role sees all non-deleted jobs), not a filter.
+          // Real scoping lives in RLS + jobs_public. No extra query.
           entries={Object.fromEntries(bucketByDay(visible, [])) as Record<string, CalEntry[]>}
           admin={admin} money={canReadMoney}
         />

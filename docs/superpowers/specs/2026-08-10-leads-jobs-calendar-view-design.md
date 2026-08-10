@@ -67,8 +67,9 @@ accept both (they do not — each host handles only its own record type).
 - Chip opens `JobDrawer` via `?j=`.
 - Done jobs are included — the calendar doubles as recent history.
 - Deleted jobs excluded; unscheduled jobs do not appear at all (the board owns those).
-- Cleaners see only their own jobs: the page's existing `visibleJobs(role, uid, allJobs)`
-  filter runs before bucketing, so role scoping is inherited, not re-implemented.
+- Cleaners see the same job set as board and list: per the 2026-07-09 owner decision,
+  every role sees all non-deleted jobs, and `visibleJobs(role, uid, allJobs)` — run before
+  bucketing — is a pass-through seam, not a per-role filter.
 
 ### Grid behavior (unchanged from the shipped page)
 

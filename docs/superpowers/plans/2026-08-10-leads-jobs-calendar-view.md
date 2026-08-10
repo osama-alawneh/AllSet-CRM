@@ -938,7 +938,8 @@ Run on the local stack (`npx supabase start`, `npm run dev`), all three seeded r
 - [ ] Export CSV and History (admin) behave the same as in List view
 - [ ] `/jobs`: same toggle; jobs sit on their scheduled date; done jobs visible; unscheduled absent
 - [ ] Job chip opens the JobDrawer; close returns to the same month in Calendar
-- [ ] Cleaner on `/jobs?view=calendar`: sees only their own jobs, no History, no + New job
+- [ ] Cleaner on `/jobs?view=calendar`: sees the same job set as board/list (all non-deleted
+  jobs, per the 2026-07-09 owner decision), no History, no + New job
 - [ ] Phone width: cells collapse to count dots; tapping a day opens the day panel
 - [ ] Claim a job in a second window — the calendar refreshes on its own (realtime)
 
