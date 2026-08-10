@@ -32,10 +32,6 @@ export function monthLabel(month: string): string {
   return `${MONTH_NAMES[mo - 1]} ${y}`;
 }
 
-export function monthWindow(month: string): { from: string; to: string } {
-  return { from: `${month}-01`, to: `${addMonths(month, 1)}-01` };
-}
-
 export function monthGrid(month: string): { days: string[]; leadingBlanks: number } {
   const [y, mo] = month.split('-').map(Number);
   const count = new Date(Date.UTC(y, mo, 0)).getUTCDate(); // day 0 of next month = last day of this

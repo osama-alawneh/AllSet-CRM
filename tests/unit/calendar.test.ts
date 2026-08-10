@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  resolveMonth, addMonths, monthLabel, monthWindow, monthGrid, bucketByDay,
+  resolveMonth, addMonths, monthLabel, monthGrid, bucketByDay,
 } from '@/lib/calendar';
 import type { Job } from '@/lib/jobs';
 import type { Lead } from '@/lib/leads';
@@ -23,13 +23,6 @@ describe('addMonths', () => {
 
 describe('monthLabel', () => {
   it('renders a human month', () => expect(monthLabel('2026-07')).toBe('July 2026'));
-});
-
-describe('monthWindow', () => {
-  it('gives a [from, to) day pair for range queries', () => {
-    expect(monthWindow('2026-07')).toEqual({ from: '2026-07-01', to: '2026-08-01' });
-    expect(monthWindow('2026-12')).toEqual({ from: '2026-12-01', to: '2027-01-01' });
-  });
 });
 
 describe('monthGrid', () => {
@@ -78,5 +71,15 @@ describe('bucketByDay', () => {
     const j = { ...job(3, '2026-07-05T00:00:00Z'), status: 'claimed' } as Job;
     const map = bucketByDay([j], []);
     expect(map.get('2026-07-05')![0].color).toBe('var(--sched)');
+  });
+  it('buckets leads only when the jobs side is empty', () => {
+    const map = bucketByDay([], [lead(9, '2026-07-14T20:00:00Z')]);
+    expect(map.get('2026-07-14')).toEqual([
+      { kind: 'lead', id: 9, label: 'Lead 9', color: 'var(--new)' },
+    ]);
+  });
+  it('buckets jobs only when the leads side is empty', () => {
+    const map = bucketByDay([job(1, '2026-07-14T09:00:00Z')], []);
+    expect(map.get('2026-07-14')!.every(e => e.kind === 'job')).toBe(true);
   });
 });
