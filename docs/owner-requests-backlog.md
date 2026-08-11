@@ -101,17 +101,20 @@ Keep Deactivate for customers that *do* have history; that distinction is the wh
 
 ---
 
-## 6. Leads: field panes → windows
+## 6. Leads: rename the "Panes" field to "Windows"
 
 Owner: *"on leads tape switch the field panes to windows instead."*
 
-**Needs clarification before specced.** `LeadDrawer` currently stacks `.sec` blocks down a side
-panel. Candidate readings:
-- the drawer becomes a centred modal window instead of a side panel;
-- the stacked sections become separate tabbed windows/panes within the drawer;
-- something about the Leads board/list/calendar tabs specifically.
+**Clarified 2026-08-10** — this is a copy change, not a layout one. "Panes" is a field on the lead
+(`LeadDrawer.tsx:116` read view, `:201` edit input), sitting between Stories and Quote. The owner
+wants it labelled **Windows**.
 
-Ask the owner which, with the current screen on-screen, before designing anything.
+**Touches:** the label in both the read and edit views, the leads list/board column headers if they
+name it, the CSV export header (`lib/csv.ts`), and any placeholder copy that says "panes" (e.g. the
+lead description placeholder "12 front panes, 2nd-story ladder…").
+
+**Watch:** rename the *label* only. The DB column, the `panes` form field name and the server action
+all keep their names unless we deliberately do a migration — don't half-rename the data layer.
 
 ---
 
@@ -142,3 +145,33 @@ leads, jobs and invoices all have.
 **Wanted:** click a row → drawer with full detail, edit in place, delete from there. Match the
 existing drawer conventions (`?e=<id>` deep link, `backTo` on close, role gates, uniform danger
 button) so it behaves like the rest.
+
+---
+
+## 9. Numeric fields seeded with 0 instead of an empty field + placeholder
+
+Owner: the number fields start at `0`; clicking in doesn't clear it, so typing `500` with the caret
+left of the existing zero yields `5000`. He wants the zero to be a **placeholder**, not a value.
+
+**Confirmed, and it's narrower than it looks.** Only two fields actually seed a literal zero:
+
+| Field | Where | Today |
+|---|---|---|
+| Stories | `components/leads/LeadDrawer.tsx:199` | `defaultValue={lead?.stories ?? 0}` — seeds `0` |
+| Panes (→ Windows, item 6) | `components/leads/LeadDrawer.tsx:201` | `defaultValue={lead?.panes ?? 0}` — seeds `0` |
+
+The money fields are already right on **create**: Quote (`LeadDrawer.tsx:214`) and Price
+(`JobDrawer.tsx:358`) both use `?? ''` with a `0.00` placeholder, as do `cleaner_amount` (`:360`)
+and `recur_days` (`:363`).
+
+But they still show a hard `0` when **editing an existing record whose stored value is 0** — `??`
+only falls through on null, so a real zero renders as `0` and hits the same caret trap. That's
+probably where the owner saw it on jobs.
+
+**Fix direction**
+- Drop the `?? 0` on stories and panes; use `''` with a `0` placeholder, matching the money fields.
+- Add select-on-focus to the numeric inputs (`onFocus={e => e.target.select()}`) so typing replaces
+  the value instead of splicing into it. This is what actually kills the `5000` bug, including for
+  legitimately-stored zeros where we can't just blank the field.
+- Confirm the server actions still coerce empty → 0 (or null) on submit, so clearing a field doesn't
+  become `NaN`. There's a prior rider about `recur` 0-coercion in the ledger worth re-reading.
