@@ -64,7 +64,7 @@ The completion path for the shallow customers item 2 creates.
 
 ---
 
-## 4. Backgrounds: transparent map popup, muddy dropdowns
+## 4. Backgrounds: transparent map popup, muddy dropdowns — FIXED 2026-08-13
 
 Owner: the map popup is transparent and unreadable, and a lead's service-type dropdown renders grey
 and hard to read — *"double check with all drop down lists"*.
@@ -79,7 +79,12 @@ pre-existing:
   `rgba(255, 255, 255, .80)` light. Native `<option>` lists inherit the select's background, so
   translucency turns them muddy.
 
-**Fix direction:** anything that floats over other content needs an opaque surface — `--card`, or a
+**Fixed on `main`:** `--field-solid` (the flattened equivalent of `--field`) now backs `select`
+and `option`, and `.pop` / `.sresults` override `.box`'s translucent `--surface` with `--card`.
+`.searchbox-list` and `.drawer` were already opaque; `.caldaypanel` is in-flow, not an overlay,
+so it keeps the glass.
+
+**Original fix direction:** anything that floats over other content needs an opaque surface — `--card`, or a
 `.box--solid` variant — and `select`/`option` need opaque backgrounds in both themes. Then sweep
 every overlay: `.sresults` (global search), `.searchbox-list` (map search), `.caldaypanel`, and the
 drawers.
