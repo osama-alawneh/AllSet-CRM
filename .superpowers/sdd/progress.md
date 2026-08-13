@@ -423,3 +423,28 @@ Contents: small-changes Tasks 1-7 (Cleaners Pay rename, streets-v12 + 2x flyTo, 
 Battery green pre-merge at 51a083b and post-merge on main: lint 0, tsc clean, 327/327 unit (44 files), build all routes (no /calendar, /leads + /jobs present). pgTAP not re-run — no DB file touched since the last green run.
 Carried minors remain open backlog (calendar wave list in the 2026-08-10 entry above; earlier waves' lists unchanged).
 NEXT: branch exp/theme-directions cut from main 50aa2cf — theme experiments against the old AllSet-Rep-Portal palette (https://github.com/NotSlik/AllSet-Rep-Portal: dark #0b1220, violet #7c3aed -> sky #38bdf8 gradient, glass panels, sans/weight-950, big radii; vs our flat mono Blueprint+). Direction not yet chosen.
+
+## 2026-08-10 — OWNER REQUEST BACKLOG (logged, NOT started) + theme-skin regressions
+Branch `exp/theme-directions` (off main c5523a4). Theme work so far: 762e84c old-portal palette, f2ef5bd glass surfaces + sans type, 94714f9 drawer/form buttons, 52c8ae5 button-label overflow fix. Battery green at 52c8ae5 (lint 0, tsc, 327/327). NOT merged.
+
+### 1. Live GPS on the map
+Reps/cleaners see their own live position on /map (beyond the one-shot GeolocateControl shipped in 9ebb076 — that recenters until first pan and does not stream). Owner also asks, explicitly as an open question ("i dunno how hard it is"): can an ADMIN watch reps/cleaners live, for those who have sharing on?
+Open questions for the spec: consent + opt-in UI; battery/permission story on phones; whether positions persist (new table + RLS) or are ephemeral broadcast over the existing realtime channel; retention; whether cleaners can see each other or only admins can see them. Treat admin tracking of staff as a privacy-sensitive feature — it needs an explicit, visible opt-in per user, not a silent default.
+
+### 2. Create lead/job without a full customer — auto-create from the name alone
+Today the lead/job create panel requires picking an existing customer. A rep standing in front of a prospect has no time to fill the full customer record. Wanted: type a NAME into the customer field; if no customer matches, creating the lead/job auto-creates a customer with just that name and links it, and the lookup then resolves to it.
+Touches: CustomerLookup (components/customers/CustomerLookup.tsx), the lead + job create paths, and whatever server action inserts them. Watch: uniqueness/dedup on name, role gates (rep may create customers?), and not silently creating duplicates when the rep mistypes an existing name.
+
+### 3. Red dot on customers missing phone or address + created-by traceability
+Complement to #2: a shallow customer needs to be completed later. Red dot next to the customer name in the customers view when phone OR address is missing. Also surface WHO created the record, so an admin seeing many red dots can go back to that creator and get the gaps filled.
+Touches: customers list + drawer, and a created_by column if one doesn't already exist (check before designing — this needs a migration + pgTAP if it doesn't). Dot must not rely on color alone (a11y): pair it with a title/aria-label such as "missing phone".
+
+### 4. Background/contrast regressions from the glass skin (REPRO'D, cause known)
+Owner: the map popup is transparent and unreadable, and a lead's service-type dropdown renders gray/hard to read — "double check with all drop down lists".
+Cause is this branch's skin, confirmed in code, not a pre-existing bug:
+  - `DotPopover` renders `pop box pop-dot` (components/map/DotPopover.tsx:35), and f2ef5bd made `.box` a translucent white-alpha gradient (`--surface`). Over map tiles it shows straight through. Fix: give popovers/menus an OPAQUE surface (`--card`) rather than `--surface`, or add a `.box--solid` variant for anything floating over imagery.
+  - `input, select, textarea { background: var(--field) }` where `--field` is `rgba(0,0,0,.22)` dark / `rgba(255,255,255,.80)` light. Native `<option>` lists inherit the select's background, so translucency turns them muddy. Fix: opaque background on `select` and `option` in both themes.
+  - Sweep every floating/overlay surface for the same problem: `.sresults` (global search), `.searchbox-list` (map search), `.caldaypanel`, drawers, and any menu that sits over the map.
+
+### Backlog moved to a tracked file
+All owner requests now live in `docs/owner-requests-backlog.md` (committed, 8 items: the 4 above plus delete-vs-deactivate for history-less customers, leads field-panes-to-windows [NEEDS CLARIFICATION — owner's wording is ambiguous], the near-invisible datetime-local calendar icon [cause: no `color-scheme` declared anywhere in globals.css, so native controls paint with light chrome in dark theme], and expenses rows having no detail/edit drawer [confirmed: ExpensesSection has a create drawer + row delete only]). This ledger keeps status; that file keeps what was asked and why.

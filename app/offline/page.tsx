@@ -14,16 +14,16 @@ export default function OfflinePage() {
         padding: 24,
         textAlign: 'center',
         fontFamily: 'system-ui, sans-serif',
-        background: '#e9eef3',
-        color: '#0f1a2b',
+        background: '#dfe8f6',
+        color: '#1d2532',
       }}
     >
       {/* No external stylesheet reaches this page offline — the dark override lives inline
           here too, scoped with prefers-color-scheme so it still renders with zero network. */}
       <style>{`
         @media (prefers-color-scheme: dark) {
-          #offline-root { background: #070d18; color: #dce6f5; }
-          #offline-root .offline-sub { color: #7d8db0; }
+          #offline-root { background: #0b1220; color: #ebeced; }
+          #offline-root .offline-sub { color: #aaacb1; }
         }
       `}</style>
       <div
@@ -31,7 +31,7 @@ export default function OfflinePage() {
           width: 56,
           height: 56,
           borderRadius: 12,
-          background: '#2f6df6',
+          background: '#7c3aed',
           color: '#fff',
           fontSize: 26,
           display: 'flex',
@@ -42,7 +42,7 @@ export default function OfflinePage() {
         ◇
       </div>
       <h1 style={{ margin: 0, fontSize: 20 }}>You&apos;re offline</h1>
-      <p className="offline-sub" style={{ margin: 0, maxWidth: 320, fontSize: 14, color: '#42506b' }}>
+      <p className="offline-sub" style={{ margin: 0, maxWidth: 320, fontSize: 14, color: '#696f78' }}>
         AllSet needs a connection to load live data. Reconnect and try again.
       </p>
     </div>
