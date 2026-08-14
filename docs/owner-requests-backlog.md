@@ -180,3 +180,92 @@ probably where the owner saw it on jobs.
   legitimately-stored zeros where we can't just blank the field.
 - Confirm the server actions still coerce empty → 0 (or null) on submit, so clearing a field doesn't
   become `NaN`. There's a prior rider about `recur` 0-coercion in the ledger worth re-reading.
+
+---
+
+## 10. Navigation feels slow — measured, with a ranked fix list
+
+Raised 2026-08-13, after the first production deploy. Owner: *"why when navigating screens I feel
+there is this delay. even the user noticed it."* The owner's own framing of the fix he wants: the
+page should **open immediately showing the front end — table, dashboard, whatever — with a blurred
+placeholder where the data will land**, rather than a spinner over a blank screen.
+
+### What was already done (do not redo)
+
+Functions ran in `iad1` (Virginia) while the Supabase project lives in `us-west-2` (Oregon).
+`vercel.json` now pins them to `pdx1`, which is us-west-2. Authenticated pages went from ~880ms to
+~490ms TTFB. Commit `102d7be`.
+
+### Measured breakdown of one navigation
+
+Taken on the live deployment via a temporary `/api/perf` probe that runs the same work a page render
+does, phase by phase. The rig is on branch `perf/latency-probe` — reuse it to verify any fix rather
+than re-deriving it.
+
+| Phase | Warm | Cold |
+| --- | --- | --- |
+| `auth.getUser` — asks Supabase to identify the user, over the network | 55ms | 127ms |
+| `auth.roleQuery` — the `profiles` role lookup, which cannot start until the above returns | 25ms | 53ms |
+| dashboard's 9 queries — already parallel via `Promise.all` | 80ms | 93ms |
+| Next render + function overhead | ~40ms | ~400ms |
+| Network, Midwest user to Oregon | ~150-200ms | same |
+| **Total per navigation** | **~350-500ms** | **~700-900ms** |
+
+Two things this rules out. The app's own query code is **not** the problem: a bare
+`select id limit 1` costs 25-35ms, and a raw `fetch` bypassing supabase-js costs the same, so that is
+simply the floor for talking to Supabase at all. Nor is it connection setup: five identical queries
+back to back measured 46, 25, 35, 27, 26ms — only the first pays warm-up.
+
+**The dominant problem is perceptual, not arithmetic.** There is no `loading.tsx` anywhere in the
+app. In the App Router a click to a fully dynamic route leaves the *old page on screen, unchanged*,
+until the new one is completely ready — no spinner, no skeleton, no acknowledgement. 400ms of
+nothing reads as a dead click. Per `node_modules/next/dist/docs/01-app/02-guides/prefetching.md`,
+it also means dynamic routes are **not prefetched at all** without a loading boundary, and the
+client route cache is off by default, so hovering a nav link currently does nothing and revisiting
+a page you saw ten seconds ago still costs a full round trip.
+
+There is no caching of any kind today: `next.config.ts` is empty (no `cacheComponents`), no
+`use cache` exists in the codebase, and every response carries `Cache-Control: private, no-cache,
+no-store`.
+
+### Items 1-3 — EASY, RECOMMENDED, no risk. Do these first.
+
+1. **Suspense boundaries with skeleton fallbacks on every list page.** This is precisely the
+   behaviour the owner described: shell paints at once, each data region shows a placeholder, rows
+   stream in. Reference: `node_modules/next/dist/docs/01-app/02-guides/instant-navigation.md`.
+2. **Prefetching, which switches itself on once item 1 exists.** No new code — a loading boundary is
+   the precondition Next requires before it will prefetch a dynamic route. Hovering a nav link then
+   warms the page, so the data is often already there on click.
+3. **Client route cache** via `staleTimes` in `next.config.ts` (~30s for dynamic). Returning to a
+   page you just visited becomes instant with no server call. The only cost is lists up to 30s
+   stale, which is nothing for this app's cadence.
+
+Together these fix what the owner and his user actually noticed, and none of them can serve wrong
+data to the wrong person.
+
+### Items 4-6 — NEED CARE. Real wins, but each can break something.
+
+4. **Verify the auth token locally instead of asking Supabase over the network** (−55ms on *every*
+   navigation, and it unblocks the role lookup 55ms earlier). Care: this is the authentication path.
+   Getting local JWT verification subtly wrong — accepting an expired token, skipping signature
+   checks, mishandling key rotation — is an auth bypass, not a slow page. Wants tests written before
+   the change, and the existing `getSession`/`getRole` contract preserved exactly.
+5. **Carry the user's role in their token** rather than querying `profiles` on every render (−25ms,
+   and removes a step that currently blocks *all* data fetching behind it). Care: the role then
+   lives in two places, so it goes stale the moment an admin changes someone's role — that user
+   keeps their old permissions until their token refreshes. Needs a deliberate answer for
+   invalidation, and it is implemented as a Supabase-side access-token hook, so it is infrastructure
+   config that must be reproducible, not a code change alone.
+6. **Cache Components (`cacheComponents: true` + `use cache`) for the shell.** Care: this app's rows
+   are RLS-scoped per user and per role — a cleaner must never see admin money data. Cached results
+   are keyed by the cached function's arguments, so a cache key that omits user or role serves one
+   user's data to another. That is a data leak, not a rendering bug. Cache the *shell* — layout,
+   nav, table chrome — freely; cache rows only with identity in the key, deliberately, and last.
+   The `unstable_instant` route export exists to fail the build if a later change reintroduces a
+   blocking query, and should be adopted alongside it.
+
+### Ordering
+
+Do 1-3 as one change, re-measure with the `perf/latency-probe` rig, then decide 4-6 with fresh
+numbers rather than these ones. 4 and 5 roughly halve remaining server time (~160ms to ~80ms); 6 is
+the finishing move once the rest is proven.
