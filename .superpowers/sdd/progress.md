@@ -448,3 +448,17 @@ Cause is this branch's skin, confirmed in code, not a pre-existing bug:
 
 ### Backlog moved to a tracked file
 All owner requests now live in `docs/owner-requests-backlog.md` (committed, 8 items: the 4 above plus delete-vs-deactivate for history-less customers, leads field-panes-to-windows [NEEDS CLARIFICATION — owner's wording is ambiguous], the near-invisible datetime-local calendar icon [cause: no `color-scheme` declared anywhere in globals.css, so native controls paint with light chrome in dark theme], and expenses rows having no detail/edit drawer [confirmed: ExpensesSection has a create drawer + row delete only]). This ledger keeps status; that file keeps what was asked and why.
+
+---
+
+## 2026-08-13 — FIRST PRODUCTION DEPLOY + item 4 (glass overlays) fixed
+
+`exp/theme-directions` merged into main (no-ff), then the glass-skin overlay regression from item 4 above fixed on main as ee742df: `--field-solid` (the flattened equivalent of `--field` per theme) backs `select`/`option`, and `.pop` / `.sresults` override `.box`'s translucent `--surface` with the solid `--card`. The sweep found `.searchbox-list` and `.drawer` already opaque, and `.caldaypanel` in-flow rather than floating, so it keeps the glass. Battery green (327/327, clean prod build). Item 4 marked FIXED in `docs/owner-requests-backlog.md`; items 1-3 and 5-8 still open.
+
+**Live: https://allset-crm.vercel.app** — Vercel project `allset-crm` (scope `all-set-crm`) against the existing Supabase Cloud project `gdetewfzxvmoyubfufzk`, which was paused on the free tier and resumed with an empty schema. All 29 migrations pushed with `supabase db push --db-url`; `seed.sql` deliberately NOT run, so production carries no demo customers or `password123` logins. Env: the three `NEXT_PUBLIC_*` vars plus `SUPABASE_SERVICE_ROLE_KEY`, on production and preview.
+
+The first admin had to be bootstrapped out of band — the app has no signup page, and `createUser` is admin-gated, so nobody could have made the first account through the UI. Created via the service-role admin API exactly as `settings/actions.ts` does it (`auth.admin.createUser` with `email_confirm: true`, then the `profiles` row): `laith@allset.com`, role `admin`. Verified by requesting a password-grant token against the live project.
+
+**Deploys are CLI-driven** (`npx vercel deploy --prod --yes`): `vercel link` failed to connect the GitHub repo because the Vercel GitHub app isn't installed on `osama-alawneh/AllSet-CRM`, so pushes to `main` do not deploy themselves.
+
+**Still owed by the owner, dashboard-only:** the live auth config reports `disable_signup: false`, meaning anyone holding the publishable key — which ships in the browser bundle — can self-register (RLS still denies them data, since no profile row means no role); Site URL is unset; and both the DB password and the first admin password were pasted into a chat transcript and want rotating.
