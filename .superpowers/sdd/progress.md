@@ -519,3 +519,23 @@ wrong, and the fix is that count plus its assertion in `tests/unit/loading.rende
 
 Battery 327 → 343 green; `tsc --noEmit`, `lint`, `build` all clean. Item 10's fixes 4-6 remain
 untouched and unrecommended without fresh numbers.
+
+### Session close, 2026-08-13 — where to pick up
+
+Branch `feat/instant-navigation` (`0bc1154..167522a`) is complete and verified locally: `tsc`,
+`lint`, `build` clean, 343/343 tests. Owner likes the result and resumes tomorrow. Open threads, in
+the order they matter:
+
+1. **Browser eye-check, still owed.** Preview `https://allset-jk62mefx1-all-set-crm.vercel.app` —
+   click Dashboard → Jobs → Customers → Leads. Want a shimmer in the destination's shape that does
+   not jump when real rows land. A jump means that route's row/column count is wrong; fix it in the
+   `loading.tsx` plus its assertion in `tests/unit/loading.render.test.tsx`.
+2. **`staleTimes.dynamic` is tunable.** Currently 30s (`next.config.ts:8`, asserted in
+   `tests/unit/next-config.test.ts:8`). Owner asked about lowering it. 5-10s is the honest choice
+   once two or more people work the same list at once; 30s costs a solo user nothing. Only *other
+   people's* changes go stale — own edits clear the client cache via `revalidatePath`, of which the
+   seven `actions.ts` files hold 47.
+3. **Item 10 fixes 4-6.** Backlog says re-measure with the `perf/latency-probe` rig before choosing.
+   Blocked on a production session cookie: the prod service-role key reads `[SENSITIVE]` through
+   `vercel env pull`, so it cannot be minted unattended. Local rig works — `supabase start`, then
+   `admin@clearview.dev` / `password123` from `supabase/seed.sql`.
