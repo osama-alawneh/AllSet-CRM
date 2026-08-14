@@ -596,3 +596,21 @@ input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; marg
 /* Hamburger nav drawer (owner call): the shared .drawer's min(440px, 94vw) blankets
    a phone; the nav list only needs sidebar-ish width. Variant class from MobileNav. */
 .drawer.drawer-nav { width: min(280px, 78vw); padding: 16px 14px; }
+
+/* ===== Route-level loading skeletons =====
+   The shimmer rides the existing surface tokens so a pending screen keeps the skin.
+   No reduced-motion opt-out here on purpose: the global rule above already kills every
+   animation for users who ask for that, and a second one would only drift. */
+.sk {
+  display: block;
+  border-radius: var(--r-sm);
+  background: linear-gradient(90deg, var(--surface-2), var(--chip), var(--surface-2));
+  background-size: 200% 100%;
+  animation: skshimmer 1.3s ease-in-out infinite;
+}
+@keyframes skshimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.sk-actions { display: flex; gap: 8px; }
+.sk-gap { height: 12px; }
+.kpi.box .sk, .col.box .sk, .panel.box .sk { margin-bottom: 8px; }
+.col.box .sk:last-child, .panel.box .sk:last-child { margin-bottom: 0; }
+.sk-fill { flex: 1; min-height: 420px; }

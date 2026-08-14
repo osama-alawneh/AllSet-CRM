@@ -228,7 +228,7 @@ There is no caching of any kind today: `next.config.ts` is empty (no `cacheCompo
 `use cache` exists in the codebase, and every response carries `Cache-Control: private, no-cache,
 no-store`.
 
-### Items 1-3 — EASY, RECOMMENDED, no risk. Do these first.
+### Items 1-3 — DONE 2026-08-13, commits `0bc1154..67a01b8`
 
 1. **Suspense boundaries with skeleton fallbacks on every list page.** This is precisely the
    behaviour the owner described: shell paints at once, each data region shows a placeholder, rows
@@ -242,6 +242,35 @@ no-store`.
 
 Together these fix what the owner and his user actually noticed, and none of them can serve wrong
 data to the wrong person.
+
+**What shipped.** `components/skeleton/Skeleton.tsx` (eight primitives reusing the real screens'
+class names) plus a `loading.tsx` on all nine `(app)` routes — dashboard, customers, jobs, leads,
+invoices, expenses, cleaners, settings, map. `next.config.ts` gained
+`experimental.staleTimes = { dynamic: 30, static: 180 }`. Shimmer CSS is at the end of
+`app/globals.css`; the existing global `prefers-reduced-motion` rule already kills it, so there is
+no second opt-out. Item 1 landed as **route-level** loading boundaries, not in-page `<Suspense>`:
+the finer-grained version means moving every page's fetching into child components and it tangles
+with item 6, so it is deliberately not done here. No `cacheComponents`, no `use cache`, and nothing
+in `lib/auth.ts` / `proxy.ts` was touched. 16 new tests, battery 327 → 343 green.
+
+**Measured, same machine, production build, admin session, `/dashboard` `/jobs` `/customers`:**
+
+| | prefetch payload | prefetch | RSC navigation |
+| --- | --- | --- | --- |
+| Before (no loading boundary) | **206-211 B, no shell** | 60-183ms | 117-247ms |
+| After | **13.8-18.0 KB, contains the skeleton** | 109-142ms warm | 114-120ms warm |
+
+The payload size is the whole point: at 211 bytes Next was declining to prefetch a dynamic route at
+all, exactly as `prefetching.md` documents. Now hovering a nav link downloads the destination's
+shell, so the click paints it with no server round trip, and `staleTimes.dynamic` keeps that shell
+for 30s afterwards. Production baseline for comparison remains the numbers measured above:
+`/dashboard` 310-520ms, `/customers` 317-518ms, no prefetch.
+
+**Not yet measured on production.** The authenticated preview probe needs a session cookie, and the
+production service-role key that would mint one comes back `[SENSITIVE]` from `vercel env pull`, so
+the numbers above are local. Preview deployment carrying this work:
+`https://allset-jk62mefx1-all-set-crm.vercel.app` (shimmer CSS confirmed present in its served
+stylesheet). Owner to confirm the feel in a browser.
 
 ### Items 4-6 — NEED CARE. Real wins, but each can break something.
 

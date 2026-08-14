@@ -490,3 +490,52 @@ owner asked: **1-3 easy/recommended/no-risk** (Suspense skeletons, the prefetchi
 `staleTimes` client route cache) and **4-6 need care**, each with its specific hazard recorded —
 auth bypass, stale permissions after a role change, and cross-user cache leakage under RLS. Owner
 intends to execute this himself with superpowers, so the entry is written to be picked up cold.
+
+## 2026-08-13 (later still) — instant navigation shipped (item 10, fixes 1-3)
+
+Branch `feat/instant-navigation`, commits `0bc1154..67a01b8`, executed from
+`docs/superpowers/plans/2026-08-13-instant-navigation-1-3.md`. Three levers, none of them touching
+data access: skeleton primitives in `components/skeleton/Skeleton.tsx`, a `loading.tsx` on all nine
+`(app)` routes shaped like the screen it stands in for, and
+`experimental.staleTimes = { dynamic: 30, static: 180 }` in `next.config.ts`. Shimmer CSS appended
+to `app/globals.css`, riding the existing tokens; the global `prefers-reduced-motion` rule already
+covers it. No `cacheComponents`, no `use cache`, no change to `lib/auth.ts` or `proxy.ts` — those
+are items 4-6 and stay closed.
+
+Measured on one machine, production build, admin session, three routes. Before, a prefetch of a
+dynamic route returned **206-211 bytes and no shell** — Next declines to prefetch without a loading
+boundary. After, it returns **13.8-18.0 KB containing the destination skeleton** (warm: prefetch
+109-142ms, RSC navigation 114-120ms). That payload difference is the fix: hovering now warms the
+shell, the click paints it immediately, and the 30s client route cache makes a return visit cost no
+round trip at all.
+
+Production numbers are still the old ones (`/dashboard` 310-520ms, `/customers` 317-518ms) — the
+authenticated preview probe needs a session cookie and the prod service-role key reads `[SENSITIVE]`
+through `vercel env pull`, so it could not be minted unattended. Preview deployment with this work:
+`https://allset-jk62mefx1-all-set-crm.vercel.app`; its served stylesheet does contain the shimmer
+rules. Owner still owes the by-eye check — click between Dashboard, Jobs and Customers and watch for
+a shimmer that does not jump when real rows land. A jump means a skeleton's row/column count is
+wrong, and the fix is that count plus its assertion in `tests/unit/loading.render.test.tsx`.
+
+Battery 327 → 343 green; `tsc --noEmit`, `lint`, `build` all clean. Item 10's fixes 4-6 remain
+untouched and unrecommended without fresh numbers.
+
+### Session close, 2026-08-13 — where to pick up
+
+Branch `feat/instant-navigation` (`0bc1154..167522a`) is complete and verified locally: `tsc`,
+`lint`, `build` clean, 343/343 tests. Owner likes the result and resumes tomorrow. Open threads, in
+the order they matter:
+
+1. **Browser eye-check, still owed.** Preview `https://allset-jk62mefx1-all-set-crm.vercel.app` —
+   click Dashboard → Jobs → Customers → Leads. Want a shimmer in the destination's shape that does
+   not jump when real rows land. A jump means that route's row/column count is wrong; fix it in the
+   `loading.tsx` plus its assertion in `tests/unit/loading.render.test.tsx`.
+2. **`staleTimes.dynamic` is tunable.** Currently 30s (`next.config.ts:8`, asserted in
+   `tests/unit/next-config.test.ts:8`). Owner asked about lowering it. 5-10s is the honest choice
+   once two or more people work the same list at once; 30s costs a solo user nothing. Only *other
+   people's* changes go stale — own edits clear the client cache via `revalidatePath`, of which the
+   seven `actions.ts` files hold 47.
+3. **Item 10 fixes 4-6.** Backlog says re-measure with the `perf/latency-probe` rig before choosing.
+   Blocked on a production session cookie: the prod service-role key reads `[SENSITIVE]` through
+   `vercel env pull`, so it cannot be minted unattended. Local rig works — `supabase start`, then
+   `admin@clearview.dev` / `password123` from `supabase/seed.sql`.
