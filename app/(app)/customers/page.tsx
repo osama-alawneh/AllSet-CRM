@@ -10,6 +10,7 @@ import {
   type DrawerInvoice,
 } from '@/components/customers/CustomerDrawer';
 import type { CustomerRow } from '@/lib/customers';
+import { timed } from '@/lib/perf';
 
 export default async function CustomersPage({
   searchParams,
@@ -25,7 +26,7 @@ export default async function CustomersPage({
   const showInactive = admin && inactiveParam === '1';
   const sb = await supabaseServer();
 
-  const [customersRes, jobRowsRes, invRowsRes] = await Promise.all([
+  const [customersRes, jobRowsRes, invRowsRes] = await timed('customers.batch', () => Promise.all([
     sb
       .from('customers')
       .select('id,name,phone,email,address,type,notes,active')
@@ -33,7 +34,7 @@ export default async function CustomersPage({
       .order('name'),
     sb.from('jobs_public').select('customer_id'),
     admin ? sb.from('invoices').select('customer_id') : Promise.resolve({ data: null, error: null }),
-  ]);
+  ]));
   logQueryError('customers.page.customers', customersRes.error);
   logQueryError('customers.page.jobs', jobRowsRes.error);
   logQueryError('customers.page.invoices', invRowsRes.error);

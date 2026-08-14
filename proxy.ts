@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
+import { timed } from '@/lib/perf';
 import { NextResponse, type NextRequest } from 'next/server';
 
 // Next.js 16 renamed `middleware` to `proxy` (same request-interceptor role).
@@ -32,7 +33,7 @@ export async function proxy(request: NextRequest) {
   // Triggers a token refresh when the access token is stale; refreshed cookies
   // are written to `response` above. Do NOT add auth-guard/redirect logic here —
   // layouts and pages keep owning that. This layer only refreshes cookies.
-  await supabase.auth.getUser();
+  await timed('proxy.getUser', () => supabase.auth.getUser());
 
   return response;
 }

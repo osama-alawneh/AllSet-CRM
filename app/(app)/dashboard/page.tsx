@@ -19,6 +19,7 @@ import { ClaimableJobs, type ClaimableJob } from '@/components/dashboard/Claimab
 import { MiniMap } from '@/components/dashboard/MiniMap';
 import { Leaderboard } from '@/components/dashboard/Leaderboard';
 import { MoneyRow } from '@/components/dashboard/MoneyRow';
+import { timed } from '@/lib/perf';
 
 export default async function DashboardPage() {
   const user = await getSession();
@@ -37,7 +38,7 @@ export default async function DashboardPage() {
     ? sb.from('jobs').select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at,price').is('deleted_at', null).order('id')
     : sb.from('jobs_public').select('id,customer_id,lead_id,status,claimed_by,scheduled_date,service,description,created_at,updated_at').order('id');
 
-  const [jobsRes, csRes, psRes, lpRes, invRes, itemRes, ceRes, crRes, dotsRes] = await Promise.all([
+  const [jobsRes, csRes, psRes, lpRes, invRes, itemRes, ceRes, crRes, dotsRes] = await timed('dashboard.batch', () => Promise.all([
     jobsQuery,
     sb.from('customers').select('id,name,address,phone,email,lat,lng'),
     sb.from('profiles').select('id,full_name'),
@@ -49,7 +50,7 @@ export default async function DashboardPage() {
     sb.from('cleaner_earnings').select('cleaner_id,job_id,done_at,share'),
     sb.from('company_revenue').select('month,job_revenue,expenses,net'),
     sb.from('dots').select('id,lat,lng,label,notes,status').order('id'),
-  ]);
+  ]));
   logQueryError('dashboard.jobs', jobsRes.error);
   logQueryError('dashboard.customers', csRes.error);
   logQueryError('dashboard.profiles', psRes.error);
