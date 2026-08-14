@@ -539,3 +539,9 @@ the order they matter:
    Blocked on a production session cookie: the prod service-role key reads `[SENSITIVE]` through
    `vercel env pull`, so it cannot be minted unattended. Local rig works — `supabase start`, then
    `admin@clearview.dev` / `password123` from `supabase/seed.sql`.
+
+**Shipped to production 2026-08-13, `652395a`.** Branch merged `--no-ff` into main and pushed
+(`9fc0072..652395a`), then `npx vercel deploy --prod` — live at `https://allset-crm.vercel.app`,
+deployment `allset-7c4ztvfwu`. Verified after: main green at 343/343, and the served production
+stylesheet contains the shimmer rules. Owner chose to ship ahead of the browser eye-check, so item 1
+above is now a **post-deploy** check against production rather than the preview.
