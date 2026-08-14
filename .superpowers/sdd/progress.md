@@ -462,3 +462,31 @@ The first admin had to be bootstrapped out of band — the app has no signup pag
 **Deploys are CLI-driven** (`npx vercel deploy --prod --yes`): `vercel link` failed to connect the GitHub repo because the Vercel GitHub app isn't installed on `osama-alawneh/AllSet-CRM`, so pushes to `main` do not deploy themselves.
 
 **Still owed by the owner, dashboard-only:** the live auth config reports `disable_signup: false`, meaning anyone holding the publishable key — which ships in the browser bundle — can self-register (RLS still denies them data, since no profile row means no role); Site URL is unset; and both the DB password and the first admin password were pasted into a chat transcript and want rotating.
+
+---
+
+## 2026-08-13 (later) — navigation latency measured; fix list logged, NOT started
+
+Owner reported navigation delay after the deploy, and his user noticed it too. Region move to `pdx1`
+(commit `102d7be`) already halved page TTFB, ~880ms to ~490ms. The remainder was then measured
+properly rather than guessed: a `/api/perf` probe on a preview deployment runs each phase of a page
+render and returns the milliseconds, because `vercel logs` only samples and dropped most of the
+timing lines. Rig lives on branch `perf/latency-probe` (pushed, NOT for main) — reuse it to verify
+any fix.
+
+Warm per navigation: `auth.getUser` 55ms → `auth.roleQuery` 25ms (serialised behind it) → the 9
+parallel dashboard queries 80ms → render ~40ms → ~150-200ms of user-to-Oregon network. Cold roughly
+doubles it. Ruled out: the app's query code (a bare `select id limit 1` costs 25-35ms, and a raw
+fetch bypassing supabase-js costs the same — that is the Supabase floor) and connection setup (five
+identical queries: 46, 25, 35, 27, 26ms).
+
+The dominant cause is perceptual: no `loading.tsx` anywhere, so a click leaves the old page on
+screen until the new one is fully ready, and Next will not prefetch dynamic routes without a loading
+boundary. No caching of any kind exists — empty `next.config.ts`, no `use cache`, `no-store` on
+every response.
+
+Full findings and the ranked fix list are in `docs/owner-requests-backlog.md` item 10, split as the
+owner asked: **1-3 easy/recommended/no-risk** (Suspense skeletons, the prefetching they unlock,
+`staleTimes` client route cache) and **4-6 need care**, each with its specific hazard recorded —
+auth bypass, stale permissions after a role change, and cross-user cache leakage under RLS. Owner
+intends to execute this himself with superpowers, so the entry is written to be picked up cold.
